@@ -1,12 +1,63 @@
-\documentclass[british,titlepage]{ntnuthesis}
+\documentclass[british,titlepage,oneside]{ntnuthesis}
 
-\title{An NTNU Thesis \LaTeX{} Document Class}
-\shorttitle{An NTNU Thesis Document Class}
-\author{Community of Practice in Computer Science Education at NTNU}
-\shortauthor{CoPCSE$@$NTNU}
-\date{CC-BY \ntnuthesisdate}
+%\usepackage{todonotes}
+\usepackage{tabularx}
+%\usepackage{tikz-timing}
+%\usepackage{tikz-timing}[2009/05/15]
+\usepackage{tikz-timing}[2017/12/20]
+\usepackage{tikz}
+%\usetikzlibrary{matrix}
+%\usepackage{paralist}
+%\usepackage{subfig}
 
-\addbibresource{thesis.bib}
+
+
+\usepackage{pgfgantt}
+\definecolor{blue}{HTML}{74BBC9}
+\definecolor{yellow}{HTML}{F7E967}
+
+\newcommand{\sv}[1]{\lstinline{#1}} %systemverilog code
+\newcommand{\rv}[1]{\lstinline{#1}} %riscv instructions, csrs etc
+\newcommand{\ccode}[1]{\lstinline{#1}} %c code
+\newcommand{\file}[1]{\lstinline{#1}}
+\newcommand{\dir}[1]{\lstinline{#1}}
+
+\newcommand{\tmp}[1]{\textcolor{red}{#1}}
+
+\newenvironment{svblock}[1][]
+    {\begin{lstlisting}[#1]}
+    {\end{lstlisting}}
+
+\lstnewenvironment{systemverilog}[1][]
+{\lstset{language=verilog,
+        #1
+        }}
+{}
+
+\lstnewenvironment{clisting}[1][]
+{\lstset{language=c,
+        #1
+        }}
+{}
+
+\lstnewenvironment{terminal}[1][]
+{\lstset{language=c,
+        #1
+        }}
+{}
+%\begin{lstlisting}[label={lst:async_int_1},caption={Trace output from asynchronous interrupts without pipeline shell}]
+
+\crefname{req}{ISS Requirement}{ISS Requirements}
+
+\title{Designing a RISC-V Reference Model for Open Source Processor Cores}
+\shorttitle{RISC-V Reference Model}
+\author{Torje Nygaard Eikenes}
+\shortauthor{Torje N. Eikenes}
+\date{\today}
+
+%\addbibresource{thesis.bib}
+%\addbibresource{bib/Formal.bib}
+\addbibresource{bib/MyLibrary.bib}
 
 \input{glossary.tex} % add glossary and acronym lists before document
 
@@ -14,6 +65,8 @@
 
 \input{chapters/0a-abstract.tex}
 \input{chapters/0b-sammendrag.tex}
+\input{chapters/0c-preface.tex}
+
 
 \tableofcontents
 \listoffigures
@@ -24,16 +77,44 @@
 \printglossary                    % Print glossary
 
 \input{chapters/1-introduction}
-\input{chapters/2-usage.tex}
-\input{chapters/3-structure.tex}
-\input{chapters/4-conclusion.tex}
+
+\input{chapters/2-Background}
+
+\input{chapters/3-previous-work}
+
+\input{chapters/4-design}
+
+\input{chapters/5-Pipelineshell}
+
+\input{chapters/6-ISS}
+
+\input{chapters/7-Formal}
+%\input{chapters/7-results}
+
+\input{chapters/8-discussion}
+
+\input{chapters/9-conclusion}
+
+
+
+%\input{chapters/Formal}
+%\input{chapters/referenceModel}
+%\input{chapters/Implementation}
+%\input{chapters/Results}
+%\input{chapters/discussions}
+%\input{chapters/4-conclusion.tex}
+
 
 \chapter*{\bibname}
+\tmp{TODO: Gå over alle kilder}
 \printbibliography[heading=none]
 
-\input{chapters/papers.tex}
+%\input{chapters/papers.tex}
 
 \appendix
-\input{appendices/a-appendix.tex}
+
+%\input{template/2-usage}
+%\input{template/3-structure}
+%\input{appendices/a-appendix.tex}
 
 \end{document}

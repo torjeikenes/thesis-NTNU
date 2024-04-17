@@ -1,0 +1,1655 @@
+@incollection{adamchlipalaIntroduction2013,
+  title = {Introduction},
+  booktitle = {Certified {{Programming}} with {{Dependent Types}}: {{A Pragmatic Introduction}} to the {{Coq Proof Assistant}}},
+  author = {{Adam Chlipala}},
+  year = {2013},
+  pages = {1--12},
+  abstract = {The technology of mechanized program verification can play a supporting role in many kinds of research projects in computer science, and related tools for formal proof-checking are seeing increasing adoption in mathematics and engineering. This book provides an introduction to the Coq software for writing and checking mathematical proofs. It takes a practical engineering focus throughout, emphasizing techniques that will help users to build, understand, and maintain large Coq developments and minimize the cost of code change over time. Two topics, rarely discussed elsewhere, are covered in detail: effective dependently typed programming (making productive use of a feature at the heart of the Coq system) and construction of domain-specific proof tactics. Almost every subject covered is also relevant to interactive computer theorem proving in general, not just program verification, demonstrated through examples of verified programs applied in many different sorts of formalizations. The book develops a unique automated proof style and applies it throughout; even experienced Coq users may benefit from reading about basic Coq concepts from this novel perspective. The book also offers a library of tactics, or programs that find proofs, designed for use with examples in the book. Readers will acquire the necessary skills to reimplement these tactics in other settings by the end of the book. All of the code appearing in the book is freely available online.},
+  isbn = {978-0-262-31787-0},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/8Y4252GG/6712773.pdf}
+}
+
+@inproceedings{adelImplementationFunctionalVerification2021,
+  title = {Implementation and {{Functional Verification}} of {{RISC-V Core}} for {{Secure IoT Applications}}},
+  booktitle = {2021 {{International Conference}} on {{Microelectronics}} ({{ICM}})},
+  author = {Adel, Abdelrahman and Saad, Dina and El Mawgoed, Mahmoud Abd and Sharshar, Mohamed and Ahmed, Zyad and Ibrahim, Hala and Mostafa, Hassan},
+  year = {2021},
+  month = dec,
+  pages = {254--257},
+  publisher = {IEEE},
+  address = {New Cairo City, Egypt},
+  doi = {10.1109/ICM52667.2021.9664926},
+  urldate = {2023-12-04},
+  abstract = {In the world of technology we live in, there is a huge increase in the number of internet of things (IoT) devices leading to a tremendous amount of data being sent. This wireless data is prone to eavesdropping and being hacked. The contribution of this work is the design of a System on Chip (SoC) with a processor based on the instruction set architecture (ISA) of reduced instruction-set computer (RISC-V). The system focuses on the security of data between IoT end-nodes. For SoC verification, a Universal Verification Methodology (UVM) environment is used for covering most of the functionality and security aspects to guarantee a sufficient level of trust in the implemented SoC.},
+  isbn = {978-1-66540-839-4},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/FNW2D7UD/Adel et al. - 2021 - Implementation and Functional Verification of RISC.pdf}
+}
+
+@article{akramSurveyComputerArchitecture2019,
+  title = {A {{Survey}} of {{Computer Architecture Simulation Techniques}} and {{Tools}}},
+  author = {Akram, Ayaz and Sawalha, Lina},
+  year = {2019},
+  journal = {IEEE Access},
+  volume = {7},
+  pages = {78120--78145},
+  issn = {2169-3536},
+  doi = {10.1109/ACCESS.2019.2917698},
+  urldate = {2023-12-17},
+  abstract = {Computer architecture simulators play an important role in advancing computer architecture research. With wider research directions and the increased number of simulators that have been developed, it becomes harder to choose a particular simulator to use. This paper reviews the fundamentals of different computer architecture simulation techniques. It also surveys many computer architecture simulators and classifies them into different groups based on their simulation models. Comparing computer architecture simulators with each other and validating their accuracy have been demanding tasks for architects. In addition to providing a survey of computer architecture simulation tools, we measured the experimental error of six contemporary computer architecture simulators: gem5, MARSSx86, Multi2Sim, PTLsim, Sniper, and ZSim. We also performed a detailed comparison of these simulators based on other features such as flexibility and micro-architectural details. We believe that this paper will be a very useful resource for the computer architecture community especially for early-stage computer architecture and systems researchers to gain exposure to the existing architecture simulation options.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/SXFJMQHX/Akram and Sawalha - 2019 - A Survey of Computer Architecture Simulation Techn.pdf}
+}
+
+@misc{AllPartRISCV,
+  title = {All {{Aboard}}, {{Part}} 4: {{The RISC-V Code Models}}},
+  shorttitle = {All {{Aboard}}, {{Part}} 4},
+  journal = {SiFive},
+  urldate = {2024-02-15},
+  howpublished = {https://www.sifive.com/blog/all-aboard-part-4-risc-v-code-models},
+  langid = {american},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/RVHHSWIN/all-aboard-part-4-risc-v-code-models.html},
+  maintitle = {{{SiFive}}}
+}
+
+@article{armstrongISASemanticsARMv8a2019,
+  title = {{{ISA}} Semantics for {{ARMv8-a}}, {{RISC-v}}, and {{CHERI-MIPS}}},
+  author = {Armstrong, Alasdair and Bauereiss, Thomas and Campbell, Brian and Reid, Alastair and Gray, Kathryn E. and Norton, Robert M. and Mundkur, Prashanth and Wassell, Mark and French, Jon and Pulte, Christopher and Flur, Shaked and Stark, Ian and Krishnaswami, Neel and Sewell, Peter},
+  year = {2019},
+  month = jan,
+  journal = {Proceedings of the ACM on Programming Languages},
+  volume = {3},
+  number = {POPL},
+  pages = {1--31},
+  issn = {2475-1421},
+  doi = {10.1145/3290384},
+  urldate = {2023-09-15},
+  abstract = {Architecture specifications notionally define the fundamental interface between hardware and software: the envelope of allowed behaviour for processor implementations, and the basic assumptions for software development and verification. But in practice, they are typically prose and pseudocode documents, not rigorous or executable artifacts, leaving software and verification on shaky ground.             In this paper, we present rigorous semantic models for the sequential behaviour of large parts of the mainstream ARMv8-A, RISC-V, and MIPS architectures, and the research CHERI-MIPS architecture, that are complete enough to boot operating systems, variously Linux, FreeBSD, or seL4. Our ARMv8-A models are automatically translated from authoritative ARM-internal definitions, and (in one variant) tested against the ARM Architecture Validation Suite.             We do this using a custom language for ISA semantics, Sail, with a lightweight dependent type system, that supports automatic generation of emulator code in C and OCaml, and automatic generation of proof-assistant definitions for Isabelle, HOL4, and (currently only for MIPS) Coq. We use the former for validation, and to assess specification coverage. To demonstrate the usability of the latter, we prove (in Isabelle) correctness of a purely functional characterisation of ARMv8-A address translation. We moreover integrate the RISC-V model into the RMEM tool for (user-mode) relaxed-memory concurrency exploration. We prove (on paper) the soundness of the core Sail type system.             We thereby take a big step towards making the architectural abstraction actually well-defined, establishing foundations for verification and reasoning.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/RZF9TAQM/Armstrong et al. - 2019 - ISA semantics for ARMv8-a, RISC-v, and CHERI-MIPS.pdf}
+}
+
+@article{armstrongSailInstructionsetSemantics2023,
+  title = {The {{Sail}} Instruction-Set Semantics Specification Language},
+  author = {Armstrong, Alasdair and Bauereiss, Thomas and Campbell, Brian and Gray, Kathryn E and {Norton-Wright}, Robert and Pulte, Christopher and Flur, Shaked and Sewell, Peter},
+  year = {2023},
+  month = jan,
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/4MX7A5KU/Armstrong et al. - The Sail instruction-set semantics specification l.pdf}
+}
+
+@article{bellardQEMUFastPortable2005,
+  title = {{{QEMU}}, a {{Fast}} and {{Portable Dynamic Translator}}},
+  author = {Bellard, Fabrice},
+  year = {2005},
+  abstract = {We present the internals of QEMU, a fast machine emulator using an original portable dynamic translator. It emulates several CPUs (x86, PowerPC, ARM and Sparc) on several hosts (x86, PowerPC, ARM, Sparc, Alpha and MIPS). QEMU supports full system emulation in which a complete and unmodified operating system is run in a virtual machine and Linux user mode emulation where a Linux process compiled for one target CPU can be run on another CPU.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/KPCK6JZF/Bellard - 2005 - QEMU, a Fast and Portable Dynamic Translator.pdf}
+}
+
+@inproceedings{berramlaFormalValidationModel2015,
+  title = {Formal Validation of Model Transformation with {{Coq}} Proof Assistant},
+  booktitle = {2015 {{First International Conference}} on {{New Technologies}} of {{Information}} and {{Communication}} ({{NTIC}})},
+  author = {Berramla, Karima and Deba, El Abbassia and Senouci, Mohammed},
+  year = {2015},
+  month = nov,
+  pages = {1--6},
+  publisher = {IEEE},
+  address = {Mila, Algeria},
+  doi = {10.1109/NTIC.2015.7368755},
+  urldate = {2024-01-24},
+  abstract = {Facing the increasing complexity of systems and their design methods, the Model Driven Engineering (MDE) brings solutions to facilitate and automate the software development process. The model transformation is the most important artifact in MDE that it defines the automatic passing from one model to another. The validation of such model transformation are necessary to improve the safety of this latter, but most transformation languages have not a formal semantics to add detailed specifications on the expected behavior. So it is important to give solutions to integrate formal methods at this level. For this, we utilize the Coq proof assistant that is based on various calculus, for validating a model transformation specified with QVT-operational language. We illustrate our approach by transforming a UML state diagram into Petri net. .},
+  isbn = {978-1-4673-6684-7 978-1-4673-6685-4},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/SFC8JYUC/Berramla et al. - 2015 - Formal validation of model transformation with Coq.pdf}
+}
+
+@inproceedings{bogdanovCycleaccurateTemplateMicroprocessor2022,
+  title = {A {{Cycle-accurate Template Microprocessor Model}} of a {{Von Neumann Architecture Based}} on {{SystemC}}},
+  booktitle = {2022 {{XXXI International Scientific Conference Electronics}} ({{ET}})},
+  author = {Bogdanov, Lubomir and Ivanov, Ratcho},
+  year = {2022},
+  month = sep,
+  pages = {1--6},
+  publisher = {IEEE},
+  address = {Sozopol, Bulgaria},
+  doi = {10.1109/ET55967.2022.9920276},
+  urldate = {2023-11-12},
+  abstract = {The paper presents different aspects of the creation of a cycle-accurate, pipeline-accurate, single-issue, von Neumann microprocessor model that can be used as a template to model any existing microarchitecture. The goal of this development is simplicity and modularity so that any embedded developer could create a model out of the instruction timings given in the datasheet. The model is created as a separate entity to allow for code reuse and support for many families and subfamilies of microcontrollers.},
+  isbn = {978-1-66549-878-4},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/HES3S8NZ/Bogdanov and Ivanov - 2022 - A Cycle-accurate Template Microprocessor Model of .pdf}
+}
+
+@inproceedings{bohmCycleaccuratePerformanceModelling2010,
+  title = {Cycle-Accurate Performance Modelling in an Ultra-Fast Just-in-Time Dynamic Binary Translation Instruction Set Simulator},
+  booktitle = {Modeling and {{Simulation}} 2010 {{International Conference}} on {{Embedded Computer Systems}}: {{Architectures}}},
+  author = {B{\"o}hm, Igor and Franke, Bj{\"o}rn and Topham, Nigel},
+  year = {2010},
+  month = jul,
+  pages = {1--10},
+  doi = {10.1109/ICSAMOS.2010.5642102},
+  abstract = {Instruction set simulators (ISS) are vital tools for compiler and processor architecture design space exploration and verification. State-of-the-art simulators using just-in-time (JIT) dynamic binary translation (DBT) techniques are able to simulate complex embedded processors at speeds above 500 MIPS. However, these functional ISS do not provide microarchitectural observability. In contrast, low-level cycle-accurate ISS are too slow to simulate full-scale applications, forcing developers to revert to FPGA-based simulations. In this paper we demonstrate that it is possible to run ultra-high speed cycle-accurate instruction set simulations surpassing FPGA-based simulation speeds. We extend the JIT DBT engine of our ISS and augment JIT generated code with a verified cycle-accurate processor model. Our approach can model any microarchitectural configuration, does not rely on prior profiling, instrumentation, or compilation, and works for all binaries targeting a state-of-the-art embedded processor implementing the ARCompact™ instruction set architecture (ISA). We achieve simulation speeds up to 63 MIPS on a standard {\texttimes}86 desktop computer, whilst the average cycle-count deviation is less than 1.5\% for the industry standard EEMBC and COREMARK benchmark suites.},
+  keywords = {notion,Pipeline model},
+  file = {/home/torje/Zotero/storage/WDHSRDCZ/Böhm et al. - 2010 - Cycle-accurate performance modelling in an ultra-f.pdf;/home/torje/Zotero/storage/G32E97WJ/5642102.html}
+}
+
+@article{caiTransactionLevelModeling,
+  title = {Transaction {{Level Modeling}}: {{An Overview}}},
+  author = {Cai, Lukai and Gajski, Daniel},
+  abstract = {Recently, the transaction-level modeling has been widely referred to in system-level design community. However, the transaction-level models(TLMs) are not well defined and the usage of TLMs in the existing design domains, namely modeling, validation, refinement, exploration, and synthesis, is not well coordinated. This paper introduces a TLM taxonomy and compares the benefits of TLMs' use.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/GLI3UFP7/Cai and Gajski - Transaction Level Modeling An Overview.pdf}
+}
+
+@misc{carlfriedrichBackgroundOptimizationsThat,
+  title = {Background: {{Optimizations}} That {{Pydrofoil}} Does - {{Pydrofoil}} Documentation},
+  author = {{Carl Friedrich} and {Matti Picus}},
+  urldate = {2023-09-15},
+  howpublished = {https://docs.pydrofoil.org/en/latest/background\_optimizations.html},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/BTIUL44T/background_optimizations.html}
+}
+
+@misc{carlfriedrichHowSpeedEmulating,
+  title = {How to {{Speed Up}} the {{Emulating Process}} with {{Pydrofoil}} {\textbar} {{Carl Friedrich}} and {{Matti Picus}} -- {{RISC-V International}}},
+  author = {{Carl Friedrich} and {Matti Picus}},
+  urldate = {2023-09-15},
+  langid = {american},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/AFKA26KM/how-to-speed-up-the-emulating-process-with-pydrofoil-carl-friedrich.html}
+}
+
+@inproceedings{castromarquezFormalEquivalenceChecking2013,
+  title = {Formal Equivalence Checking between High-Level and {{RTL}} Hardware Designs},
+  booktitle = {2013 14th {{Latin American Test Workshop}} - {{LATW}}},
+  author = {Castro Marquez, Carlos Ivan and Strum, Marius and {Wang Jiang Chau}},
+  year = {2013},
+  month = apr,
+  pages = {1--6},
+  publisher = {IEEE},
+  address = {Cordoba},
+  doi = {10.1109/LATW.2013.6562666},
+  urldate = {2024-01-26},
+  abstract = {Digital applications complexity makes it harder every day to discover and debug behavioral inconsistencies at register transfer level (RTL). Aiming to bring a solution, several techniques have appeared as alternatives to verify that a circuit description meets the requirements of its corresponding functional specification. Simulation is widely applied due to its convenience to uncover early design bugs, but is far from providing the exhaustiveness acquired through formal methods, for which improved and new tools continue to appear. On the other hand, formal verification can suffer from problems such as state-space explosion or modeling inaccuracy. Then, it is vital to develop new ways to check a design for consistency fast and comprehensively. In this paper, we propose a sequential equivalence checking (SEC) formalism and an algorith m, for use between a specification, written at electronic system level (ESL), and an implementation, written at RTL. Given that equivalence is checked between different levels of abstraction, it is no longer valid to perform SEC on single states, thus, we show a scheme to extract and compare complete sequences of states in order to determine if the design intention, which is described in the ESL specification, is contained and respected by the RTL implementation. The results obtained suggest that our methodology can be applied efficiently on real designs.},
+  isbn = {978-1-4799-0597-3 978-1-4799-0595-9 978-1-4799-0596-6},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/YSRDWEP8/Castro Marquez et al. - 2013 - Formal equivalence checking between high-level and.pdf}
+}
+
+@book{cernySVAPowerAssertions2015,
+  title = {{{SVA}}: {{The Power}} of {{Assertions}} in {{SystemVerilog}}},
+  shorttitle = {{{SVA}}},
+  author = {Cerny, Eduard and Dudani, Surrendra and Havlicek, John and Korchemny, Dmitry},
+  year = {2015},
+  publisher = {Springer International Publishing},
+  address = {Cham},
+  doi = {10.1007/978-3-319-07139-8},
+  urldate = {2024-02-16},
+  isbn = {978-3-319-07138-1 978-3-319-07139-8},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/IQYY9BCT/Cerny et al. - 2015 - SVA The Power of Assertions in SystemVerilog.pdf}
+}
+
+@misc{CertifiedProgrammingDependent,
+  title = {Certified {{Programming}} with {{Dependent Types}}: {{A Pragmatic Introduction}} to the {{Coq Proof Assistant}} {\textbar} {{MIT Press eBooks}} {\textbar} {{IEEE Xplore}}},
+  urldate = {2024-01-24},
+  howpublished = {https://ieeexplore.ieee.org/book/6712486},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/BJFDKDXQ/6712486.html}
+}
+
+@inproceedings{chiangEfficientTwolayeredCycleaccurate2009,
+  title = {Efficient Two-Layered Cycle-Accurate Modeling Technique for Processor Family with Same Instruction Set Architecture},
+  booktitle = {2009 {{International Symposium}} on {{VLSI Design}}, {{Automation}} and {{Test}}},
+  author = {Chiang, Chien-De and Huang, Juinn-Dar},
+  year = {2009},
+  month = apr,
+  pages = {235--238},
+  publisher = {IEEE},
+  address = {Hsinchu, Taiwan},
+  doi = {10.1109/VDAT.2009.5158138},
+  urldate = {2023-11-11},
+  abstract = {In this paper, we propose a new processor modeling technique that partitions a cycle-accurate model into two layers, an inner functional kernel and an outer timing shell. The kernel is an untimed but high-speed instruction set simulator (ISS) and is suitable for software development; while the timing shell provides additional timing details for cycle-accurate hardware behavior. When a new processor member is added to the family, it demands only a new timing shell because the kernel is identical to that of its ancestors sharing the same instruction set architecture (ISA). It not only helps ensure functional consistency but significantly reduces the model development time. We take two processors with a same ISA, an ARM7-like one and an ARM9-like one, as our modeling examples to demonstrate the feasibility of the proposed technique. Finally, the experimental results show that, on average our two-layered cycle-accurate model is about 30 times faster than the RTL model in simulation.},
+  isbn = {978-1-4244-2781-9},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/RHWB9V98/Chiang and Huang - 2009 - Efficient two-layered cycle-accurate modeling tech.pdf}
+}
+
+@article{chiangQEMUSystemCBasedCycleAccurate2011,
+  title = {A {{QEMU}} and {{SystemC-Based Cycle-Accurate ISS}} for {{Performance Estimation}} on {{SoC Development}}},
+  author = {Chiang, Ming-Chao and Yeh, Tse-Chen and Tseng, Guo-Fu},
+  year = {2011},
+  month = apr,
+  journal = {IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems},
+  volume = {30},
+  number = {4},
+  pages = {593--606},
+  issn = {1937-4151},
+  doi = {10.1109/TCAD.2010.2095631},
+  abstract = {In this paper, we present a fast cycle-accurate instruction set simulator (CA-ISS) for system-on-chip development based on QEMU and SystemC. Even though most state-of-the-art commercial tools have tried very hard to provide all the levels of details to satisfy the different requirements of the software designer, the hardware designer, and even the system architect, the hardware/software co-simulation speed is dramatically slow when co-simulating the hardware models at the register-transfer level (RTL) with a full-fledged operating system (OS). Our experimental results show that the combination of QEMU and SystemC can make the co-simulation at the CA level much faster than the conventional RTL simulation, even with a full-fledged operating system up and running. Furthermore, the statistics indicate that with every instruction executed and every memory accessed since power-on traced at the CA level, it takes 28m15.804s on average to boot up a full-fledged Linux kernel, even on a personal computer. Compared to the kernel boot time reported by Xilinx and SiCortex, the proposed CA-ISS is about 6.09 times faster compared to ``SystemC without trace'' of Xilinx and about 30.32 times faster compared to ``SystemC models converted from RTL'' of SiCortex. The main contributions of this paper are threefold: 1) a hardware/software co-simulation environment capable of running a full-fledged OS at the early stage of the electronic system level design flow at an acceptable simulation speed is proposed; 2) a virtual platform constructed using the proposed CA-ISS as the processor model can be used to estimate the performance of a target system from system perspective, which all the previous works, such as QEMU-SystemC, do not provide; and 3) such a virtual platform also provides the modeling capability from the transaction level down to the CA level or the other way around.},
+  keywords = {Cycle-accurate simulation,Data mining,Estimation,Hardware,hardware/software co-simulation,ISS,Linux,notion,Pipelines,QEMU,SoC,Software,System-on-a-chip,systemC},
+  file = {/home/torje/Zotero/storage/YC7X8RGJ/Chiang et al. - 2011 - A QEMU and SystemC-Based Cycle-Accurate ISS for Pe.pdf;/home/torje/Zotero/storage/GX2WY7UA/5737847.html}
+}
+
+@inproceedings{chuahFormalVerificationSecurity2023,
+  title = {Formal {{Verification}} of {{Security Properties}} on {{RISC-V Processors}}},
+  booktitle = {Proceedings of the 21st {{ACM-IEEE International Conference}} on {{Formal Methods}} and {{Models}} for {{System Design}}},
+  author = {Chuah, Czea Sie and Appold, Christian and Leinmueller, Tim},
+  year = {2023},
+  month = sep,
+  pages = {159--168},
+  publisher = {ACM},
+  address = {Hamburg Germany},
+  doi = {10.1145/3610579.3611085},
+  urldate = {2024-01-23},
+  abstract = {Hardware Security and trustworthiness are becoming ever more important, especially for security-critical applications like autonomous driving and service robots. With the increase in distribution of RISCV processors, security issues in them arise. Security vulnerabilities and design flaws in processors can be exploited by attackers, e.g. by running software exploiting the vulnerabilities. This can lead to drastic consequences like damaging whole system functionality and even human lives can be endangered. Hence, it is very important to verify compliance of processors with the design specification and microarchitecture intent to harden the hardware against malicious attacks. Detection and removal of design bugs results in improved processor security. Therefore, we formally verify in this paper the security-critical functionality of a commercial RISC-V processor using model checking based formal verification with the formal verification tool Jasper. For this, we determined and implemented a comprehensive list of properties for security-critical functionality, derived from RISC-V specification and processor microarchitecture intent. The properties cover the security-critical functionality within a RISC-V processor. With our verification experiments, we detected design bugs which have been confirmed by the design team.},
+  isbn = {9798400703188},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/QH6U436C/Chuah et al. - 2023 - Formal Verification of Security Properties on RISC.pdf}
+}
+
+@inproceedings{chupilkoDevelopingCycleaccurateContract2010,
+  title = {Developing Cycle-Accurate Contract Specifications for Synchronous Parallel-Pipeline Hardware: {{Application}} to Verification},
+  shorttitle = {Developing Cycle-Accurate Contract Specifications for Synchronous Parallel-Pipeline Hardware},
+  booktitle = {2010 12th {{Biennial Baltic Electronics Conference}}},
+  author = {Chupilko, M. and Kamkin, A.},
+  year = {2010},
+  month = oct,
+  pages = {185--188},
+  publisher = {IEEE},
+  address = {Tallinn, Estonia},
+  doi = {10.1109/BEC.2010.5631143},
+  urldate = {2023-11-09},
+  abstract = {The paper describes a methodology for formal cycle-accurate specification of synchronous parallel-pipeline hardware. The main application of the methodology is simulation-based verification of control-intensive digital designs. Its key features are as follows: (1) resources of a design under verification (buffers, arbiters, data transfer channels, etc.) are specified by means of reusable cycleaccurate models; (2) operations of a design (pipeline control flows) are described by defining contracts (i.e. pre- and postconditions) for all operation stages (functional units of a pipeline). Formal specifications of that kind can be easily applied to automate simulation-based verification. The suggested solution is aimed at achieving technological effectiveness of specifications development.},
+  isbn = {978-1-4244-7356-4},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/PXRQS64F/Chupilko and Kamkin - 2010 - Developing cycle-accurate contract specifications .pdf}
+}
+
+@inproceedings{chupilkoMethodologyExperienceSimulationBased2008,
+  title = {Methodology and {{Experience}} of {{Simulation-Based Verification}} of {{Microprocessor Units Based}} on {{Cycle-Accurate Contract Specifications}}},
+  booktitle = {Spring/{{Summer Young Researchers}}' {{Colloquium}} on {{Software Engineering}}},
+  author = {Chupilko, Mikhail and Kamkin, Alexander and Vorobyev, Dmitry},
+  year = {2008},
+  doi = {10.15514/SYRCOSE-2008-2-17},
+  urldate = {2023-11-10},
+  abstract = {In this paper we describe a methodology and experience of simulation-based verification of microprocessor units based on cycle-accurate contract specifications. Such specifications describe behavior of a unit in the form of preconditions and postconditions of microoperations. We have successfully applied the methodology to several units of the industrial microprocessor. The experience shows that cycle-accurate contract specifications are very suitable for simulation-based verification, since, first, they represent functional requirements on a unit in comprehensible declarative form, and second, they make it possible to automatically construct test oracles which verify unit correctness.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/9J9KZ5AK/Chupilko et al. - 2008 - Methodology and Experience of Simulation-Based Ver.pdf}
+}
+
+@inproceedings{chupilkoTLMbasedApproachFunctional2011,
+  title = {A {{TLM-based}} Approach to Functional Verification of Hardware Components at Different Abstraction Levels},
+  booktitle = {2011 12th {{Latin American Test Workshop}} ({{LATW}})},
+  author = {Chupilko, Mikhail and Kamkin, Alexander},
+  year = {2011},
+  month = mar,
+  pages = {1--6},
+  publisher = {IEEE},
+  address = {Beach of Porto de Galinhas, Brazil},
+  doi = {10.1109/LATW.2011.5985902},
+  urldate = {2023-11-11},
+  abstract = {Verification has long been recognized as an integral part of the hardware design process. When designing a system, engineers usually use various design representations and concretize them step by step up to a physical layout. At the beginning of the process, when there is much of indeterminacy, only abstract reference models are applicable to verification; when the process is close to the end, more concrete ones can be utilized. The article concerns problems of developing reusable verification systems (testbenches), which can be used to analyze different versions of the same component at different abstraction levels. We suggest an approach to construct reusable reaction checkers basing on a concept of Transaction Level Modeling (TLM). The paper includes general description of the approach, considers several particular cases, and outlines our experience.},
+  isbn = {978-1-4577-1489-4},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/UBA4645L/Chupilko and Kamkin - 2011 - A TLM-based approach to functional verification of.pdf}
+}
+
+@article{clarkRv8HighPerformance2017,
+  title = {Rv8: A High Performance {{RISC-V}} to X86 Binary Translator},
+  author = {Clark, Michael and Hoult, Bruce},
+  year = {2017},
+  abstract = {Dynamic binary translation has a history of being used to ease transitions between CPU architectures[7], including micro-architectures. Modern x86 CPUs, while maintaining binary compatibility with their legacy CISC instruction set, have internal micro-architectures that resemble RISC. High performance x86 micro-architectures have long used a CISC decoder front-end to crack complex instructions into smaller micro-operations. Recently macro-op fusion [17][6] has been used to combine several instructions into one micro-op. Both techniques change the shape of the ISA to match the internal {\textmu}op micro-architecture. Well-known binary translators also use micro-op internal representations to provide an indirection between the source and target ISAs as this makes the addition of new instruction sets much easier.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/34N8R8SU/Clark and Hoult - 2017 - rv8 a high performance RISC-V to x86 binary trans.pdf}
+}
+
+@article{CoreLocalInterruptController,
+  title = {Core-{{Local Interrupt Controller}} ({{CLIC}}) {{RISC-V Privileged Architecture Extensions}}},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/95HMNGVE/Core-Local Interrupt Controller (CLIC) RISC-V Priv.pdf;/home/torje/Zotero/storage/UNUJLF7E/Core-Local Interrupt Controller (CLIC) RISC-V Priv.pdf}
+}
+
+@misc{CorevverifCv32e40sBsp,
+  title = {Core-v-Verif/Cv32e40s/Bsp at Master {$\cdot$} Openhwgroup/Core-v-Verif},
+  journal = {GitHub},
+  urldate = {2024-02-15},
+  abstract = {Functional verification project for the CORE-V family of RISC-V cores. - openhwgroup/core-v-verif},
+  howpublished = {https://github.com/openhwgroup/core-v-verif/tree/master/cv32e40s/bsp},
+  langid = {english},
+  file = {/home/torje/Zotero/storage/WSMFB5Y3/bsp.html},
+  maintitle = {{{GitHub}}}
+}
+
+@inproceedings{davideschiavoneSlowSteadyWins2017,
+  title = {Slow and Steady Wins the Race? {{A}} Comparison of Ultra-Low-Power {{RISC-V}} Cores for {{Internet-of-Things}} Applications},
+  shorttitle = {Slow and Steady Wins the Race?},
+  booktitle = {2017 27th {{International Symposium}} on {{Power}} and {{Timing Modeling}}, {{Optimization}} and {{Simulation}} ({{PATMOS}})},
+  author = {Davide Schiavone, Pasquale and Conti, Francesco and Rossi, Davide and Gautschi, Michael and Pullini, Antonio and Flamand, Eric and Benini, Luca},
+  year = {2017},
+  month = sep,
+  pages = {1--8},
+  publisher = {IEEE},
+  address = {Thessaloniki},
+  doi = {10.1109/PATMOS.2017.8106976},
+  urldate = {2023-12-18},
+  isbn = {978-1-5090-6462-5}
+}
+
+@inproceedings{davideschiavoneSlowSteadyWins2017a,
+  title = {Slow and Steady Wins the Race? {{A}} Comparison of Ultra-Low-Power {{RISC-V}} Cores for {{Internet-of-Things}} Applications},
+  shorttitle = {Slow and Steady Wins the Race?},
+  booktitle = {2017 27th {{International Symposium}} on {{Power}} and {{Timing Modeling}}, {{Optimization}} and {{Simulation}} ({{PATMOS}})},
+  author = {Davide Schiavone, Pasquale and Conti, Francesco and Rossi, Davide and Gautschi, Michael and Pullini, Antonio and Flamand, Eric and Benini, Luca},
+  year = {2017},
+  month = sep,
+  pages = {1--8},
+  publisher = {IEEE},
+  address = {Thessaloniki},
+  doi = {10.1109/PATMOS.2017.8106976},
+  urldate = {2024-04-08},
+  isbn = {978-1-5090-6462-5},
+  keywords = {notion}
+}
+
+@misc{davidSimpipe2022,
+  title = {Simpipe},
+  author = {David},
+  year = {2022},
+  month = may,
+  urldate = {2023-09-11},
+  abstract = {Pipeline Simulator},
+  copyright = {GPL-3.0}
+}
+
+@misc{duncangrahamRISCVVerificationImplications2023,
+  title = {{{RISC-V}} Verification and Implications of the 5:1 Ratio of {{DV}} to Design Engineers},
+  author = {{Duncan Graham} and {Simon Davidmann}},
+  year = {2023},
+  month = jun,
+  address = {Thame, Oxfordshire},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/G63PWPWI/10-Duncan-Graham-Imperas-Verification-Futures-22-June-2023-v4.pdf}
+}
+
+@inproceedings{duranSimulationFormalBest2020,
+  title = {Simulation and {{Formal}}: {{The Best}} of {{Both Domains}} for {{Instruction Set Verification}} of {{RISC-V Based Processors}}},
+  shorttitle = {Simulation and {{Formal}}},
+  booktitle = {2020 {{IEEE International Symposium}} on {{Circuits}} and {{Systems}} ({{ISCAS}})},
+  author = {Duran, Ckristian and Morales, Hanssel and Rojas, Camilo and Ruospo, Annachiara and Sanchez, Ernesto and Roa, Elkim},
+  year = {2020},
+  month = oct,
+  pages = {1--4},
+  publisher = {IEEE},
+  address = {Seville, Spain},
+  doi = {10.1109/ISCAS45731.2020.9180589},
+  urldate = {2023-12-05},
+  abstract = {The instruction set architecture (ISA) specifies a contract between hardware and software; it covers all possible operations that have to be performed by a processor, regardless of the implemented architecture. Verifying the instruction execution against a golden execution model following the ISA is becoming a common practice to verify processors. Despite many potential applications, existing verification frameworks require an extensive test set to cover most of the processor states. In this paper, we suggest a verification scheme combining two different domains, simulation- and formal-verification, establishing a methodology for exclusive error detection. The first approach drives automatic program generation using genetic algorithms to maximize coverage of the test and the contrast against an instruction set simulator. The second is a formal verification approach, where an interface carries specific processor states according to the ISA specification. By combining these two, we present a reliable way to perform more accurate instruction verification by increasing processor state coverage and formal assertions to detect different kinds of errors. Compared to extensive torture test sets, this approach reaches a more significant number of internal states by taking advantage of the exercised abstractions. Among remarkable results to highlight, the proposed approach detected a RISC-V ISA specification gap revealing ambiguity from two different verification perspectives.},
+  isbn = {978-1-72813-320-1},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/9R3FFNI9/Duran et al. - 2020 - Simulation and Formal The Best of Both Domains fo.pdf}
+}
+
+@article{eniEfficientHintBasedEvent2022,
+  title = {Efficient {{Hint-Based Event}} ({{EHE}}) {{Issue Scheduling}} for {{Hardware Multithreaded RISC-V Pipeline}}},
+  author = {Eni, Yossi and Greenberg, Shlomo and {Ben-Shimol}, Yehuda},
+  year = {2022},
+  month = feb,
+  journal = {IEEE Transactions on Circuits and Systems I: Regular Papers},
+  volume = {69},
+  number = {2},
+  pages = {735--745},
+  issn = {1558-0806},
+  doi = {10.1109/TCSI.2021.3117490},
+  abstract = {Hardware multithreading is a common approach for tolerating memory latency by utilizing idle cycles and avoiding CPU stalling. Nowadays, multithreading architectures are commonly used across many processors and various embedded edge devices to improve performance. This work suggests a new multithreading in-order pipeline microarchitecture design for RISC-V and proposes an efficient event-based issue scheduling algorithm. The proposed scheduling algorithm is based on the unique RISC-V ISA that enables decoding of the instruction type in an early stage of the pipeline. The RISC-V-based multithreading architecture is evaluated using a dedicated software simulator. Simulation results show that the proposed algorithm outperforms the classical Round Robin and the coarse grain algorithms. The proposed architecture is evaluated using the standard MiBench benchmark and other common applications, demonstrating pipeline utilization improvement of up to about 26\% in terms of IPC using four threads.},
+  keywords = {Computer architecture,Decoding,Hardware,Hardware multithreading,in-order pipeline,Instruction sets,issue scheduling,Multithreading,notion,Pipelines,Registers,RISC-V},
+  file = {/home/torje/Zotero/storage/VRESKTA4/Eni et al. - 2022 - Efficient Hint-Based Event (EHE) Issue Scheduling .pdf;/home/torje/Zotero/storage/9WARX5V4/9568719.html}
+}
+
+@misc{ethzurichanduniversityofbolognaCosimulationSystem2023,
+  title = {Co-Simulation {{System}}},
+  author = {{ETH Zurich and University of Bologna}},
+  year = {2023},
+  journal = {Ibex Documentation},
+  urldate = {2023-12-18},
+  howpublished = {https://ibex-core.readthedocs.io/en/latest/03\_reference/cosim.html},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/HL9C5GXV/cosim.html},
+  maintitle = {Ibex {{Documentation}}}
+}
+
+@misc{ETISSExtendableTranslating2023,
+  title = {{{ETISS}} ({{Extendable Translating Instruction Set Simulator}})},
+  year = {2023},
+  month = aug,
+  urldate = {2023-09-11},
+  abstract = {Extendable Translating Instruction Set Simulator},
+  howpublished = {EDA@TUM},
+  keywords = {instruction-set-simulator,notion,risc-v}
+}
+
+@misc{evancoxAddDocumentationLowlevel2017,
+  title = {Add Documentation of Low-Level Spike Internals {$\cdot$} {{Issue}} \#145 {$\cdot$} Riscv-Software-Src/Riscv-Isa-Sim},
+  author = {{Evan Cox}},
+  year = {2017},
+  month = oct,
+  journal = {GitHub},
+  urldate = {2024-02-15},
+  abstract = {Hi yall, I'm trying to modify spike to directly control the fetched instruction data, starting from the very first instruction execution. This has been a bit difficult due to a lack of documentatio...},
+  howpublished = {https://github.com/riscv-software-src/riscv-isa-sim/issues/145},
+  langid = {english},
+  keywords = {notion,Spike},
+  file = {/home/torje/Zotero/storage/HCJK8V8L/145.html},
+  maintitle = {{{GitHub}}}
+}
+
+@inproceedings{funckIdentificationISALevelMutationClasses2023,
+  title = {Identification of {{ISA-Level Mutation-Classes}} for {{Qualification}} of {{RISC-V Formal Verification}}},
+  booktitle = {2023 {{Forum}} on {{Specification}} \& {{Design Languages}} ({{FDL}})},
+  author = {Funck, Milan and {Ahmadi-Pour}, Sallar and Herdt, Vladimir and Drechsler, Rolf},
+  year = {2023},
+  month = sep,
+  pages = {1--8},
+  publisher = {IEEE},
+  address = {Turin, Italy},
+  doi = {10.1109/FDL59689.2023.10272202},
+  urldate = {2024-01-23},
+  abstract = {RISC-V has generated a lot of interest in academia and industry alike due to the open source, modular, and royalty-free design of the Instruction Set Architecture (ISA). With its modular extensibility and the ability to customize the ISA to meet application-specific needs, new challenges arise in terms of verification. Various approaches have been proposed to overcome these challenges, including traditional simulation-based verification and formal verification. While formal verification is considered thorough, its quality heavily depends on the properties and assumptions of the proofs meeting the exact specification.},
+  isbn = {9798350307375},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/VTEHHG6A/Funck et al. - 2023 - Identification of ISA-Level Mutation-Classes for Q.pdf}
+}
+
+@article{gaoEndtoEndFormalVerification2021,
+  title = {End-to-{{End Formal Verification}} of a {{RISC-V Processor Extended}} with {{Capability Pointers}}},
+  author = {Gao, Dapeng and Melham, Tom},
+  year = {2021},
+  month = oct,
+  publisher = {TU Wien},
+  doi = {10.34727/2021/ISBN.978-3-85448-046-4_10},
+  urldate = {2023-11-03},
+  abstract = {Capability Hardware Enhanced RISC Instructions (CHERI) extend conventional ISAs with capabilities that can enable fine-grained memory protection and scalable software compartmentalisation. CHERI-RISC-V is an extended version of the RISC-V ISA with support for CHERI, and Flute is an open-source 64-bit RISC-V processor with a five-stage, inorder pipeline. This case study presents the formal verification of CHERI-Flute, a modified version of Flute that implements CHERI-RISC-V, against the Sail CHERI-RISC-V specification. To the best of our knowledge, this is the first extensive formal verification of a CHERI-enabled processor.},
+  collaborator = {{TU Wien} and {TU Wien}},
+  copyright = {Creative Commons Attribution 4.0 International},
+  langid = {english},
+  keywords = {formal methods,formale Methode,notion},
+  file = {/home/torje/Zotero/storage/MHG5HN7N/Gao and Melham - 2021 - End-to-End Formal Verification of a RISC-V Process.pdf}
+}
+
+@inproceedings{gaoRISCVISAExtension2023,
+  title = {{{RISC-V ISA Extension Toolchain Supports}}: {{A Survey}}},
+  shorttitle = {{{RISC-V ISA Extension Toolchain Supports}}},
+  booktitle = {Proceedings of the 2023 4th {{International Conference}} on {{Computing}}, {{Networks}} and {{Internet}} of {{Things}}},
+  author = {Gao, Yue and Qian, Wei and Cui, Enfang},
+  year = {2023},
+  month = may,
+  pages = {924--929},
+  publisher = {ACM},
+  address = {Xiamen China},
+  doi = {10.1145/3603781.3603942},
+  urldate = {2023-10-12},
+  abstract = {RISC-V is an open source modular and scalable emerging instruction set. As the RISC-V architecture gradually matures in the field of contemporary chips, the RISC-V software ecosystem is also gradually prospering. Some mainstream tool chains and operating systems have supported RISC-V architecture since the beginning, and now gradually support multiple RISC-V expansion directive. Although there are many works dedicated to advancing RISC-V instruction extensions to adapt to various scenarios under different computing power requirements, and exploring the RISC-V software ecosystem, there is no work on existing tool chains and operating systems to extend RISC-V Conduct systematic research and conclusions on the support of the instructions. The purpose of this paper is to systematically and comprehensively investigate and summarize the adaptation of tool chain and operating system to RISC-V extended instructions, including some extensions defined in the RISC-V instruction set specification and some customized Define extensions. In this article, we mainly elaborate on our research from four aspects: operating system, compiler, simulator, and verification tools.},
+  isbn = {9798400700705},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/6EQRE34F/Gao et al. - 2023 - RISC-V ISA Extension Toolchain Supports A Survey.pdf}
+}
+
+@misc{gauravkothariMARSSRISCVMicroArchitecturalSystem2020,
+  title = {{{MARSS-RISCV}}: {{Micro-Architectural System Simulator}} for {{RISC-V}}},
+  shorttitle = {Marss-Riscv},
+  author = {{Gaurav Kothari} and {Gokturk Yuksek} and {Marc Gauthier} and {Parikshit Sarnaik}},
+  year = {2020},
+  month = dec,
+  urldate = {2023-12-15},
+  abstract = {TinyEMU based full system cycle-level micro-architectural research simulator for single-core RISC-V systems},
+  copyright = {MIT},
+  howpublished = {Binghamton University Computer Architecture and  Power-Aware Systems (CAPS) Research Group},
+  keywords = {cpu-simulator,cycle-level-modeling,cycle-level-simulator,notion,risc-v,riscv-emulator,riscv-simulator}
+}
+
+@misc{Gem5Simulator2023,
+  title = {The Gem5 {{Simulator}}},
+  year = {2023},
+  urldate = {2023-12-06},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/4Y23DAKH/gem5.html}
+}
+
+@inproceedings{giorgiWebRISCVWebBasedEducationOriented2019,
+  title = {{{WebRISC-V}}: A {{Web-Based Education-Oriented RISC-V Pipeline Simulation Environment}}},
+  shorttitle = {{{WebRISC-V}}},
+  booktitle = {Proceedings of the {{Workshop}} on {{Computer Architecture Education}}},
+  author = {Giorgi, Roberto and Mariotti, Gianfranco},
+  year = {2019},
+  month = jun,
+  pages = {1--6},
+  publisher = {ACM},
+  address = {Phoenix AZ USA},
+  doi = {10.1145/3338698.3338894},
+  urldate = {2023-09-11},
+  abstract = {WebRISC-V is a web-based server-side RISC-V assembly language Pipelined Datapath simulation environment, which aims at easing students learning and instructors teaching experience. RISC-V is an open-source Instruction Set Architecture (ISA) that is highly flexible, modular, extensible and royalty free. Because of these reasons, there is an exploding interest both in the industry and academia for the RISC-V. Here, we present the main features of this simulator and how it can be used for a simple exercise in the classroom. This web-based simulator permits the execution of RISC-V userprovided source code on a five-stage pipeline, while displaying the data of registers, memory and the internal state of the pipeline elements. One of the main advantages of WebRISC-V is the immediate availability in the web browser, thanks to its implementation as a server-side script in PHP.},
+  isbn = {978-1-4503-6842-1},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/RKPCQPXG/Giorgi and Mariotti - 2019 - WebRISC-V a Web-Based Education-Oriented RISC-V P.pdf}
+}
+
+@inproceedings{gligorUsingBinaryTranslation2009,
+  title = {Using Binary Translation in Event Driven Simulation for Fast and Flexible {{MPSoC}} Simulation},
+  booktitle = {Proceedings of the 7th {{IEEE}}/{{ACM}} International Conference on {{Hardware}}/Software Codesign and System Synthesis},
+  author = {Gligor, Marius and Fournel, Nicolas and P{\'e}trot, Fr{\'e}d{\'e}ric},
+  year = {2009},
+  month = oct,
+  pages = {71--80},
+  publisher = {ACM},
+  address = {Grenoble France},
+  doi = {10.1145/1629435.1629446},
+  urldate = {2023-09-13},
+  abstract = {In this paper, we investigate the use of instruction set simulators (ISS) based on binary translation to accelerate full timed multiprocessor system simulation at transaction level. To have an accurate timing behavior, we had to firstly solve timing issues in processor modeling, secondly define fast and precise cache models, and thirdly solve the synchronization issues due to the different models of computation used in the ISSes and in the rest of the system. We present an integration solution that covers these issues and detail its implementation. We have experimented our proposal using processors models provided by the QEMU framework to replace the existing ISSes and SystemC TLM as simulation environment for the whole platform. This approach proposes a range of solutions trading off simulation speed versus accuracy. The experiments show that even for the most precise configuration, the simulation speedup is still significant.},
+  isbn = {978-1-60558-628-1},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/2UC55APH/Gligor et al. - 2009 - Using binary translation in event driven simulatio.pdf}
+}
+
+@article{guoAccelerateCycleLevelFullSystem2020,
+  title = {Accelerate {{Cycle-Level Full-System Simulation}} of {{Multi-Core RISC-V Systems}} with {{Binary Translation}}},
+  author = {Guo, Xuan and Mullins, Robert},
+  year = {2020},
+  abstract = {It has always been challenging to balance the accuracy and performance of instruction set simulators (ISSs). Register-transfer level (RTL) simulators or systems such as gem5 [4] are used to execute programs in a cycle-accurate manner but are often prohibitively slow. In contrast, functional simulators such as QEMU [2] can run large benchmarks to completion in a reasonable time yet capture few performance metrics and fail to model complex interactions between multiple cores. This paper presents a novel multi-purpose simulator that exploits binary translation to offer fast cycle-level full-system simulations. Its functional simulation mode outperforms QEMU and, if desired, it is possible to switch between functional and timing modes at run-time. Cycle-level simulations of RISC-V multi-core processors are possible at more than 20 MIPS, a useful middle ground in terms of accuracy and performance with simulation speeds nearly 100 times those of more detailed cycleaccurate models.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/AQBASLMG/Guo and Mullins - 2020 - Accelerate Cycle-Level Full-System Simulation of M.pdf}
+}
+
+@misc{guoR2VM2023,
+  title = {{{R2VM}}},
+  author = {Guo, Gary},
+  year = {2023},
+  month = aug,
+  urldate = {2023-09-08},
+  abstract = {Rust RISC-V Virtual Machine},
+  copyright = {Apache-2.0},
+  keywords = {notion}
+}
+
+@article{halbwachsSimulationVerificationAsynchronous,
+  title = {Simulation and {{Verification}} of {{Asynchronous Systems}} by Means of a {{Synchronous Model}}},
+  author = {Halbwachs, N and Mandel, L},
+  abstract = {Synchrony and asynchrony are commonly opposed to each other. Now, in embedded applications, actual solutions are often situated in between, with synchronous processes composed in a partially asynchronous way. Examples of such intermediate solutions are GALS, quasi-synchronous periodic processes, deadline-driven task scheduling. . . In this paper, we illustrate the use of the synchronous paradigm to model and validate such partially asynchronous applications. We show that, through the use of sporadic activation of processes and simulation of nondeterminism by the way of auxiliary inputs, the synchronous paradigm allows a precise control of asynchrony. The approach is illustrated on a real case study, proposed in the framework of the European Integrated project ``Assert''.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/VWWGR6TA/Halbwachs and Mandel - Simulation and Verification of Asynchronous System.pdf}
+}
+
+@article{harcourtSystemCLibrarySpecifying2014,
+  title = {A {{SystemC}} Library for Specifying Pipeline Abstractions},
+  author = {Harcourt, Ed and Perconti, James},
+  year = {2014},
+  month = feb,
+  journal = {Microprocessors and Microsystems},
+  volume = {38},
+  number = {1},
+  pages = {76--81},
+  issn = {01419331},
+  doi = {10.1016/j.micpro.2013.11.010},
+  urldate = {2023-11-13},
+  abstract = {We describe a SystemC library for specifying, modeling, and simulating hardware pipelines. The library includes a set of overloaded operators defining a pipeline expression language that allows the user to quickly specify the architecture of the pipeline. The pipeline expression is used to derive the connectivity of the SystemC modules that define the stages of the pipeline and to automatically insert latches and control modules between the stages to handle the proper routing of transactions through pipeline. Using the SystemC simulator the pipeline can then be simulated and evaluated. The pipeline expression language sits on top of SystemC, exposes all of the features of C++ and SystemC enabling the user to specify, evaluate, and analyze pipeline architectures.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/QJZWG9LP/Harcourt and Perconti - 2014 - A SystemC library for specifying pipeline abstract.pdf}
+}
+
+@book{hennessyComputerArchitectureQuantitative2019,
+  title = {Computer Architecture: A Quantitative Approach},
+  shorttitle = {Computer Architecture},
+  author = {Hennessy, John L. and Patterson, David A.},
+  year = {2019},
+  edition = {Sixth edition},
+  publisher = {Morgan Kaufmann Publishers, an imprint of Elsevier},
+  address = {Cambridge, Mass},
+  isbn = {978-0-12-811905-1},
+  langid = {english},
+  file = {/home/torje/Zotero/storage/N4UT9YHU/Hennessy - Computer Architecture.pdf}
+}
+
+@inproceedings{herdtClosingRISCVCompliance2020,
+  title = {Closing the {{RISC-V Compliance Gap}}: {{Looking}} from the {{Negative Testing Side}}},
+  shorttitle = {Closing the {{RISC-V Compliance Gap}}},
+  booktitle = {2020 57th {{ACM}}/{{IEEE Design Automation Conference}} ({{DAC}})},
+  author = {Herdt, Vladimir and Gro{\ss}e, Daniel and Drechsler, Rolf},
+  year = {2020},
+  month = jul,
+  pages = {1--6},
+  issn = {0738-100X},
+  doi = {10.1109/DAC18072.2020.9218629},
+  abstract = {Compliance testing for RISC-V is very important. Therefore, an official hand-written compliance test-suite is being actively developed. However, besides requiring significant manual effort, it focuses on positive testing (the implemented instructions work as expected) only and neglects negative testing (consider illegal instructions to also ensure that no additional/unexpected behavior is accidentally added). This leaves a large gap in compliance testing.In this paper we propose a fuzzing-based test-suite generation approach to close this gap. We found new bugs in several RISC-V simulators including riscvOVPsim from Imperas which is the official reference simulator for compliance testing.},
+  keywords = {Computer bugs,Fuzzing,Instruction sets,notion,Registers,Standards},
+  file = {/home/torje/Zotero/storage/8J3DIYZL/Herdt et al. - 2020 - Closing the RISC-V Compliance Gap Looking from th.pdf;/home/torje/Zotero/storage/FB33QHMZ/9218629.html}
+}
+
+@book{herdtEnhancedVirtualPrototyping2021,
+  title = {Enhanced {{Virtual Prototyping}}: {{Featuring RISC-V Case Studies}}},
+  shorttitle = {Enhanced {{Virtual Prototyping}}},
+  author = {Herdt, Vladimir and Gro{\ss}e, Daniel and Drechsler, Rolf},
+  year = {2021},
+  publisher = {Springer International Publishing},
+  address = {Cham},
+  doi = {10.1007/978-3-030-54828-5},
+  urldate = {2023-09-18},
+  isbn = {978-3-030-54827-8 978-3-030-54828-5},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/QMKBXN8R/Herdt et al. - 2021 - Enhanced Virtual Prototyping Featuring RISC-V Cas.pdf}
+}
+
+@article{herdtRISCVBasedVirtual2020,
+  title = {{{RISC-V}} Based Virtual Prototype: {{An}} Extensible and Configurable Platform for the System-Level},
+  shorttitle = {{{RISC-V}} Based Virtual Prototype},
+  author = {Herdt, Vladimir and Gro{\ss}e, Daniel and Pieper, Pascal and Drechsler, Rolf},
+  year = {2020},
+  month = oct,
+  journal = {Journal of Systems Architecture},
+  volume = {109},
+  pages = {101756},
+  issn = {13837621},
+  doi = {10.1016/j.sysarc.2020.101756},
+  urldate = {2023-09-14},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/2BW3K54P/Herdt et al. - 2020 - RISC-V based virtual prototype An extensible and .pdf}
+}
+
+@article{hinSupportingRISCVFull2021,
+  title = {Supporting {{RISC-V Full System Simulation}} in Gem5},
+  author = {Hin, Peter Yuen Ho and Liao, Xiongfei and Cui, Jin and Mondelli, Andrea and Somu, Thannirmalai Muthukaruppan and Zhang, Naxin},
+  year = {2021},
+  abstract = {The RISC-V ISA and ecosystem have been becoming an increasingly popular in both industry and academia. gem5 is a widely used powerful simulation platform for computer architecture research. Previous works have added single-core and multi-core RISC-V support to gem5 but only for system call emulation. The full-system simulation of gem5, on the other hand, provides accurate analysis of systems as an actual system software is loaded and run on the hardware platform modelled in gem5. However, full-system simulation support in gem5 for RISC-V ISA is currently not available. This paper presents our recent work on supporting RISC-V fullsystem simulation in gem5. After describing the implementation details of supporting extensible target system and debugging methodology for overcoming major challenges, we share our experiments of full-system simulations.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/XVK7BV8J/Hin et al. - 2021 - Supporting RISC-V Full System Simulation in gem5.pdf}
+}
+
+@misc{imperassoftwareltdRISCVProcessorOVP2023,
+  title = {{{RISC-V Processor OVP Model Simulator}}},
+  shorttitle = {{{riscvOVPsimPlus User Guide}}},
+  author = {{Imperas Software Ltd}},
+  year = {2023},
+  month = oct,
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/QFYKCS2E/riscvOVPsimPlus_User_Guide.pdf}
+}
+
+@misc{ISSImperasInstruction,
+  title = {{{ISS}} - {{The Imperas Instruction Set Simulator}} {\textbar} {{Imperas}} - {{Embedded Software Development}}},
+  urldate = {2023-09-08},
+  howpublished = {https://www.imperas.com/iss-imperas-instruction-set-simulator},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/3ZBERXZ3/iss-imperas-instruction-set-simulator.html}
+}
+
+@inproceedings{jebaliEnsuringConsistencyCycleAccurate2018,
+  title = {Ensuring {{Consistency}} between {{Cycle-Accurate}} and {{Instruction Set Simulators}}},
+  booktitle = {2018 18th {{International Conference}} on {{Application}} of {{Concurrency}} to {{System Design}} ({{ACSD}})},
+  author = {Jebali, Fatma and {Potop-Butucaru}, Dumitru},
+  year = {2018},
+  month = jun,
+  pages = {105--114},
+  publisher = {IEEE},
+  address = {Bratislava},
+  doi = {10.1109/ACSD.2018.00019},
+  urldate = {2023-11-06},
+  abstract = {The xMAS micro-architecture modeling language has been introduced by Intel to facilitate the formal representation and analysis of on-chip interconnect fabrics. In this paper, we introduce xMAStime, a new domain-specific language inspired by xMAS. xMAStime allows the modeling of full micro-architectures comprising certain classes of CPU pipelines, caches, and RAM. Given an in-order pipeline model in xMAStime, we automatically generate both a Cycle-Accurate, Bit-Accurate (CABA) hardware simulator and a timed instruction set simulator where time is accounted with safe upper bounds, as in the pipeline analysis step of Worst-Case Execution Time (WCET) analysis. The approach relies on the theory of endochronous systems, which allows us to ensure functional equivalence and timing consistency between the two generated simulators, using a delay-insensitivity argument. xMAStime is implemented over Lucid Synchrone -- a dataflow synchronous language featuring a higher order type system and type inference, which facilitate the definition of our DSL. We use the new DSL to model and synthesize simulation code for a full-fledged MIPS32-based architecture.},
+  isbn = {978-1-5386-7013-2},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/4NBK67F8/Jebali and Potop-Butucaru - 2018 - Ensuring Consistency between Cycle-Accurate and In.pdf}
+}
+
+@article{jianwenzhuUltrafastInstructionSet2002,
+  title = {An Ultra-Fast Instruction Set Simulator},
+  author = {{Jianwen Zhu} and Gajski, D.D.},
+  year = {2002},
+  month = jun,
+  journal = {IEEE Transactions on Very Large Scale Integration (VLSI) Systems},
+  volume = {10},
+  number = {3},
+  pages = {363--373},
+  issn = {1063-8210, 1557-9999},
+  doi = {10.1109/TVLSI.2002.1043339},
+  urldate = {2023-08-25},
+  abstract = {In this paper, we present new techniques which further improve the static compilation-based instruction set architecture (ISA) simulation by the aggressive utilization of the host machine resources. Such utilization is achieved by defining a low-level code-generation interface specialized for ISA simulation, rather than the traditional approaches which use C as a code-generation interface. We are able to perform the simulation at a speed of up to 102 millions of simulated instructions per second (MIPS) on a 270 MHz Ultra-5 workstation. This result is only on average 1.6 times slower than the native execution on the host machine, the fastest to the best of our knowledge.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/328S2PR5/Jianwen Zhu and Gajski - 2002 - An ultra-fast instruction set simulator.pdf}
+}
+
+@article{joannouRandomizedTestingRISCV2023,
+  title = {Randomized {{Testing}} of {{RISC-V CPUs}} Using {{Direct Instruction Injection}}},
+  author = {Joannou, Alexandre and Rugg, Peter and Woodruff, Jonathan and Fuchs, Franz A. and Van Der Maas, Marno and Naylor, Matthew and Roe, Michael and Watson, Robert N. M. and Neumann, Peter G. and Moore, Simon W.},
+  year = {2023},
+  journal = {IEEE Design \& Test},
+  pages = {1--1},
+  issn = {2168-2356, 2168-2364},
+  doi = {10.1109/MDAT.2023.3262741},
+  urldate = {2023-09-26},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/BWYPULJX/Joannou et al. - 2023 - Randomized Testing of RISC-V CPUs using Direct Ins.pdf}
+}
+
+@misc{kevinmcdermottOpenHWIndustrialGradeVerification2022,
+  title = {{{OpenHW Industrial-Grade Verification}} for {{Open-Source CORE-v IP Cores}}},
+  author = {{Kevin McDermott}},
+  year = {2022},
+  journal = {OpenHW Group},
+  urldate = {2023-12-18},
+  abstract = {This brief outline gives an overview of the open methodology and standards-based environment for the verification of the RISC-V based open-source CV32E40P core.},
+  howpublished = {https://www.openhwgroup.org/resources/blog/openhw-industrial-grade-verification-for-open-source-core-v-ip-cores/},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/7TLMIGDQ/openhw-industrial-grade-verification-for-open-source-core-v-ip-cores.html},
+  maintitle = {{{OpenHW Group}}}
+}
+
+@misc{kothariMARSSRISCVTinyEMUBased2019,
+  title = {{{MARSS-RISCV}}: {{TinyEMU}} Based Full System Cycle-Level Micro-Architectural Research Simulator for Single-Core {{RISC-V}} Systems --- {{MARSS-RISCV}} 4.1a Documentation},
+  author = {Kothari, Gaurav},
+  year = {2019},
+  urldate = {2023-09-08},
+  howpublished = {https://marss-riscv-docs.readthedocs.io/en/latest/},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/Z4DLTFWB/latest.html}
+}
+
+@article{lebedevTestEnvironmentVerification2020,
+  title = {Test Environment for Verification of Multi-Processor Interrupt System with Virtualization Support},
+  author = {Lebedev, Dmitry and Kutsevol, Vitaliy},
+  year = {2020},
+  journal = {Proceedings of the Institute for System Programming of the RAS},
+  volume = {32},
+  number = {2},
+  pages = {53--60},
+  issn = {20798156, 22206426},
+  doi = {10.15514/ISPRAS-2020-32(2)-5},
+  urldate = {2023-11-06},
+  abstract = {Interrupt system is an important part of microprocessors. Interrupts are widely used for interaction with hardware and responding to stimuli. Modern microprocessor interrupt systems include hardware support of virtualization. Hardware support helps to increase the performance of virtual machines. However, including additional functionality may lead to potential errors. The paper presents an overview of approaches used for multi-core microprocessors interrupt system with virtualization support verification. Some definitions and characteristics of interrupt systems that needed to be taken into account in the process of verification are described. Stand-alone verification environment general scheme is presented. Universal Verification Methodology was applied to construct test system. To simplify development of checking module discrete-event with time accounting reference model was used. Sequences of primary requests and automatically generated secondary requests in the special modules named auto-handlers were used for test system behavior randomization. We describe some difficulties discovered in the verification process and corresponding solving methods. Generalized test algorithm stages are presented. Some other techniques for checking the correctness of interrupt system have been reviewed. In conclusion, we provide the case study of applying the suggested approaches for interrupt system verification of microprocessors with ``Elbrus'' and ``SPARC-V9'' architectures developed by MCST. The results and further plan of the test system development are presented.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/P2ACTJFY/Lebedev and Kutsevol - 2020 - Test environment for verification of multi-process.pdf}
+}
+
+@article{leeFaCSimFastCycleAccurate2008,
+  title = {{{FaCSim}}: {{A Fast}} and {{Cycle-Accurate Architecture Simulator}} for {{Embedded Systems}}},
+  author = {Lee, Jaejin and Kim, Junghyun and Jang, Choonki and Kim, Seungkyun and Egger, Bernhard and Kim, Kwangsub and Han, SangYong},
+  year = {2008},
+  month = jul,
+  journal = {Association for Computing Machinery},
+  abstract = {There have been strong demands for a fast and cycle-accurate virtual platforms in the embedded systems area where developers can do meaningful software development including performance debugging in the context of the entire platform. In this paper, we describe the design and implementation of a fast and cycle-accurate architecture simulator called FaCSim as a first step towards such a virtual platform. FacSim accurately models the ARM9E-S processor core and ARM926EJ-S processor's memory subsystem. It accurately simulates exceptions and interrupts to enable whole-system simulation including the OS. Since it is implemented in a modular manner in C++, it can be easily extended with other system components by subclassing or adding new classes. FaCSim is based on an interpretive simulation technique to provide flexibility, yet achieving high speed. It enables fast cycle-accurate architecture simulation by means of three mechanisms. First, it computes elapsed cycles in each pipeline stage as a chunk and incrementally adds it up to advance the core clock instead of performing cycle-by-cycle simulation. Second, it uses a basic-block cache that caches decoded instructions at the basic-block level. Finally, it is parallelized to exploit multicore systems that are available everywhere these days. Using 21 applications from the EEMBC benchmark suite, FaCSim's accuracy is validated against the ARM926EJ-S development board from ARM, and is accurate in a {\textpm}7\% error margin. Due to basic-block level caching and parallelization, FaCSim is, on average, more than three times faster than ARMulator and more than six times faster than SimpleScalar.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/TLXG3C6Z/Lee et al. - FaCSim A Fast and Cycle-Accurate Architecture Sim.pdf}
+}
+
+@misc{liTerminus2023,
+  title = {Terminus},
+  author = {Li, Apollo},
+  year = {2023},
+  month = sep,
+  urldate = {2023-09-08},
+  abstract = {A  riscv isa simulator in rust.},
+  copyright = {MIT},
+  keywords = {iss,notion,riscv,rust,virtio}
+}
+
+@article{lowe-powerGem5SimulatorVersion2020,
+  title = {The Gem5 {{Simulator}}: {{Version}} 20.0+},
+  author = {{Lowe-Power}, Jason and Ahmad, Abdul Mutaal and Akram, Ayaz and Alian, Mohammad and Amslinger, Rico and Andreozzi, Matteo and Armejach, Adri{\`a} and Asmussen, Nils and Beckmann, Brad and Bharadwaj, Srikant and Black, Gabe and Bloom, Gedare and Bruce, Bobby R and Carvalho, Daniel Rodrigues and Castrillon, Jeronimo and Chen, Lizhong and Derumigny, Nicolas and Diestelhorst, Stephan and Elsasser, Wendy and Escuin, Carlos and Fariborz, Marjan and {Farmahini-Farahani}, Amin and Fotouhi, Pouya and Gambord, Ryan and Gandhi, Jayneel and Gope, Dibakar and Grass, Thomas and Gutierrez, Anthony and Hanindhito, Bagus and Hansson, Andreas and Haria, Swapnil and Harris, Austin and Hayes, Timothy and Herrera, Adrian and Horsnell, Matthew and Jafri, Syed Ali Raza and Jagtap, Radhika and Jang, Hanhwi and Jeyapaul, Reiley and Jones, Timothy M and Jung, Matthias and Kannoth, Subash and Khaleghzadeh, Hamidreza and Kodama, Yuetsu and Krishna, Tushar and Marinelli, Tommaso and Menard, Christian and Mondelli, Andrea and Moreto, Miquel and M{\"u}ck, Tiago and Naji, Omar and Nathella, Krishnendra and Nguyen, Hoa and Nikoleris, Nikos and Olson, Lena E and Orr, Marc and Pham, Binh and Prieto, Pablo and Reddy, Trivikram and Roelke, Alec and Samani, Mahyar and Sandberg, Andreas and Setoain, Javier and Shingarov, Boris and Sinclair, Matthew D and Ta, Tuan and Thakur, Rahul and Travaglini, Giacomo and Upton, Michael and Vaish, Nilay and Vougioukas, Ilias and Wang, William and Wang, Zhengrong and Wehn, Norbert and Weis, Christian and Wood, David A and Yoon, Hongil and Zulian, {\'E}der F},
+  year = {2020},
+  month = sep,
+  abstract = {The open-source and community-supported gem5 simulator is one of the most popular tools for computer architecture research. This simulation infrastructure allows researchers to model modern computer hardware at the cycle level, and it has enough fidelity to boot unmodified Linux-based operating systems and run full applications for multiple architectures including x86, Arm{\textregistered}, and RISC-V. The gem5 simulator has been under active development over the last nine years since the original gem5 release. In this time, there have been over 7000 commits to the codebase from over 250 unique contributors which have improved the simulator by adding new features, fixing bugs, and increasing the code quality. In this paper, we give an overview of gem5's usage and features, describe the current state of the gem5 simulator, and enumerate the major changes since the initial release of gem5. We also discuss how the gem5 simulator has transitioned to a formal governance model to enable continued improvement and community support for the next 20 years of computer architecture research.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/32GME8Z3/document.pdf;/home/torje/Zotero/storage/M76VLP7M/Lowe-Power et al. - The gem5 Simulator Version 20.0+.pdf}
+}
+
+@article{ludwigPropertiesFirstCorrectByConstruction2020,
+  title = {Properties {{First}}---{{Correct-By-Construction RTL Design}} in {{System-Level Design Flows}}},
+  author = {Ludwig, Tobias and Urdahl, Joakim and Stoffel, Dominik and Kunz, Wolfgang},
+  year = {2020},
+  month = oct,
+  journal = {IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems},
+  volume = {39},
+  number = {10},
+  pages = {3093--3106},
+  issn = {0278-0070, 1937-4151},
+  doi = {10.1109/TCAD.2019.2921319},
+  urldate = {2024-01-23},
+  abstract = {This paper presents a new Property-Driven Design (PDD) method that starts from an abstract system model and integrates formal property checking early into a top-down design methodology for register transfer level (RTL) hardware. In PDD the role of formal verification is not limited to ``bug hunting'' alone. Instead, the formal techniques are applied in such a way that a formal relationship is provided between the abstract system model and its concrete implementation at the RTL. In order to avoid the high efforts associated with verification by property checking the proposed PDD approach automatically generates abstract properties from a system-level description and later refines them along the design process. The advantage of this methodology is to obtain a formally verified design at lower costs when compared to conventional design flows with property checking. The main benefit of the proposed approach results from the fact that a formally sound system model is available together with the RTL design. Specifically, LTL properties proven on the abstract model also hold on the concrete implementation. This facilitates many complex analysis and verification tasks in today's design flows and contributes to emancipating system-level models from prototypes to golden design models. Several open-source and industrial case studies are reported that demonstrate the high potential of a PDD-based design paradigm.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/QEY9PVFZ/Ludwig et al. - 2020 - Properties First—Correct-By-Construction RTL Desig.pdf}
+}
+
+@misc{masarikWhatRISCVWhy2016,
+  title = {What Is {{RISC-V}}? {{Why We Care}} and {{Why You Should Too}}},
+  shorttitle = {What Is {{RISC-V}}?},
+  author = {Masa{\v r}{\'i}k, Karel},
+  year = {2016},
+  month = sep,
+  journal = {Codasip},
+  urldate = {2023-10-06},
+  abstract = {The revolution is happening, but what is RISC-V? This blog post clarifies things for you, as Codasip cares about it, and you should too!},
+  howpublished = {https://codasip.com/2016/09/22/what-is-risc-vwhy-do-we-care-and-why-you-should-too/},
+  langid = {american},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/U3LT7DE4/what-is-risc-vwhy-do-we-care-and-why-you-should-too.html},
+  maintitle = {Codasip}
+}
+
+@misc{mcdermottGettingStartedRISCV,
+  title = {Getting {{Started}} with {{RISC-V Verification}} -- {{RISC-V International}}},
+  author = {McDermott, Kevin},
+  urldate = {2023-10-23},
+  langid = {american},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/2BT6A7MQ/getting-started-with-risc-v-verification.html}
+}
+
+@book{mehtaSystemVerilogAssertions2020,
+  title = {System {{Verilog Assertions}} and {{Functional Coverage}}: {{Guide}} to {{Language}}, {{Methodology}} and {{Applications}}},
+  shorttitle = {System {{Verilog Assertions}} and {{Functional Coverage}}},
+  author = {Mehta, Ashok B.},
+  year = {2020},
+  publisher = {Springer International Publishing},
+  address = {Cham},
+  doi = {10.1007/978-3-030-24737-9},
+  urldate = {2024-02-16},
+  isbn = {978-3-030-24736-2 978-3-030-24737-9},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/AVWEFALY/Mehta - 2020 - System Verilog Assertions and Functional Coverage.pdf}
+}
+
+@article{mikethompsonJumpStartYour2021,
+  title = {Jump Start Your {{RISCV}} Project with {{OpenHW}}},
+  author = {{Mike Thompson} and {ingliang (Leo) Wang} and {Steve Richmond} and {Lee Moore} and {David McConnell} and {Greg Tumbush}},
+  year = {2021},
+  abstract = {The OpenHW group is a member driven global organization with the shared goal of developing RISC-V compliant open source IP which meet commercial standards for delivery and quality. This paper will address the verification methodology adopted by the OpenHW Verification Task Group to assure commercial standards for quality.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/3NVQ3WLM/McDermott - Jump start your RISCV project with OpenHW.pdf}
+}
+
+@book{mohamedIPCoresDesign2016,
+  title = {{{IP Cores Design}} from {{Specifications}} to {{Production}}: {{Modeling}}, {{Verification}}, {{Optimization}}, and {{Protection}}},
+  shorttitle = {{{IP Cores Design}} from {{Specifications}} to {{Production}}},
+  author = {Mohamed, Khaled Salah},
+  year = {2016},
+  series = {Analog {{Circuits}} and {{Signal Processing}}},
+  publisher = {Springer International Publishing},
+  address = {Cham},
+  doi = {10.1007/978-3-319-22035-2},
+  urldate = {2024-02-16},
+  isbn = {978-3-319-22034-5 978-3-319-22035-2},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/GGUSJQXV/Mohamed - 2016 - IP Cores Design from Specifications to Production.pdf}
+}
+
+@misc{mohammedRISCVComputer2023,
+  title = {{{RISC-V Computer}} 2.0},
+  author = {Mohammed, Mazin},
+  year = {2023},
+  month = sep,
+  urldate = {2023-09-08},
+  abstract = {An educational RISC-V based computer build with Logisim},
+  keywords = {computer,computer-architecture,computer-engineering,cpu,logic,logisim,logisim-computer,notion,risc-v}
+}
+
+@inproceedings{molina-roblesCompactFunctionalVerification2020,
+  title = {A Compact Functional Verification Flow for a {{RISC-V 32I}} Based Core},
+  booktitle = {2020 {{IEEE}} 3rd {{Conference}} on {{PhD Research}} in {{Microelectronics}} and {{Electronics}} in {{Latin America}} ({{PRIME-LA}})},
+  author = {{Molina-Robles}, Roberto and {Solera-Bolanos}, Edgar and {Garcia-Ramirez}, Ronny and {Chacon-Rodriguez}, Alfonso and Arnaud, Alfredo and {Rimolo-Donadio}, Renato},
+  year = {2020},
+  month = feb,
+  pages = {1--4},
+  publisher = {IEEE},
+  address = {San Jose, Costa Rica},
+  doi = {10.1109/PRIME-LA47693.2020.9062717},
+  urldate = {2023-12-04},
+  abstract = {The structure of a functional verification flow used for the design of a RISC-V core is presented. The paper offers a guide on the test-planning used and details of the flow architecture, showing how to integrate the Universal Verification Methodology with the required, reference models, while implementing key futures in standard verification environments, such as testing regressions and code and structural coverage. The designed flow is compact yet efficient, making it affordable for small design teams, without requiring extra investment other than the already necessary licenses for RTL synthesis and the eventual fabrication of the chip.},
+  isbn = {978-1-72813-146-7},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/3TZ95H4M/Molina-Robles et al. - 2020 - A compact functional verification flow for a RISC-.pdf}
+}
+
+@inproceedings{mueller-gritschnederETISSMLMultilevelInstruction2018,
+  title = {{{ETISS-ML}}: {{A}} Multi-Level Instruction Set Simulator with {{RTL-level}} Fault Injection Support for the Evaluation of Cross-Layer Resiliency Techniques},
+  shorttitle = {{{ETISS-ML}}},
+  booktitle = {2018 {{Design}}, {{Automation}} \& {{Test}} in {{Europe Conference}} \& {{Exhibition}} ({{DATE}})},
+  author = {{Mueller-Gritschneder}, Daniel and Dittrich, Martin and Weinzierl, Josef and Cheng, Eric and Mitra, Subhasish and Schlichtmann, Ulf},
+  year = {2018},
+  month = mar,
+  pages = {609--612},
+  issn = {1558-1101},
+  doi = {10.23919/DATE.2018.8342081},
+  abstract = {ETISS is an instruction set simulator (ISS) for Virtual Prototypes (VPs) modeled with SystemC/TLM. In this paper, we propose the extension ETISS-ML, which enables a multi-level simulation that switches between ISS-level and register transfer level (RTL) to accurately evaluate the impact of soft errors in the pipeline of a RISC processor. ETISS-ML achieves close-to-RTL-accurate fault injection simulation results with close-to-ISS simulation performance with a speed up gain up to 100x compared to RTL. For this, we propose an approach to dynamically determine the length of the RTL simulation period. The high simulation performance of ETISS-ML enables an ultra-efficient and accurate evaluation of cross-layer resiliency techniques for embedded applications, which requires running a large number of fault injections for long simulation scenarios. This is demonstrated on a case study of a Microcontroller Unit (MCU) executing a control algorithm for adaptive cruise control.},
+  keywords = {Adaptation models,C++ languages,notion,Pipelines,Reduced instruction set computing,Registers,Resilience},
+  file = {/home/torje/Zotero/storage/LNQ4KPPQ/Mueller-Gritschneder et al. - 2018 - ETISS-ML A multi-level instruction set simulator .pdf;/home/torje/Zotero/storage/KH7DKAEI/8342081.html}
+}
+
+@inproceedings{mueller-gritschnederExtendableTranslatingInstruction2017,
+  title = {The Extendable Translating Instruction Set Simulator ({{ETISS}}) Interlinked with an {{MDA}} Framework for Fast {{RISC}} Prototyping},
+  booktitle = {Proceedings of the 28th {{International Symposium}} on {{Rapid System Prototyping}}: {{Shortening}} the {{Path}} from {{Specification}} to {{Prototype}}},
+  author = {{Mueller-Gritschneder}, Daniel and Devarajegowda, Keerthikumara and Dittrich, Martin and Ecker, Wolfgang and Greim, Marc and Schlichtmann, Ulf},
+  year = {2017},
+  month = oct,
+  pages = {79--84},
+  publisher = {ACM},
+  address = {Seoul South Korea},
+  doi = {10.1145/3130265.3138858},
+  urldate = {2023-09-13},
+  isbn = {978-1-4503-5418-9},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/B48IAZG3/Mueller-Gritschneder et al. - 2017 - The extendable translating instruction set simulat.pdf}
+}
+
+@article{natarajaResearchFertileCoEmulationFramework,
+  title = {A {{Research-Fertile Co-Emulation Framework}} for {{RISC-V Processor Verification}}},
+  author = {Nataraja, Anoop Mysore},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/WS3STMPG/Nataraja - A Research-Fertile Co-Emulation Framework for RISC.pdf}
+}
+
+@misc{newsUsingGem5RISCV,
+  title = {Using Gem5 and {{RISC-V}} Simulation to Enable the Optimization of Heterogeneous Architectures {\textbar} {{HiPEAC}} -- {{RISC-V International}}},
+  author = {News, RISC-V. Community},
+  urldate = {2023-09-18},
+  langid = {american},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/5TFQ85CJ/using-gem5-and-risc-v-simulation-to-enable-the-optimization-of-heterogeneous-architectures-hipe.html}
+}
+
+@misc{nikhilREADMETourRISCV2023,
+  title = {{{README}} for ``{{A Tour}} of the {{RISC-V ISA Formal Specification}}''},
+  author = {Nikhil, Rishiyur S.},
+  year = {2023},
+  month = jul,
+  urldate = {2023-11-01},
+  abstract = {Tutorial tour of the RISC-V ISA Spec (expressed in SAIL ISA spec language)},
+  copyright = {Apache-2.0},
+  keywords = {notion}
+}
+
+@book{nygaardWritingScholarsPractical2015,
+  title = {Writing for {{Scholars}}: {{A Practical Guide}} to {{Making Sense}} \& {{Being Heard}}.},
+  author = {Nygaard, P., Lynn},
+  year = {2015},
+  edition = {2nd Edition},
+  isbn = {978-82-15-02555-1},
+  file = {/home/torje/Zotero/storage/R7E7RWMU/Nygaard_WritingForScholars_1stEdition2008(1).pdf}
+}
+
+@inproceedings{oleksiakDesignVerificationEnvironment2019,
+  title = {Design and {{Verification Environment}} for {{RISC-V Processor Cores}}},
+  booktitle = {2019 {{MIXDES}} - 26th {{International Conference}} "{{Mixed Design}} of {{Integrated Circuits}} and {{Systems}}"},
+  author = {Oleksiak, Adrian and Cie{\'s}lak, Sebastian and Marcinek, Krzysztof and Pleskacz, Witold A.},
+  year = {2019},
+  month = jun,
+  pages = {206--209},
+  doi = {10.23919/MIXDES.2019.8787108},
+  abstract = {Processor verification is a very complex task. Even simple system has plenty of blocks which must work together in a determined way. Modern digital systems use advanced techniques to improve throughput and reduce power consumption. It enhances risk of error and consequently verification process requires a significant and continuous resources. This article presents the approach to create design and verification environment for RISC-V processor cores. The environment consists of behavioral golden reference model and online disassembler module, as well as a set of scripts for setting up software infrastructure. Golden reference model running in master-checker mode with core under design allows faulty behavior to be detected instantly while running direct tests or random verification technique.},
+  keywords = {golden reference model,Integrated circuits,master-checker,notion,Pipelines,RISC-V,verification},
+  file = {/home/torje/Zotero/storage/WPG49QPV/Oleksiak et al. - 2019 - Design and Verification Environment for RISC-V Pro.pdf;/home/torje/Zotero/storage/62A8GFPR/8787108.html}
+}
+
+@misc{onespinsolutionsAssuringIntegrityRISCV2019,
+  title = {Assuring the {{Integrity}} of {{RISC-V Cores}} and {{SoCs}}},
+  author = {{OneSpin Solutions}},
+  year = {2019},
+  month = jul,
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/M7NCW8RK/RISC-V White Paper_062019.pdf}
+}
+
+@misc{OpenhwgroupCv32e40s2024,
+  title = {Openhwgroup/Cv32e40s},
+  year = {2024},
+  month = mar,
+  urldate = {2024-03-22},
+  abstract = {4 stage, in-order, secure RISC-V core based on the CV32E40P},
+  howpublished = {OpenHW Group}
+}
+
+@misc{openhwgroupCV32E4SimulationTestbench2022,
+  title = {{{CV32E4}}* {{Simulation Testbench}} and {{Environment}} --- {{CORE-V Verification Strategy}} Documentation},
+  year = {2022},
+  urldate = {2023-10-16},
+  collaborator = {{OpenHW Group}},
+  howpublished = {https://docs.openhwgroup.org/projects/core-v-verif/en/latest/cv32\_env.html},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/H7HFT8L9/cv32_env.html}
+}
+
+@misc{openhwgroupExceptionsInterruptsCOREV2023,
+  title = {Exceptions and {{Interrupts}} --- {{CORE-V CV32E40S User Manual}} Documentation},
+  author = {{OpenHW Group}},
+  year = {2023},
+  urldate = {2024-04-17},
+  howpublished = {https://cv32e40s-user-manual.readthedocs.io/en/latest/exceptions\_interrupts.html},
+  file = {/home/torje/Zotero/storage/2HWSXJWW/exceptions_interrupts.html}
+}
+
+@misc{openhwgroupIntroductionCOREVCV32E40S2023,
+  title = {Introduction - {{CORE-V CV32E40S User Manual}} Documentation},
+  author = {{OpenHW Group}},
+  year = {2023},
+  urldate = {2024-04-04},
+  howpublished = {https://docs.openhwgroup.org/projects/cv32e40s-user-manual/en/latest/intro.html},
+  keywords = {notion}
+}
+
+@misc{openhwgroupOpenhwgroupCorevverif2023,
+  title = {Openhwgroup/Core-v-Verif},
+  author = {{OpenHW Group}},
+  year = {2023},
+  journal = {GitHub},
+  urldate = {2023-09-11},
+  abstract = {Functional verification project for the CORE-V family of RISC-V cores. - openhwgroup/core-v-verif at cv32e40s/dev},
+  howpublished = {https://github.com/openhwgroup/core-v-verif},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/MC5B2TXA/dev.html},
+  maintitle = {{{GitHub}}}
+}
+
+@misc{openhwgroupPipelineDetails2023,
+  title = {Pipeline {{Details}}},
+  year = {2023},
+  journal = {CORE-V CV32E40S User Manual documentation},
+  urldate = {2023-12-12},
+  collaborator = {{OpenHW Group}},
+  howpublished = {https://cv32e40s-user-manual.readthedocs.io/en/latest/pipeline.html},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/VFN5V858/pipeline.html},
+  maintitle = {{{CORE-V CV32E40S User Manual}} Documentation}
+}
+
+@misc{openhwgroupRISCVFormalInterface2023,
+  title = {{{RISC-V Formal Interface}} --- {{CORE-V CV32E40S User Manual}} Documentation},
+  year = {2023},
+  urldate = {2024-02-21},
+  collaborator = {{OpenHW Group}},
+  howpublished = {https://docs.openhwgroup.org/projects/cv32e40s-user-manual/en/latest/rvfi.html},
+  file = {/home/torje/Zotero/storage/2JUP3FKH/rvfi.html}
+}
+
+@misc{openhwgroupVerificationEnvironmentCV32E40X2023,
+  title = {Verification {{Environment}} for the {{CV32E40X CORE-V}} Processor Core.},
+  author = {{openhwgroup}},
+  year = {2023},
+  month = sep,
+  urldate = {2023-10-17},
+  abstract = {CV32E40X Design-Verification environment},
+  howpublished = {OpenHW Group},
+  keywords = {notion}
+}
+
+@inproceedings{patelMARSSFullSystem2011,
+  title = {{{MARSS}}: A Full System Simulator for Multicore X86 {{CPUs}}},
+  shorttitle = {{{MARSS}}},
+  booktitle = {Proceedings of the 48th {{Design Automation Conference}}},
+  author = {Patel, Avadh and Afram, Furat and Chen, Shunfei and Ghose, Kanad},
+  year = {2011},
+  month = jun,
+  pages = {1050--1055},
+  publisher = {ACM},
+  address = {San Diego California},
+  doi = {10.1145/2024724.2024954},
+  urldate = {2023-09-11},
+  abstract = {We present MARSS, an open source, fast, full system simulation tool built on QEMU to support cycle-accurate simulation of superscalar homogeneous and heterogeneous multicore x86 processors. MARSS includes detailed models of coherent caches, interconnections, chipsets, memory and IO devices. MARSS simulates the execution of all software components in the system, including unmodified binaries of applications, OS and libraries.},
+  isbn = {978-1-4503-0636-2},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/W2MBCCI6/Patel et al. - 2011 - MARSS a full system simulator for multicore x86 C.pdf}
+}
+
+@article{pathakValidatingFullSystemRISCV,
+  title = {Validating {{Full-System RISC-V Simulator}}: {{A Systematic Approach}}},
+  author = {Pathak, Karan and Klein, Joshua and Ansaloni, Giovanni and Zapater, Marina and Atienza, David},
+  abstract = {RISC-V-based Systems-on-Chip (SoCs) are witnessing a steady rise in adoption in both industry and academia. However, the limited support for Linux-capable Full System-level simulators hampers development of the RISC-V ecosystem. We address this by validating a full system-level simulator, gXR5 (gem5-eXtensions for RISC-V), against the SiFive HiFive Unleashed SoC, to ensure performance statistics are representative of actual hardware. This work also enriches existing methodologies to validate the gXR5 simulator against hardware by proposing a systematic component-level calibration approach. The simulator error for selected SPEC CPU2017 applications reduces from 44\% to 24\%, just by calibrating the CPU. We show that this systematic component-level calibration approach is accurate, fast (in terms of simulation time), and generic enough to drive future validation efforts.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/3HT7I68R/Pathak et al. - Validating Full-System RISC-V Simulator A Systema.pdf}
+}
+
+@book{pattersonComputerOrganizationDesign2021,
+  title = {Computer Organization and Design: The Hardware Software Interface},
+  shorttitle = {Computer Organization and Design},
+  author = {Patterson, David A. and Hennessy, John L.},
+  year = {2021},
+  edition = {RISC-V edition, Second edition},
+  publisher = {Elsevier, Morgan Kaufmann Publishers},
+  address = {Cambridge, MA},
+  isbn = {978-0-12-820331-6},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/J4AFGYWA/[The Morgan Kaufmann Series in Computer Architecture and Design ] David A. Patterson, John L. Hennessy - Computer Organization and Design RISC-V Edition (2020, Morgan Kaufmann Publishers) - libgen.li.pdf}
+}
+
+@article{piskacEndtoEndFormalVerification2021,
+  title = {End-to-{{End Formal Verification}} of a {{RISC-V Processor Extended}} with {{Capability Pointers}}},
+  author = {Piskac, Ruzica and Whalen, Michael W.},
+  year = {2021},
+  month = oct,
+  publisher = {TU Wien},
+  doi = {10.34727/2021/ISBN.978-3-85448-046-4},
+  urldate = {2024-01-15},
+  abstract = {Capability Hardware Enhanced RISC Instructions (CHERI) extend conventional ISAs with capabilities that can enable fine-grained memory protection and scalable software compartmentalisation. CHERI-RISC-V is an extended version of the RISC-V ISA with support for CHERI, and Flute is an open-source 64-bit RISC-V processor with a five-stage, inorder pipeline. This case study presents the formal verification of CHERI-Flute, a modified version of Flute that implements CHERI-RISC-V, against the Sail CHERI-RISC-V specification. To the best of our knowledge, this is the first extensive formal verification of a CHERI-enabled processor.},
+  collaborator = {{TU Wien} and {TU Wien} and Piskac, Ruzica and Whalen, Michael W.},
+  copyright = {Creative Commons Attribution 4.0 International},
+  langid = {english},
+  keywords = {automated and formal reasoning,automatisches Schlussfolgern,computer-aided system design,formal methods,formal verification,formale Logik,formale Methode,formale Verifikation,hardware and system verification,Hardwareverifikation,rechnerunterstutzte Systementwicklung,specification,Spezifikation,Synthese und Testung,synthesis and testing,Systemverifikation},
+  file = {/home/torje/Zotero/storage/BQPB3WUQ/Piskac and Whalen - 2021 - Proceedings of the 21st Conference on Formal Metho.pdf}
+}
+
+@article{poroshinExplorationApproachesInstruction2019,
+  title = {An {{Exploration}} of {{Approaches}} to {{Instruction Pipeline Implementation}} for {{Cycle-Accurate Simulators}} of <<{{Elbrus}}>>},
+  author = {Poroshin, P.A. and Meshkov, A.N.},
+  year = {2019},
+  journal = {Proceedings of the Institute for System Programming of the RAS},
+  volume = {31},
+  number = {3},
+  pages = {47--58},
+  issn = {20798156, 22206426},
+  doi = {10.15514/ISPRAS-2019-31(3)-4},
+  urldate = {2023-09-11},
+  abstract = {Software simulation is of a big importance during development of processors as they provide access to hardware under development. Cycle-accurate simulators allow software engineers to design and optimize high-performance algorithms and programs with considerations of features and characteristics of processors being in development. This is especially important for architectures, whose performance is mainly achieved by advanced compiler optimizations. One of the core aspects of a cycle-accurate simulator is the way it simulates the pipeline of the target processor. A pipeline model has high impact on an overall structure of a simulator and its potential performance and accuracy. The main goal of this paper is to develop and analyze different approaches to pipeline simulation of ``Elbrus'' microprocessors, which let us reuse functionality of existing instruction set simulator and achieve good balance of performance and accuracy. We briefly describe features of ``Elbrus'' microprocessors and specifics of existing instruction set simulator, relevant for cycle-accurate simulation. We make several simple, but general and useful observations about various aspects of pipeline behavior in context of accurate and efficient cycle-accurate simulation of microprocessors. These observations are then used as a basis for justification, development and analysis of the several approaches to the pipeline simulation, described in this paper. We describe four different approaches, starting from simple and obvious one, which is then successively transformed into more advanced ones through several iterations. We analyze limitations of proposed approaches and outline further work.},
+  langid = {english},
+  keywords = {notion,Pipeline model},
+  file = {/home/torje/Zotero/storage/6E7CH7H4/Poroshin and Meshkov - 2019 - An Exploration of Approaches to Instruction Pipeli.pdf}
+}
+
+@article{probstDynamicBinaryTranslation,
+  title = {Dynamic {{Binary Translation}}},
+  author = {Probst, Mark},
+  abstract = {This paper presents an overview of dynamic binary translation. Dynamic binary translation is the process of translating code for one instruction set architecture to code for another on the fly, i.e., dynamically. Dynamic binary translators are used for emulation, migration, and recently for the economic implementation of complex instruction set architectures.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/Y9SKEZVW/Probst - Dynamic Binary Translation.pdf}
+}
+
+@misc{qemuprojectdevelopersQEMUQEMUDocumentation2023,
+  title = {About {{QEMU}} --- {{QEMU}} Documentation},
+  author = {{QEMU Project Developers}},
+  year = {2023},
+  urldate = {2023-12-06},
+  howpublished = {https://www.qemu.org/docs/master/about/index.html},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/VB5QS2A9/index.html}
+}
+
+@article{reidEndtoEndVerificationARM,
+  title = {End-to-{{End Verification}} of {{ARM}}{\textregistered} {{Processors}} with {{ISA-Formal}}},
+  author = {Reid, Alastair and Chen, Rick and Deligiannis, Anastasios and Gilday, David and Hoyes, David and Keen, Will and Pathirane, Ashan and Shepherd, Owen and Vrabel, Peter and Zaidi, Ali},
+  abstract = {Despite 20+ years of research on processor verification, it remains hard to use formal verification techniques in commercial processor development. There are two significant factors: scaling issues and return on investment. The scaling issues include the size of modern processor specifications, the size/complexity of processor designs, the size of design/verification teams and the (non)availability of enough formal verification experts. The return on investment issues include the need to start catching bugs early in development, the need to continue catching bugs throughout development, and the need to be able to reuse verification IP, tools and techniques across a wide range of design styles.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/DNWBSUFD/Reid et al. - End-to-End Veriﬁcation of ARM® Processors with ISA.pdf}
+}
+
+@inproceedings{reshadiInstructionSetCompiled2003,
+  title = {Instruction Set Compiled Simulation: A Technique for Fast and Flexible Instruction Set Simulation},
+  shorttitle = {Instruction Set Compiled Simulation},
+  booktitle = {Proceedings of the 40th Annual {{Design Automation Conference}}},
+  author = {Reshadi, Mehrdad and Mishra, Prabhat and Dutt, Nikil},
+  year = {2003},
+  month = jun,
+  pages = {758--763},
+  publisher = {ACM},
+  address = {Anaheim CA USA},
+  doi = {10.1145/775832.776026},
+  urldate = {2023-08-25},
+  abstract = {Instruction set simulators are critical tools for the exploration and validation of new programmable architectures. Due to increasing complexity of the architectures and timeto-market pressure, performance is the most important feature of an instruction-set simulator. Interpretive simulators are flexible but slow, whereas compiled simulators deliver speed at the cost of flexibility. This paper presents a novel technique for generation of fast instruction-set simulators that combines the benefit of both compiled and interpretive simulation. We achieve fast instruction accurate simulation through two mechanisms. First, we move the timeconsuming decoding process from run-time to compile time while maintaining the flexibility of the interpretive simulation. Second, we use a novel instruction abstraction technique to generate aggressively optimized decoded instructions that further improves simulation performance. Our instruction set compiled simulation (IS-CS) technique delivers upto 40\% performance improvement over the best known published result that has the flexibility of interpretive simulation. We illustrate the applicability of the IS-CS technique using the ARM7 embedded processor.},
+  isbn = {978-1-58113-688-3},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/LPKNYV5B/Reshadi et al. - 2003 - Instruction set compiled simulation a technique f.pdf}
+}
+
+@misc{richardwawrzyniakRISCVMarketAnalysis2023,
+  title = {{{RISC-V Market Analysis Report}}: {{Application Forecasts}} in a {{Heterogeneous World}}},
+  author = {{Richard Wawrzyniak}},
+  year = {2023},
+  month = nov,
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/FBEIYBF9/RISC-V-Market-Report-2023-Summit-Presentation-final.pdf}
+}
+
+@misc{risc-vinternationalHistoryRISCVInternational,
+  title = {History -- {{RISC-V International}}},
+  author = {{RISC-V International}},
+  urldate = {2023-10-06},
+  langid = {american},
+  file = {/home/torje/Zotero/storage/G7LTURS6/history.html}
+}
+
+@misc{riscv-verificationRISCVVerificationInterface2023,
+  title = {{{RISC-V Verification Interface}} ({{RVVI}})},
+  author = {{riscv-verification}},
+  year = {2023},
+  month = sep,
+  urldate = {2023-10-17},
+  abstract = {RISC-V Verification Interface},
+  keywords = {notion}
+}
+
+@misc{RiscvOVPsimFreeImperas,
+  title = {{{riscvOVPsim}} - {{Free Imperas RISC-V Instruction Set Simulator}} {\textbar} {{Imperas}} - {{Embedded Software Development}}},
+  urldate = {2023-09-08},
+  howpublished = {https://www.imperas.com/riscvovpsim-free-imperas-risc-v-instruction-set-simulator},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/ZZLA3NB3/riscvovpsim-free-imperas-risc-v-instruction-set-simulator.html}
+}
+
+@misc{RISCVSailModel2023,
+  title = {{{RISCV Sail Model}}},
+  year = {2023},
+  month = sep,
+  urldate = {2023-09-26},
+  abstract = {Sail RISC-V model},
+  howpublished = {https://github.com/riscv/sail-riscv},
+  keywords = {notion}
+}
+
+@article{roelkeRISC5ImplementingRISCV2017,
+  title = {{{RISC5}}: {{Implementing}} the {{RISC-V ISA}} in Gem5},
+  author = {Roelke, Alec and Stan, Mircea R},
+  year = {2017},
+  abstract = {We present an RISC5, an implementation of the RISC-V ISA in the gem5 simulator. Gem5 is a modular, open-source simulation platform that supports several ISAs such as x86 and ARM and includes system-level architecture and processor microarchitecture models. It also has advanced simulation features such as system call emulation and checkpointing that the Chisel C++ simulator lacks, increasing its usefulness for simulating entire RISC-V applications or using phase analysis to estimate system behavior. Gem5 also provides detailed performance data that can be used in power estimation tools such as McPAT, which require fine granularity to provide accurate output. RISC5 is validated against performance data from the Chisel C++ emulator and FPGA soft core and is shown to have less than 10\% error on several performance statistics.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/UGL4SZ5X/Roelke and Stan - 2017 - RISC5 Implementing the RISC-V ISA in gem5.pdf}
+}
+
+@misc{SailISASpecification2023,
+  title = {The {{Sail ISA}} Specification Language},
+  year = {2023},
+  month = aug,
+  urldate = {2023-08-25},
+  abstract = {Sail architecture definition language},
+  howpublished = {REMS},
+  keywords = {notion}
+}
+
+@inproceedings{sammlerIslarisVerificationMachine2022,
+  title = {Islaris: Verification of Machine Code against Authoritative {{ISA}} Semantics},
+  shorttitle = {Islaris},
+  booktitle = {Proceedings of the 43rd {{ACM SIGPLAN International Conference}} on {{Programming Language Design}} and {{Implementation}}},
+  author = {Sammler, Michael and Hammond, Angus and Lepigre, Rodolphe and Campbell, Brian and {Pichon-Pharabod}, Jean and Dreyer, Derek and Garg, Deepak and Sewell, Peter},
+  year = {2022},
+  month = jun,
+  pages = {825--840},
+  publisher = {ACM},
+  address = {San Diego CA USA},
+  doi = {10.1145/3519939.3523434},
+  urldate = {2023-11-09},
+  abstract = {Recent years have seen great advances towards verifying large-scale systems code. However, these verifications are usually based on hand-written assembly or machine-code semantics for the underlying architecture that only cover a small part of the instruction set architecture (ISA). In contrast, other recent work has used Sail to establish formal models for large real-world architectures, including Armv8A and RISC-V, that are comprehensive (complete enough to boot an operating system or hypervisor) and authoritative (automatically derived from the Arm internal model and validated against the Arm validation suite, and adopted as the official formal specification by RISC-V International, respectively). But the scale and complexity of these models makes them challenging to use as a basis for verification. In this paper, we propose Islaris, the first system to support verification of machine code above these complete and authoritative real-world ISA specifications. Islaris uses a novel combination of SMT-solver-based symbolic execution (the Isla symbolic executor) and automated reasoning in a foundational program logic (a new separation logic we derive using Iris in Coq). We show that this approach can handle Armv8-A and RISC-V machine code exercising a wide range of systems features, including installing and calling exception vectors, code parametric on a relocation address offset (from the production pKVM hypervisor); unaligned access faults; memory-mapped IO; and compiled C code using inline assembly and function pointers.},
+  isbn = {978-1-4503-9265-5},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/P22XVUV3/Sammler et al. - 2022 - Islaris verification of machine code against auth.pdf}
+}
+
+@article{scheffelSimulationRISCVBased,
+  title = {Simulation of {{RISC-V}} Based {{Systems}} in Gem5},
+  author = {Scheffel, Robert},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/Z74F5SXC/Scheffel - Simulation of RISC-V based Systems in gem5.pdf}
+}
+
+@inproceedings{schreinerQuasicycleAccurateTiming2016,
+  title = {A Quasi-Cycle Accurate Timing Model for Binary Translation Based Instruction Set Simulators},
+  booktitle = {2016 {{International Conference}} on {{Embedded Computer Systems}}: {{Architectures}}, {{Modeling}} and {{Simulation}} ({{SAMOS}})},
+  author = {Schreiner, S{\"o}ren and G{\"o}rgen, Ralph and Gr{\"u}ttner, Kim and Nebel, Wolfgang},
+  year = {2016},
+  month = jul,
+  pages = {348--353},
+  doi = {10.1109/SAMOS.2016.7818371},
+  abstract = {Software defines the functionality of today's Cyber-Physical Systems (CPS). Many product innovations are based on software and thus the complexity of software, even when running on platforms equipped with small microprocessors, is increasing dramatically. This calls for adequate embedded software integration testing, even before the actual hardware platform is available. The application of virtual platforms for functional validation, that allows simulating CPS running real target platform application code on a generic host computer, is currently being adopted by the industry. Since the correct behavior of a CPS not only depends on the correctness of computation but also on its timeliness, virtual platforms contain a certain notion of time. This work focuses on enhancing OVP processor models by a quasi-cycle accurate timing model. This paper demonstrates and evaluates the accuracy of the proposed timing model against real hardware measurements for the Xilinx MicroBlaze and ARM Cortex-M0 processors. Results show a mean error of 0.16\% for the MicroBlaze and 0.72\% for the ARM Cortex-M0 processor over all considered benchmarks, which is a clear improvement compared to previous published work.},
+  keywords = {Clocks,Computational modeling,Hardware,notion,Open Virtual Platform,Pipelines,quasi-cycle accurate simulation,Registers,Software,Timing},
+  file = {/home/torje/Zotero/storage/9ZHA3Z4S/Schreiner et al. - 2016 - A quasi-cycle accurate timing model for binary tra.pdf;/home/torje/Zotero/storage/6942MDXW/7818371.html}
+}
+
+@book{seligmanFormalVerificationEssential2015,
+  title = {Formal Verification: An Essential Toolkit for Modern {{VLSI}} Design},
+  shorttitle = {Formal Verification},
+  author = {Seligman, Erik and Schubert, E. Thomas and Kumar, M. V. Achutha Kiran},
+  year = {2015},
+  publisher = {Elsevier/MK, Morgan Kaufmann is an imprint of Elsevier},
+  address = {Amsterdam ; Boston},
+  isbn = {978-0-12-800727-3},
+  langid = {english},
+  lccn = {TK7874.75 .S44 2015},
+  keywords = {Electronic circuits,Integrated circuits,notion,Testing,Verilog (Computer hardware description language),Very large scale integration Design and construction},
+  annotation = {OCLC: ocn920376471},
+  file = {/home/torje/Zotero/storage/6GGQ249F/Chapter-1---Formal-verification--From-dreams-to-reali_2015_Formal-Verificati.pdf;/home/torje/Zotero/storage/6LMYNDBR/Chapter-10---Dealing-with-complexity_2015_Formal-Verification.pdf;/home/torje/Zotero/storage/78V23MRI/Index_2015_Formal-Verification.pdf;/home/torje/Zotero/storage/8NKEV7VX/Chapter-11---Your-new-FV-aware-lifestyle_2015_Formal-Verification.pdf;/home/torje/Zotero/storage/8UDGVZ4D/Chapter-9---Formal-verification-s-greatest-bloopers--The-_2015_Formal-Verifi.pdf;/home/torje/Zotero/storage/9MXHPTPW/Chapter-5---Effective-FPV-for-design-exercise_2015_Formal-Verification.pdf;/home/torje/Zotero/storage/C3BSXWGS/Chapter-3---Introduction-to-systemverilog-assertions_2015_Formal-Verificatio.pdf;/home/torje/Zotero/storage/CP8VN4I5/Chapter-4---Formal-property-verification_2015_Formal-Verification.pdf;/home/torje/Zotero/storage/HJ9SEGLM/Chapter-7---FPV--Apps--for-specific-SOC-problems_2015_Formal-Verification.pdf;/home/torje/Zotero/storage/HK8ZAAZX/Chapter-2---Basic-formal-verification-algorithms_2015_Formal-Verification.pdf;/home/torje/Zotero/storage/LQCMXVXT/Chapter-6---Effective-FPV-for-verification_2015_Formal-Verification.pdf;/home/torje/Zotero/storage/UYE9TJTP/Seligman et al. - 2015 - Formal verification an essential toolkit for mode.pdf;/home/torje/Zotero/storage/Y6JTY8DW/Chapter-8---Formal-equivalence-verification_2015_Formal-Verification.pdf}
+}
+
+@misc{sharmaRISCVVsARM2023,
+  title = {{{RISC-V}} vs {{ARM}}: {{A Comprehensive Comparison}} of {{Processor Architectures}}},
+  shorttitle = {{{RISC-V}} vs {{ARM}}},
+  author = {Sharma, Shreyas},
+  year = {2023},
+  month = aug,
+  urldate = {2023-10-06},
+  abstract = {In the ever-evolving world of processor architectures, the showdown between RISC-V and ARM sparks fervent competition. With their distinct histories, these two giants are redefining computing power and igniting discussions on openness, customization, and innovation in microprocessors.},
+  howpublished = {https://www.wevolver.com/article/risc-v-vs-arm-a-comprehensive-comparison-of-processor-architectures},
+  langid = {english},
+  file = {/home/torje/Zotero/storage/CSD4ZU7H/risc-v-vs-arm-a-comprehensive-comparison-of-processor-architectures.html}
+}
+
+@misc{SpikeRISCVISA2023,
+  title = {Spike {{RISC-V ISA Simulator}}},
+  year = {2023},
+  month = sep,
+  urldate = {2023-09-08},
+  abstract = {Spike, a RISC-V ISA Simulator},
+  howpublished = {https://github.com/riscv-software-src/riscv-isa-sim},
+  keywords = {notion}
+}
+
+@inproceedings{spinkEfficientAsynchronousInterrupt2016,
+  title = {Efficient Asynchronous Interrupt Handling in a Full-System Instruction Set Simulator},
+  booktitle = {Proceedings of the 17th {{ACM SIGPLAN}}/{{SIGBED Conference}} on {{Languages}}, {{Compilers}}, {{Tools}}, and {{Theory}} for {{Embedded Systems}}},
+  author = {Spink, Tom and Wagstaff, Harry and Franke, Bj{\"o}rn},
+  year = {2016},
+  month = jun,
+  pages = {1--10},
+  publisher = {ACM},
+  address = {Santa Barbara CA USA},
+  doi = {10.1145/2907950.2907953},
+  urldate = {2023-09-08},
+  abstract = {Instruction set simulators (ISS) have many uses in embedded software and hardware development and are typically based on dynamic binary translation (DBT), where frequently executed regions of guest instructions are compiled into host instructions using a just-in-time (JIT) compiler. Full-system simulation, which necessitates handling of asynchronous interrupts from e.g. timers and I/O devices, complicates matters as control flow is interrupted unpredictably and diverted from the current region of code. In this paper we present a novel scheme for handling of asynchronous interrupts, which integrates seamlessly into a region-based dynamic binary translator. We first show that our scheme is correct, i.e. interrupt handling is not deferred indefinitely, even in the presence of code regions comprising control flow loops. We demonstrate that our new interrupt handling scheme is efficient as we minimise the number of inserted checks. Interrupt handlers are also presented to the JIT compiler and compiled to native code, further enhancing the performance of our system. We have evaluated our scheme in an ARM simulator using a region-based JIT compilation strategy. We demonstrate that our solution reduces the number of dynamic interrupt checks by 73\%, reduces interrupt service latency by 26\% and improves throughput of an I/O bound workload by 7\%, over traditional per-block schemes.},
+  isbn = {978-1-4503-4316-9},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/4QS7PEJ4/Spink et al. - 2016 - Efficient asynchronous interrupt handling in a ful.pdf}
+}
+
+@inproceedings{sriHolisticApproachCPU2022,
+  title = {A {{Holistic Approach}} to {{CPU Verification}} Using {{Formal Techniques}}},
+  booktitle = {2022 {{IEEE Women}} in {{Technology Conference}} ({{WINTECHCON}})},
+  author = {Sri, Dasari Bhavya and Rajakumar, Karthik and Madhusoodhanan, Pooja and Edarapalli, Venkata Nitin},
+  year = {2022},
+  month = jun,
+  pages = {1--5},
+  publisher = {IEEE},
+  address = {Bangalore, India},
+  doi = {10.1109/WINTECHCON55229.2022.9832178},
+  urldate = {2024-01-23},
+  abstract = {As real-time applications become increasingly demanding, complex CPU architectural techniques like Instruction Level Parallelism (ILP) and Very Long Instruction Word (VLIW) are the new norm. Processors have evolved along a similar trajectory to include twice the number of instructions compared to its predecessor, the ability to fetch a larger instruction packet and execute multiple instructions simultaneously. To ensure that the design meets the specification it's imperative to verify every possible operand combination as well as sequencing of instructions. This demands deployment of novel techniques which can reduce verification effort without compromising on the quality. In this paper, we propose a Formal Verification (FV) based ``divide-and-conquer'' approach to CPU verification which utilizes executable specification. We propose dividing the verification effort into two levels of design abstraction, namely basic functional unit level (e.g. Adder (ADD), Multiply and Accumulate (MAC), etc.) and module level (e.g. collection of functional units like ALU). FV allows us to cover the vast state space while avoiding the burden of developing corresponding stimulus. By automating the verification flow from an executable specification, we eliminate the possibility of human error and standardize the setup across functional units. We leverage these techniques to accomplish comprehensive verification goals and achieve design sign-off. When implemented, we were able to achieve 50\% reduction in the CPU verification effort and identify corner case bugs that would have been impossible to find using Dynamic Verification.},
+  isbn = {978-1-66548-674-3},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/QEHEN8S7/Sri et al. - 2022 - A Holistic Approach to CPU Verification using Form.pdf}
+}
+
+@book{stallingsOperatingSystemsInternals2018,
+  title = {Operating Systems: Internals and Design Principles},
+  shorttitle = {Operating Systems},
+  author = {Stallings, William},
+  year = {2018},
+  edition = {Ninth edition},
+  publisher = {Pearson},
+  address = {New York, NY},
+  isbn = {978-0-13-467095-9},
+  langid = {english},
+  lccn = {QA76.77 .S73 2018},
+  keywords = {Operating systems (Computers)},
+  file = {/home/torje/Zotero/storage/YQR3D7WH/Stallings - 2018 - Operating systems internals and design principles.pdf}
+}
+
+@misc{symbioticedaRiscvformalDocsRvfi2020,
+  title = {Riscv-Formal/Docs/Rvfi.Md at Master {$\cdot$} {{SymbioticEDA}}/Riscv-Formal},
+  year = {2020},
+  journal = {GitHub},
+  urldate = {2023-10-16},
+  abstract = {RISC-V Formal Verification Framework. Contribute to SymbioticEDA/riscv-formal development by creating an account on GitHub.},
+  collaborator = {{SymbioticEDA}},
+  howpublished = {https://github.com/SymbioticEDA/riscv-formal/blob/master/docs/rvfi.md},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/79BRSWWQ/rvfi.html},
+  maintitle = {{{GitHub}}}
+}
+
+@article{taSimulatingMultiCoreRISCV2018,
+  title = {Simulating {{Multi-Core RISC-V Systems}} in Gem5},
+  author = {Ta, Tuan and Cheng, Lin and Batten, Christopher},
+  year = {2018},
+  journal = {Los Angeles},
+  abstract = {The RISC-V ecosystem is becoming an increasingly popular option in both industry and academia. The ecosystem provides rich open-source software and hardware tool chains that enable computer architects to quickly leverage RISC-V in their research. While the RISC-V ecosystem includes functional-level, register-transferlevel, and FPGA simulation platforms, there is currently a lack of cycle-level simulation platforms for early design-space exploration. gem5 is a popular cycle-level simulation platform that provides reasonably flexible, fast, and accurate simulations. Previous work has added single-core RISC-V support to gem5. This paper presents our recent work on simulating multi-core RISC-V systems in gem5. We first describe our approach to functional and timing validation of RISC-V systems in gem5. We then evaluate the performance of the gem5/RISC-V simulator and discuss a design-space-exploration case study using gem5, the open-source RISC-V software tool chain, and two popular task-based parallel programming frameworks.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/I3NXML2I/Ta et al. - 2018 - Simulating Multi-Core RISC-V Systems in gem5.pdf}
+}
+
+@article{taylorAdvancedRISCVVerification2023,
+  title = {Advanced {{RISC-V Verification Methodology}}},
+  author = {Taylor, Jon and Sutton, Aimee and Thompson, Mike},
+  year = {2023},
+  month = apr,
+  journal = {Embedded World 2023 Conference Paper},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/QUKBE5VT/Taylor et al. - Advanced RISC-V Verification Methodology.pdf}
+}
+
+@misc{tessolveRISCVProcessorVerification2022,
+  title = {{{RISC-V}} Processor Verification with New Open Standard {{RVVI-based}} Methodology},
+  author = {{Tessolve}},
+  year = {2022},
+  urldate = {2023-10-26},
+  abstract = {RISC-V is extending the design freedoms for SoC developers with an open standard ISA. RISC-V is based on a modular framework with many standard extensions plus further optimization with custom instructions.}
+}
+
+@misc{theqemuprojectdevelopersRISCVSystemEmulator2023,
+  title = {{{RISC-V System}} Emulator --- {{QEMU}} Documentation},
+  author = {{The QEMU Project Developers}},
+  year = {2023},
+  month = jul,
+  urldate = {2023-12-06},
+  howpublished = {https://www.qemu.org/docs/master/system/target-riscv.html},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/RCLNAIR7/target-riscv.html}
+}
+
+@techreport{torjenygaardeikenesDesigningRISCVReference2023,
+  type = {Specialization {{Project Report}}},
+  title = {Designing a {{RISC-V Reference Model}} for {{Open Source Processor Cores}}},
+  author = {{Torje Nygaard Eikenes}},
+  year = {2023},
+  month = dec,
+  address = {Trondheim, Norway},
+  institution = {{Norwegian University of Science and Technology}},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/YCBNKDQE/Prosjektrapport_RISC_V_Reference_Model.pdf}
+}
+
+@article{udupiExploitingHardwareUnobservability2019,
+  title = {Exploiting {{Hardware Unobservability}} for {{Low-Power Design}} and {{Safety Analysis}} in {{Formal Verification-Driven Design Flows}}},
+  author = {Udupi, Shrinidhi and Urdahl, Joakim and Stoffel, Dominik and Kunz, Wolfgang},
+  year = {2019},
+  month = jun,
+  journal = {IEEE Transactions on Very Large Scale Integration (VLSI) Systems},
+  volume = {27},
+  number = {6},
+  pages = {1262--1275},
+  issn = {1063-8210, 1557-9999},
+  doi = {10.1109/TVLSI.2019.2906820},
+  urldate = {2024-01-23},
+  abstract = {Formal techniques for the functional verification of System-on-Chip (SoC) hardware have matured significantly over the last years. They can penetrate deeply into a design to exhibit complex functional dependencies between various design components in terms of detailed logical and temporal relationships. They can also provide a well-defined formal relationship between an abstract system model of a design and its concrete implementation at the register-transfer level (RTL). This paper shows how such knowledge available from formal verification can be ``condensed'' into a database that stores all registers and flip-flops, at which time points they are actually relevant for the correct behavior of the design and when they are not. We show that the comprehensive information on temporary unobservabilities in the design can be of great value to reach two nonfunctional design goals that play a dominant role in many design flows: safety and low power consumption. This paper presents techniques to assess the effects of soft errors by single-event upsets (SEUs) with formal precision and to relate the results of the proposed analysis to an abstract system model. For example, our analysis can determine which soft errors may lead to a system ``crash'' and which are guaranteed not to cause any harm. For the application of the proposed approach in power optimization, this paper presents techniques for clock gating and power gating. For the examined designs, we observe a reduction of power consumption between 10\% and 50\% on top of the state-of-the-art commercial power synthesis.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/ZB2E3LRX/Udupi et al. - 2019 - Exploiting Hardware Unobservability for Low-Power .pdf}
+}
+
+@article{watermanRISCVInstructionSet2019,
+  title = {The {{RISC-V Instruction Set Manual}}, {{Volume I}}: {{User-Level ISA}}},
+  editor = {Waterman, Andrew and Asanovic, Krste},
+  year = {2019},
+  month = dec,
+  volume = {Document Version 20191213},
+  collaborator = {{RISC-V Foundation}},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/TB3BEZ39/Waterman et al. - Volume I Unprivileged ISA.pdf}
+}
+
+@article{watermanRISCVInstructionSet2021,
+  title = {The {{RISC-V Instruction Set Manual Volume II}}: {{Privileged Architecture}}},
+  author = {Waterman, Andrew and Asanovic, Krste and Hauser, John and {RISC-V International}},
+  year = {2021},
+  month = dec,
+  volume = {Document Version 20211203},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/EZBUQ8BB/Waterman et al. - Volume II Privileged Architecture.pdf}
+}
+
+@article{weaverResponseTimeJobs2020,
+  title = {{$\bullet$} {{Response}} Time  {$\bullet$} {{Jobs}} / Second  {$\bullet$} {{Energy}} per Task},
+  author = {Weaver, Nicholas},
+  year = {2020},
+  journal = {Computer Science},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/CRFUTN6K/Weaver - 2020 - • Response time  • Jobs  second  • Energy per tas.pdf}
+}
+
+@misc{WelcomeQEMUDocumentation,
+  title = {Welcome to {{QEMU}}'s Documentation! --- {{QEMU}} Documentation},
+  urldate = {2023-09-08},
+  howpublished = {https://www.qemu.org/docs/master/index.html},
+  keywords = {notion}
+}
+
+@misc{WhisperISS2023,
+  title = {Whisper {{ISS}}},
+  year = {2023},
+  month = sep,
+  urldate = {2023-09-08},
+  copyright = {Apache-2.0},
+  howpublished = {CHIPS Alliance},
+  keywords = {notion}
+}
+
+@book{wolfComputersComponentsPrinciples2017,
+  title = {Computers as Components: Principles of Embedded Computing System Design},
+  shorttitle = {Computers as Components},
+  author = {Wolf, Marilyn},
+  year = {2017},
+  edition = {Fourth edition},
+  publisher = {Morgan Kaufmann},
+  address = {Amsterdam Boston Heidelberg},
+  isbn = {978-0-12-805387-4},
+  langid = {english},
+  file = {/home/torje/Zotero/storage/B7MVE5F8/Wolf - 2017 - Computers as components principles of embedded co.pdf}
+}
+
+@article{wolfFormalVerificationRISCV,
+  title = {Formal {{Verification}} of {{RISC-V}} Cores with Riscv-Formal},
+  author = {Wolf, Clifford},
+  journal = {Hello World},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/Z3NEBCNF/Wolf - Formal Verification of RISC-V cores with riscv-for.pdf}
+}
+
+@inproceedings{wuEffectiveSynchronizationApproach2009,
+  title = {An Effective Synchronization Approach for Fast and Accurate Multi-Core Instruction-Set Simulation},
+  booktitle = {Proceedings of the Seventh {{ACM}} International Conference on {{Embedded}} Software},
+  author = {Wu, Meng-Huan and Fu, Cheng-Yang and Wang, Peng-Chih and Tsay, Ren-Song},
+  year = {2009},
+  month = oct,
+  pages = {197--204},
+  publisher = {ACM},
+  address = {Grenoble France},
+  doi = {10.1145/1629335.1629362},
+  urldate = {2023-11-11},
+  abstract = {This paper proposes a synchronization approach for fast and accurate Multi-Core Instruction-Set Simulation (MCISS). An ideal MCISS should run accurately in a real-time fashion. In order to achieve accurate simulation results of MCISS, a lock-step approach, which synchronizes every cycle, is commonly used. However, this approach introduces immense overhead and lowers the simulation speed. Instead of synchronizing every cycle, our approach synchronizes the MCISS based on the data dependency among the simulated programs. Therefore, the synchronization overheads can be highly reduced while the accurate simulation results are ensured. With the proposed approach applied, the simulation speed of MCISS is up to 40 {\textasciitilde} 1,000 million instructions per second (MIPS) in general.},
+  isbn = {978-1-60558-627-4},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/XCGASSH8/Wu et al. - 2009 - An effective synchronization approach for fast and.pdf}
+}
+
+@inproceedings{yangResearchFormalVerification2019,
+  title = {The {{Research}} on {{Formal Verification}} of {{CPU Structure Based}} on {{Theorem Proving}}},
+  booktitle = {2019 {{IEEE}} 10th {{International Conference}} on {{Software Engineering}} and {{Service Science}} ({{ICSESS}})},
+  author = {Yang, Hongwei and Ma, Dianfu},
+  year = {2019},
+  month = oct,
+  pages = {1--5},
+  publisher = {IEEE},
+  address = {Beijing, China},
+  doi = {10.1109/ICSESS47205.2019.9040731},
+  urldate = {2024-01-23},
+  abstract = {With the development of SOC technology, the structure of today's CPU is very complex, conventional design and verification methods such as testing and simulating can't guarantee the correctness of CPU structure designs. In the area of CPU design and verification, formal verification is an emerging technology. To solve the problem of verifying CPU structure, we construct the CPU structure axiom system based on the CPU structure model and propose a formal method that proving theorem on this axiom system. Meanwhile we develop an automated verification tool. In this paper we describe our formal verification work on MIPS CPU.},
+  isbn = {978-1-72810-945-9},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/UXTZ9EXJ/Yang and Ma - 2019 - The Research on Formal Verification of CPU Structu.pdf}
+}
+
+@article{yassinFastAccurateEdge2021,
+  title = {Fast and {{Accurate Edge Computing Energy Modeling}} and {{DVFS Implementation}} in {{GEM5 Using System Call Emulation Mode}}},
+  author = {Yassin, Yahya H. and Jahre, Magnus and Kjeldsberg, Per Gunnar and Aunet, Snorre and Catthoor, Francky},
+  year = {2021},
+  month = jan,
+  journal = {Journal of Signal Processing Systems},
+  volume = {93},
+  number = {1},
+  pages = {33--48},
+  issn = {1939-8018, 1939-8115},
+  doi = {10.1007/s11265-020-01544-z},
+  urldate = {2023-09-08},
+  abstract = {Stringent power budgets in battery powered platforms have led to the development of energy saving techniques such as Dynamic Voltage and Frequency scaling (DVFS). For embedded system designers to be able to ripe the benefits of these techniques, support for efficient design space exploration must be available in system level simulators. The advent of the edge computing paradigm, with power constraints in the mW domain, has rendered this even more essential. Without a fast and accurate methodology for architecture simulation and energy estimation, the benefit of new ideas and solutions cannot be evaluated. In this paper, we propose a non-intrusive application controlled DVFS management implementation in the GEM5 simulator, used with GEM5's system call emulation mode. We also propose a novel architecture independent energy model based on categorization of different measurable workload classes. Our energy model is parametrized and calibrated with power measurements on a SAM4L microcontroller board, containing an ARM Cortex M4 processor. Together with the GEM5 output statistics, the model accurately estimates the total energy consumption of our simulated system. The results from our modified GEM5 simulator are validated with representative signal processing applications. After correction of systematic offset errors, our results deviate with less than 4\% compared to measurements from the SAM4L microcontroller. Our contributions in this paper can easily be tailored to other processor models in GEM5 and to future versions of GEM5. It will therefore enable system architects to explore new techniques and compare the improvements relative to existing architectures.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/ZE8RXXI6/Yassin et al. - 2021 - Fast and Accurate Edge Computing Energy Modeling a.pdf}
+}
+
+@misc{zotero-898,
+  urldate = {2024-04-14},
+  howpublished = {https://cplusplus.com/reference/deque/deque/},
+  file = {/home/torje/Zotero/storage/VI2938VW/deque.html}
+}

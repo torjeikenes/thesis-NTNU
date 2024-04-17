@@ -1,10 +1,10 @@
-\chapter*{Abstract}
+\chapter{Abstract}
 
 %This project explores different methodologies for the development of an adaptable and cycle-accurate RISC-V reference model with pipeline awareness to enhance the accuracy of RISC-V processor verification, particularly in the context of asynchronous interrupt and debug events.
 %Asynchronous events pose a significant challenge in processor core verification, often leading to elusive bugs. While conventional Instruction Set Simulators (ISSs) may suffice for verification in typical execution scenarios, their instruction-level accurate abstraction level can lead to misalignments of asynchronous events to the start of instructions, resulting in incorrect interrupt timings compared to the DUT. We therefore need a Reference Model that accurately simulates the timing and correctness of asynchronous events. The reference model should have a higher abstraction level than the RTL code of the DUT, and run in sync with the DUT, serving as a golden model to verify the DUT against
 
 
-\tmp{TODO: Skriv abstract}
+
 
 Asynchronous events pose a significant challenge in RISC-V processor verification, often leading to elusive bugs. While conventional \textit{Instruction Set Simulators (ISS)} may suffice for verification in typical execution scenarios, their instruction-level accurate abstraction level can lead to mistimed asynchronous events and side effects compared to the \textit{Device Under Test (DUT)} processor core.
 
@@ -15,11 +15,11 @@ While existing reference models exist, they are either internal tools, expensive
 
 To address these limitations, we explored and compared different approaches to implementing a reference model for open-source RISC-V processor cores that can accurately simulate asynchronous events at the cycle level. 
 
-%We evaluated different design approaches, adopting a split design comprising a functional simulator using an existing ISS and a "pipeline shell" for simulating the pipeline timing. Multiple Instruction Set Simulators were compared, with Spike \cite{SpikeRISCVISA2023} emerging as the most suitable ISS, closely followed by the Sail-riscv model \cite{RISCVSailModel2023}. 
-%
-%The construction of the pipeline shell was explored by evaluating the necessary simulation components with a proposed method, and a stage-based pipeline simulation was compared with a time wheel simulation approach. Additionally, three different approaches were compared for connecting the pipeline shell to the ISS, where the best approach kept the ISS as intact as possible.
-%
-%Further research should involve the practical implementation of the reference model based on the insights presented in this report, followed by an evaluation of its accuracy by verifying a previously validated processor core.
+We evaluated different design approaches, adopting a split design comprising a functional simulator using an existing ISS and a "pipeline shell" for simulating the pipeline timing. Multiple Instruction Set Simulators were compared, with Spike \cite{noauthor_spike_2023} emerging as the most suitable ISS, closely followed by the Sail-riscv model \cite{noauthor_riscv_2023}. 
+
+The construction of the pipeline shell was explored by evaluating the necessary simulation components with a proposed method, and a stage-based pipeline simulation was compared with a time wheel simulation approach. Additionally, three different approaches were compared for connecting the pipeline shell to the ISS, where the best approach kept the ISS as intact as possible.
+
+Further research should involve the practical implementation of the reference model based on the insights presented in this report, followed by an evaluation of its accuracy by verifying a previously validated processor core.
 
 
 %this report explores and compares different approaches to implementing a reference model for open-source RISC-V processor cores that can accurately simulate asynchronous events at the cycle level. Furthermore, another key consideration is the ease of adapting the model to various processor cores, as overly customized models for different cores may introduce bugs. Therefore, the project aims to find an appropriate abstraction level for the reference model. Further, the project compares building the reference model on top of existing ISSs such as Spike or sail-riscv, explores how pipeline understanding can be modeled, and examines how asynchronous events are injected into the model.
@@ -28,4 +28,10 @@ To address these limitations, we explored and compared different approaches to i
 
 
 
+
+%\chapter{Preface}
+%
+%This report is the result of the course \textit{TFE4580 - Electronic Systems Design and Innovation, Specialization Project} at the Norwegian University of Science and Technology (NTNU). Silicon Laboratories Norway AS gave the project
+%
+%I would like to thank my supervisors Per Gunnar Kjeldsberg from NTNU, and Marton Teilgård from Silicon Laboratories Norway AS, for their guidance throughout the project.
 

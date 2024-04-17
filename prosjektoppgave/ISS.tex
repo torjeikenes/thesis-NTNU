@@ -1,0 +1,359 @@
+
+\section{Choosing base ISS}
+\label{sec:choosingISS}
+
+\subsection{Requirements from ISS}
+\label{sec:requirements}
+
+To use an ISS as a building block for the reference model, as explained in the previous sections, there are some considerations and requirements to consider that will be listed below. We base the requirements around adhering to approach 3 from \cref{sec:app3}.
+
+\begin{compactenum}[(1)]
+    
+
+%\item \textbf{Provide visibility into multiple instructions} \label{req:visibility}
+%
+%\par To simulate the pipeline, we need to track multiple instructions simultaneously, corresponding to the instructions in the different pipeline stages. This requires that we can "see" the $n$ coming instructions according to the pipeline stages, or allow separation of fetching, decoding, execution, etc into separate cycles. 
+
+\item \textbf{Support stepping through the execution at the Instruction Level} \label{req:step}
+
+\par Since the reference model runs in lock-step with the DUT, we need to be able to step through the instructions at the instruction level, and be able to only run one instruction at a time, before waiting to step into the next instruction.
+
+\item \textbf{Provide processor state after each instruction} \label{req:state}
+
+\par The ISS needs to output the state changes executed after each instruction so that the pipeline shell can apply these changes in a cycle-accurate manner. 
+%To be able to use the ISS in verification, we need to access the processor state changes after each instruction to compare with the DUT. This should preferably be in the RVFI format or enough information should be available to convert into an RVFI item.
+
+\item \textbf{Revert the state of the ISS} \label{req:revertState}
+
+\par As discussed in \cref{sec:app3}, if we run the ISS before the pipeline simulation, we need to be able to revert the ISS state to a previous state to simulate pipeline flushing.
+
+%\item \textbf{Support modification of instructions} \label{req:modification}
+%
+%\par To simulate interrupts in the pipeline, it might be necessary to simulate pipeline flushing and halting. To do this we should be able to modify the instructions in the pipeline e.g. to replace them with empty NOP operations to flush the pipeline or halt execution of an instruction. 
+
+\item \textbf{Enable external injection of interrupts} \label{req:interrupt} 
+
+\par External interrupts and debug requests are inserted into the reference model independently of the ISS. To simulate the interrupts, we must be able to tell the ISS to take an interrupt by jumping to the trap handler's PC and correctly executing the side effects at the correct cycle. 
+
+\item \textbf{Support addition of custom extensions and instructions} \label{req:custom}
+
+\par A large driving force for using RISC-V is the ability to add custom extensions. Therefore, custom instructions and extensions must be easily created and added to the ISS without modifying large parts of the model.
+
+\item \textbf{Ensure maintainability while meeting requirements} \label{req:update}
+
+\par The ISS should be easily maintained and updated while still meeting the requirements. Modifications to the ISS should be kept to a minimum and be done in a way that allows the ISS to be easily updated.
+
+\item \textbf{Actively maintained and thoroughly tested} \label{req:maintained}
+
+\par The ISS should be mature and thoroughly tested. It should be actively maintained and likely to be updated in the future.
+
+
+\item \textbf{Load the same instructions as the DUT} \label{req:DUTins}
+
+\par The ISS should be able to load the same instructions as the DUT.
+
+%\par As discussed in \cref{sec:shell_iss_interaction}, to be able to model the reference model around an ISS, it is helpful to be able to separate the register file from the rest of the ISS, or be able to have a copy of the register file, and update the register file inside the ISS when necessary.
+
+\end{compactenum}
+
+%\begin{enumerate}[(1)]
+%\item Externally inject interrupts to the ISS or modify PC to trap handler 
+%\end{enumerate}
+%
+%The ISS must 
+%
+%\begin{enumerate}[]
+%    \item The execution of the ISS can be modified from the outside to change the instruction, change the program counter, and discard instructions. This should be possible at run-time at every new instruction.
+%\end{enumerate}
+%sasdfasdfasdf ISS must 
+%\begin{enumerate}[resume]
+%    \item Should be steppable at the instruction level
+%    \item We should be able to "see" multiple instructions. E.g. the 4 instructions in the pipeline
+%    \item The ISS should be able to follow the requirements while being easily maintained and kept up to date. E.g. the ISS should not be modified to a point where updating the ISS is not easily done. 
+%    \item It should be easy to add custom extensions and instructions to the ISS.
+%    \item The ISS should preferably be open-source. 
+%    \item The ISS should be actively maintained and thoroughly tested
+%    \item The ISS should load instructions in the same format as the DUT. 
+%    \item The processor state changes should be available after each instruction
+%
+%\end{enumerate}
+
+\subsection{ISS comparison}
+
+%\Cref{tab:issComp} shows a comparison between the different Instruction Set Simulators.
+%
+%\begin{longtable}{|l|p{0.4\textwidth}|p{0.4\textwidth}|}
+%\hline
+%\textbf{ISS} & \textbf{Pros}                                                                                           & \textbf{Cons}                                                                                                     \\ \hline
+%riscvOVPsim  & - Free and open-source                                                                                    & - Very basic                                                                                                       \\ 
+%             &                                                                                                           & - Lacking tracing and GDB interface                                                                                \\ 
+%             &                                                                                                           & - Dependent on Imperas to add custom extensions                                                                                             \\ \hline
+%riscvOVPsimPlus  & - Supports trace and GDB interface                                                                        & - Dependent on Imperas                                                                                             \\
+%             &                                                                                                           &                                                                                                                    \\ \hline
+%GEM5         & - Recently added support for RISC-V                                                                       & - Intended for architectural exploration and peroframnce simulation                                                \\
+%             & - Cycle-accurate simulator                                                                                & - RTL level simulator, might have the same bugs as RTL code                                                        \\
+%             & - Features multiple CPU models                                                                            & - An existing model must be modified to match the DUT core                                                         \\
+%             &                                                                                                           & - Has no trace output                                                                                              \\
+%             &                                                                                                           & - Has limited support for RISC-V extensions                                                                        \\
+%             &                                                                                                           & - Must be modified to support lock-step execution                                                                  \\ \hline
+%QEMU         & - Full system emulator                                                                                    & - Built to run as fast as possible                                                                                 \\
+%             &                                                                                                           & - Uses dynamic binary translation, making it difficult to run a single instruction                                 \\
+%             &                                                                                                           &                                                                                                                    \\ \hline
+%rv8          &                                                                                                           & - Focus on performance, not accuracy                                                                               \\ \hline
+%TinyEMU      & - Small and simple                                                                                        & - Not actively maintained                                                                                          \\
+%             & - system emulator                                                                                         &                                                                                                                    \\ \hline
+%MARSS-RISCV  & - Cycle-level accurate                                                                                    & - Not actively maintained. Last commit in 2020                                                                     \\
+%             & - Simulates both Out-of-order and in-order (6 or 5 stages pipeline) cores                                 & - Has old unfixed bugs                                                                                             \\
+%             &                                                                                                           & - Hard to get up to date                                                                                           \\ \hline
+%R2VM         & - Simulates a simple 5 stage in-order pipeline                                                            & - Buildt with rust, which is hard to run in conjunction with a SystemVerilig testbench                             \\
+%             &                                                                                                           & - Uses dynamic binary translation                                                                                  \\
+%             &                                                                                                           & - Focused on performance, not accuracy                                                                             \\
+%             &                                                                                                           & - Interrupts are only handled at the end of code blocks                                                            \\
+%             &                                                                                                           &                                                                                                                    \\ \hline
+%Spike        & - Has been the official RISC-V ISS                                                                        & - Custom instructions must be added in Spike as well as the core                                                   \\
+%             & - Thurougly used and tested                                                                               &                                                                                                                    \\
+%             & - Supports many extensions                                                                                &                                                                                                                    \\
+%             & - Easy to run single instructions                                                                         &                                                                                                                    \\
+%             & - Can be split up in modular components. e.g. fetch and debug independently of execution                  &                                                                                                                    \\
+%             &                                                                                                           &                                                                                                                    \\ \hline
+%sail-riscv   & - The sail-riscv model has been adopted as the formal specification of the RISC-V ISA                     & - The c-emulator consists of a mix of autogenerated code and wrapper code, which can be complicated to work around \\
+%             & - Autogenerates a C-emulator from the model                                                               & - The model must be modified to support splitting up the model into separate components like fetch, debug, and execute   \\
+%             & - Custom instructions are already specified in sail, so they can automatically be modeled by the emulator &                                                                                                                  \\
+%             & - Supports RVFI trace output                                                                              &                                                                                                                  \\ \hline
+%                                                                                                         
+%\caption{Comparison between different Instruction Set Simulators.}
+%\label{tab:issComp}
+%\end{longtable}
+
+To find the most appropriate ISS to build the model around, we can apply the requirements from \cref{sec:requirements} to the simulators listed in \cref{back:iss} to see which ISS fulfills all requirements.  
+
+QEMU (\cref{sec:qemu}), rv8 (\cref{sec:rv8}), and R2VM (\cref{sec:R2VM}) all use dynamic binary translation to translate code blocks from RISC-V to the target ISA. This achieves good performance but makes it harder to step through the execution at the instruction level, therefore not meeting \requirement{req:step}. Additionally, interrupts can not be inserted in the middle of a basic block, not meeting \requirement{req:interrupt}. Therefore, we will not consider these further.
+
+
+RiscvOVPsim (\cref{sec:riscvOVPsim}) is a stable simulator but is closely tied to Imperas. Custom extensions can not be added without buying a license from Imperas, only partially fulfilling \requirement{req:custom}, as we want the solution to be easy to get up and running without acquiring licenses and contacting Imperas. 
+
+%riscvOVPsim - no custom instructions. Has to contact imperas. Not a strict requirement, but an advantage if we can get a fully open source solution. Ease to get up and running without aquiring licences and contacting imperas.
+
+
+This leaves us with Spike and sail-riscv, which will be compared further below.
+
+\subsection{Spike}
+\label{sec:spike_req}
+
+%Spike is popular and widely used, so it is likely to be up to date for a while.
+%
+%Spike is also used in the verification of other RISC-V cores CVA6 and Ibex 
+
+Looking at the requirements from \cref{sec:requirements}, we will determine which requirements are passed below.
+
+To integrate Spike into the reference model, it is possible to make a copy of the \lstinline{step()} function in \lstinline{execute.cc} to base the model on. This is the same approach as the CVA6 and Ibex spike implementations in \cref{back:cva6} and \cref{back:Ibex}. By using the \lstinline{step()} function, we can make sure we only step one instruction at a time, solving \requirement{req:step}.
+
+
+%The code below shows a step in the \lstinline{step()} function:
+%\begin{lstlisting}[caption={step function in execute.cc from \cite{noauthor_spike_2023}}, label={codef:execute}, language=c]
+%for (auto ic_entry = _mmu->access_icache(pc); ; ) {
+%    auto fetch = ic_entry->data;
+%    pc = execute_insn_fast(this, pc, fetch);
+%    ic_entry = ic_entry->next;
+%    if (unlikely(ic_entry->tag != pc))
+%        break;
+%    if (unlikely(instret + 1 == n))
+%        break;
+%    instret++;
+%    state.pc = pc;
+%}
+%advance_pc();
+%\end{lstlisting}
+%
+%
+%One way to implement the reference model around Spike could be using a modified version of the step function as the interface between the reference model and Spike. If we use the sequential pipeline simulation approach from \cref{sec:sequentialPipeline}, we could "fetch" instructions into the pipeline with \lstinline{_mmu->access_icache(pc)}. In Spike, the instructions placed in the \lstinline{icache} are already decoded, so we do not have to disassemble them to calculate hazards, etc. 
+%
+%The pipeline model could store the \lstinline{insn_fetch_t} fetch types for the different pipeline stages, move these around, and use the \lstinline{execute_insn_fast()} function to execute the instructions. This passes \requirement{req:visibility} by storing the different instructions in a pipeline simulator. If we need to modify an instruction to account for an interrupt or something similar, it could be possible to modify the fetch type to hold another instruction, also solving \requirement{req:modification}.  
+%
+%Doing it like this should make it fairly easy to stall, flush the pipeline, and modify instructions if needed. We also have control over the PC. 
+
+%To integrate Spike according to approach 3 in \cref{sec:app3}, we want to keep Spike as intact as possible. We can use the \lstinline{step()} function to step Spike one instruction at a time. Approach 3 also requires that the state changes from an instruction is output after every instruction retirement.
+
+
+%we need a way to output an RVFI item at the end of each instruction retirement. Spike does not explicitly support RVFI, but we can extend Spike to build an RVFI item using the processor state. 
+
+
+In Spike, the state, including the register file, CSR registers, and PC, is stored in a \lstinline{state_t} struct in the \lstinline{processor_t} class in \lstinline{processor.h}. To fulfill \requirement{req:revertState}, we should be able to revert this state to a previous state. One possibility is for the pipeline shell also to contain a \lstinline{state_t} struct that is updated cycle-accurately from the pipeline shell. The \lstinline{processor_t} could be expanded with a \lstinline{set_state(state_t state)} method to allow the state to be set from the pipeline shell.
+
+To fulfill \requirement{req:state} we need to output the state changes from Spike after every step. One possibility could be to extend Spike with RVFI support. This is currently in development in the CVA6 Spike implementation in \cref{back:cva6}, which we can use as a starting point. Alternatively, we could use the \lstinline{get_state()} method from \lstinline{processor_t} to output the \lstinline{state_t} type from Spike to the pipeline shell.
+
+To fulfill \requirement{req:interrupt}, we need to be able to insert interrupts before any instruction. This can be done similarly to the Ibex Spike cosimulator approach discussed in \cref{back:Ibex}. This expands Spike with different functions like \lstinline{set_nmi()}, \lstinline{set_mip()}, \lstinline{set_debug_req()}, that modify the correct registers and execute a step to make spike take the interrupt.
+
+Spike has support for a large amount of extensions. It is also possible to add custom instructions by adding a new instruction file in \lstinline{riscv/insns/<new_instruction>.h} and adding the opcode and mask to \lstinline{riscv/opcodes.h} \cite{noauthor_spike_2023}. this makes it relatively simple to add custom instructions and passes \requirement{req:custom}.
+
+Since Spike is the official RISC-V ISS developed alongside the RISC-V specification since 2010, it will likely contain few bugs and continue being supported into the future, fulfilling \requirement{req:maintained}.
+
+To fulfill \requirement{req:update}, pulling a new version of Spike should be simple when it receives updates. We should, therefore, leave Spike as intact as possible and do modifications on a layer above Spike. Essential modifications to Spike can be made using git patches, as is done with the Spike tandem verification for the CVA6 core in \cref{back:cva6}. This allows us to store modifications to the spike code as patches, pull changes to Spike, and then apply these patches.
+
+Spike can be loaded with an ELF file, which is also loaded into the DUTs memory module. This fulfills \requirement{req:DUTins}.
+
+From the above, we see that Spike fulfills all the requirements and is a good choice as an ISS to base the reference model.
+
+\subsection{Sail-riscv}
+\label{sec:sail_req}
+
+The sail-riscv c-emulator introduced in \cref{sec:sail} consists of a mix of autogenerated c code generated from the sail model and wrapper code that interacts with the generated code. The interface into the autogenerated code is written in \lstinline{riscv_sail.h} and exposes functions to control the simulator, as well as variables exporting the machine state, such as PC, GPR, some CSR registers, and privilege level.
+
+ 
+The emulator exposes the \lstinline{zstep()} function to step through one instruction, fulfilling \requirement{req:step}. Fetching, decoding, and execution are all done in this function. 
+
+The sail-riscv model also supports RVFI\_DII (Risc-V Formal Interface - Direct Instruction Injection), which implements both RVFI trace output, as well as direct injection of instructions into the simulator through the DII interface, bypassing the PC and instruction memory \cite{joannou_randomized_2023}. Using the RVFI implementation, we can output an RVFI item after each instruction, fulfilling \requirement{req:state}. 
+
+
+To fulfill \requirement{req:revertState}, we must be able to revert the ISS state to a previous state. Some of the state variables are available in \lstinline{riscv_sail.h}, which we could use to set each of these back to a value stored in the pipeline shell, but only a few of the CSR registers are available here. To be able to revert all the state variables, we must modify the sail model and \lstinline{riscv_sail.h} to output all CSR registers. Additional testing is required to verify that modifying the values output here modifies the model's internal values.
+
+
+To inject interrupts into the sail model and fulfill \requirement{req:interrupt}, the model must be modified to expose a function that sets the correct CSR registers at the correct time. These registers are not output from the model, but if the modifications described above are done, outputting all the CSR values to \lstinline{riscv_sail.h}, we can insert interrupts by modifying the CSR interrupts like \lstinline{mip}. 
+
+
+
+ 
+%The approach described in \cref{sec:app1} and \cref{sec:app2}, where we hold each instruction in slots in a pipeline simulator, is more difficult in Sail-riscv. This is because we need to split up the fetch/debug and execution parts of the step function. To do this, we need to modify the model so that the decode and execute functions from the step function are available outside the ISS. Since this requires modifications to the Sail code and the generated C code, this can be complicated.
+
+%Therefore, Sail-riscv might work better with approach 3 from \cref{sec:app3}, where the whole step function is called simultaneously, requiring fewer modifications to the Sail model. If we can use this approach, we should also be able to fulfill \requirement{req:modification}, since we can modify the instructions when they are returned from the ISS to the pipeline shell.
+
+%
+%The sail-riscv model incorporates multiple "hooks" that can be used to execute code at different points during execution.
+%For accessing and transforming the decoded instructions, we can use
+%\lstinline{ext_decode(bv)} from \lstinline{riscv_decode_ext.sail}. 
+%
+%It is also possible to modify the PC with the functions \lstinline{get_arch_pc(), get_next_pc(), set_next_pc(), and tick_pc()}from \lstinline{riscv_pc_access.sail}
+%
+%There are also the hooks; \lstinline{ext_fetch_hook()}, \lstinline{ext_pre_step_hook()}, \lstinline{ext_post_step_hook()}, and \lstinline{ext_pre_step_hook()} that are executed at different points during the step function. This could be used to insert specific instructions, for example inserting NOP operations to "flush" the pipeline, etc.
+%
+%The main code execution happens from \lstinline{riscv_sim.c}. Here the model is initialized and an elf file is loaded into the emulator. 
+
+
+\requirement{req:custom} is a big incentive for using sail-riscv as the ISS in the reference model. Since the sail model has been adopted as the golden RISC-V model, most extensions are modeled in sail, and custom extensions are also implemented in sail. Using sail as the ISS would allow instructions to be defined in only one place, providing a single source of truth and avoiding differing interpretations of the ISS and specification. 
+
+
+We have seen above that some modifications to the model or interface might be necessary to meet the other requirements. 
+To meet \requirement{req:update} we must make sure that the modifications done are minimal. This can be done by making a copy of the \lstinline{riscv_sail.h} outside of the model to extend the interface or use git patches to ensure that new updates can be pulled without modifying the code.
+
+
+Regarding \requirement{req:maintained}, sail-riscv is also a fairly mature and safe option, especially since the RISC-V Foundation has adopted it as the formal golden model. It is likely to continue being supported and for more bugs to be found as it gains popularity.
+
+
+
+To fulfill \requirement{req:DUTins}, we can either load an ELF file into the emulator or use the DII interface to inject instructions directly into the emulator.
+
+
+%\cite{noauthor_riscv_2023}
+
+%Generating the reference model from the sail model would be optimal for keeping up with changes and easily supporting extensions. As the sail model is the golden risc-v model and custom extensions and instructions are often added to the sail model already, it makes sense to use the sail model as the base ISA. This would allow instructions to only be defined in one place and not modified in both the model and reference model. For this to make sense, the sail model should be held relatively intact so it can be kept up to date with the latest updates.
+
+
+%. This could allow us to have more control over the instructions to be executed. DII allows direct injection of instructions into the model, which outputs an RVFI trace of the given instruction. The DII bypasses the PC and instruction memory, loading instructions directly into the IF/ID register. Using this method, the reference model would therefore have to handle the instructions instead of loading an elf file into the model. The model would probably also have to decode the instructions outside of sail to know how to handle the instructions. This method would greatly increase the control of when and what instructions are executed, and handling branches would be easier, but there would be some double work e.g. as instructions are already decoded inside sail, but would also be decoded in the reference model. 
+%
+%The DII\_RVFI interface uses network socket design, so the simulator would have to support sending and receiving instructions and traces through a socket. 
+%
+%The RVFI\_DII (Risc-V Formal Interface) interface can be used to interface with to the model. This requires:
+%\begin{itemize}
+%  \item The reference model must keep track of the PC and instructions. This gives us control over the pipeline, and we can easily flush, stall, and modify instructions etc. We can also modify the PC and branch to the interrupt handler etc.
+%  \item The DII interface is used to inject instructions directly into the IF/ID register. We could model the pipeline to carry the instructions all the way through the pipeline and send the instruction into the model in the WB stage to execute the side effects of the instruction.
+%  \item If we assume the instruction is fed back into the ISS at the WB stage, we need to do some disassembly of the instructions in IF to calculate hazards etc. Two options for this is:
+%  \begin{itemize}
+%      \item Use a separate disassembler to get rs1, rs2, rd, etc. Here support for custom instructions might need to be added to this disassembler as well. (or maybe not since rs1, rs2, and rd are positioned at the same place for all instructions. )
+%      \item Use the decoder from the sail model. This requires some fidling and modification of the model to "extract" the decoder and convert the instructions to the correct format. If we do this, custom extension only need to be defined in the sail model and not in another disassembler as well. 
+%  \end{itemize}
+%  \item Output the RVFI trace out of the reference model to compare with DUT. If we use the RVFI\_DII interface, it should be relatively simple.
+%\end{itemize}
+%
+%
+%Another alternative that is a bit more hacky would be to to use the rvfi functions defined in \lstinline{riscv_sail.h} to avoid using the socket. This exposes functions like \lstinline{zrvfi_get_ins()}, \lstinline{zrvfi_set_instr_packet()}, and \lstinline{zrvfi_halt_exec_packet()}. This could allow us to use the same method as with the socket where the reference model controls the instructions and PC. 
+%
+%It might also be possible to become more tightly coupled with the emulator and have the model load the elf file, and use the functions above to extract information from the instructions and model the pipeline around this. This could get quite messy.
+%
+%The CORE-V verification also utilizes RVFI tracing for step-and-compare, possibly making the integration with the rest of the verification environment easier.
+
+
+
+%The sail model without modification has no obvious method to be able to use the sail model to disassemble the instruction without executing the instruction. Some form of disassembly is required to calculate hazards etc. in the pipeline. In the RISC-V ISA, the source and destination registers are in the same position for all instructions, so basic decoding of registers is possibly not too complicated. \cite{waterman_risc-v_nodate}
+
+
+%\subsubsection{sail hooks}
+%
+%The sail-riscv model incorporates multiple hooks that can be used to execute code at different points during execution.
+%For accessing and transforming the decoded instructions, we can use
+%\lstinline{ext_decode(bv)} from \lstinline{riscv_decode_ext.sail}. 
+%
+%It is also possible to modify the PC with the functions \lstinline{get_arch_pc(), get_next_pc(), set_next_pc(), and tick_pc()}from \lstinline{riscv_pc_access.sail}
+%
+%There are also the hooks; \lstinline{ext_fetch_hook()}, \lstinline{ext_pre_step_hook()}, \lstinline{ext_post_step_hook()}, and \lstinline{ext_pre_step_hook()} that are executed at different points during the step function. This could be used to insert specific instructions, for example inserting NOP operations to "flush" the pipeline, etc.
+
+
+
+\subsection{Spike vs. Sail}
+
+\Cref{tab:spikevsail} shows the advantages and disadvantages of using Spike and Sail-riscv as the ISS the model is built around
+
+\begin{table}[!htb]
+\centering
+%\setlist[itemize]{font= \color{DeepSkyBlue}, wide, leftmargin=*, noitemsep, after=\vspace*{-\topsep}}
+%\setlength{\extrarowheight}{3pt}
+%\setlength{\tabcolsep}{3pt}
+\caption{Summary of advantages and disadvantages of Spike and Sail-riscv}
+\label{tab:spikevsail}
+%\begin{tabularx}{\textwidth}{|p{15mm}|*{2}{>{\compress\RaggedRight\arraybackslash} X |}}
+\begin{tabularx}{\textwidth}{|p{15mm}|*{2}{>{\arraybackslash} X |}}
+\hline
+ISS & Advantages & Disadvantages \\
+\hline
+Spike
+& \begin{itemize}
+\item Widely used and tested 
+\item Extensive support for many extensions 
+\item The C++ code is easy to modify and modularize
+\item Already integrated into core-v-verif for verification of the CVA6 core
+\end{itemize}
+& \begin{itemize}
+\item Custom instructions must be added separately 
+\item Model must be modified to output RVFI trace items at instruction retirement
+\item Must be modified to inject interrupts into the model
+\end{itemize} \\
+\hline
+Sail-riscv
+& \begin{itemize}
+\item Adapted as the official RISC-V specification 
+\item Supports RVFI trace output
+\item Extensions already modeled in sail, can be automatically added to the model
+\end{itemize}
+& \begin{itemize}
+\item The mix of handwritten and autogenerated sail and C code is complicated to work around 
+\item Modifications are necessary to separate fetch/debug and execute functions
+\item Must be modified to inject interrupts into the model
+\item Not as much used for verification as Spike
+\end{itemize} \\
+\hline
+\end{tabularx}
+\end{table}
+
+From \cref{sec:spike_req} and \cref{sec:sail_req}, we see that Spike and Sail-riscv both are viable options to use as the Instruction Set Simulator that the pipeline shell is built around. Both Spike and Sail-riscv can be modeled to fulfill all the requirements in \cref{sec:requirements}, but Spike requires fewer modifications to be able to meet them. There are also some other differences between them, as shown in \cref{tab:spikevsail}. Spike is the most used ISS and has been around since the start of RISC-V. It is a golden model for the RISC-V ISA and many cores. This makes Spike an attractive choice as most bugs are removed, and it has been thoroughly tested and trusted. 
+
+As Spike is fully written in C++, code modifications are easier than Sails' mix of handwritten C code and C code autogenerated sail model. 
+
+Fulfilling \requirement{req:revertState} is easier in Spike than in Sail if we keep a copy of \lstinline{state_t} struct in the pipeline shell and revert the ISS state by using this copy of the state. In comparison, in Sail, we would have to modify the model to export all CSR variables and individually set all of these back to revert the state.
+
+Sail-riscv already has RVFI support, allowing us to output the state changes during each instruction retirement and use this further to output the changes from the reference model to compare the reference model and DUT. For Spike, this RVFI support must be added directly to Spike or the pipeline shell to compare the reference model to the DUT. 
+%Specifically considering the separation of fetch/debug and execute discussed in \textbf{LINK}, this is advantageous in Spike. In Spike, we can model the interface around the step function and easily separate the fetch/debug and execute stages, while in Sail, these are all embedded into the same step function accessible from outside the model, requiring modifications to the model to separate these, or modifications to how the ISS is integrated with the pipeline shell.
+
+Spike has been used to verify multiple cores, including the CVA6 core from OpenHW Group. CVA6 uses the same verification environment as the CV32E40X core we use as an example core. Recent efforts have been made to include Spike in the "core-v-verif" verification environment, and it is therefore also available to use with the CV32E40X. The CVA6 Spike implementation has already modified the Spike code to make it suitable for verification. Some of these changes can be useful for us, for example RVFI support is in development. 
+
+%We will also need to modify the Spike code if it is used in the reference model. One disadvantage of using the same Spike implementation as the CVA6 core is that the modifications required by the Reference Model might differ from those required by CVA6, leading to chaos if improperly organized.
+
+
+Regarding interrupts and debug requests, both Spike and Sail-riscv require modifications to the code to add functions for inserting interrupts into the simulator. This has previously been done for the Ibex co-simulator for Spike, but for Sail-riscv, this needs to be investigated further. 
+
+Sail-riscv is more advantageous than Spike in regards to custom extensions. Since Sail has been adopted as the official specification, most custom extensions are already modeled in Sail. These custom extensions can be added to the model and automatically added to the reference model.  Doing this means that the sail specification can serve as a single source of truth in the reference model, the specification, and possibly in formal models. In comparison, in Spike, we need to separately add all the functionality of a custom extension to the Spike simulator, which can lead to bugs in the Spike modeling. On the other hand, if there is a bug in the Sail specification, this can be present both in the RTL code and the reference model and can be hard to find. 
+
+
+The discussion above shows that both Spike and Sail-riscv seem to be suitable options, as they can be modified to meet all requirements. However, Spike will be easier to modify because of its C++ code, compared to the mix of c and autogenerated Sail code in Sail-riscv. Because of this, and other the reasons listed above, Spike might get us up and running faster, allowing more work to be done on the more complicated implementation of the pipeline shell. If possible, the interface between the reference model and ISS should be relatively generic, so switching from Spike to Sail in the future should be possible if desired.
+
+%that Spike seems more suitable but is not necessarily the only possible choice. Both Spike and Sail-riscv can be modified to meet all requirements,
+
+

@@ -1,7 +1,113 @@
-\chapter{Introduction}
 
-Over the years, several thesis templates for \LaTeX{} have been developed by different groups at NTNU. Typically, there have been local templates for given study programmes, or different templates for the different study levels – bachelor, master, and \acrshort{phd}.\footnote{see, e.g., \url{https://github.com/COPCSE-NTNU/bachelor-thesis-NTNU} and \url{https://github.com/COPCSE-NTNU/master-theses-NTNU}}
+\chapter{Introduction and motivation}
+\label{Introduction} 
 
-Based on this experience, the \acrfull{CoPCSE}\footnote{\url{https://www.ntnu.no/wiki/display/copcse/Community+of+Practice+in+Computer+Science+Education+Home}} is hereby offering a template that should in principle be applicable for theses at all study levels. It is closely based on the standard \LaTeX{} \texttt{report} document class as well as previous thesis templates. Since the central regulations for thesis design have been relaxed – at least for some of the historical university colleges now part of NTNU – the template has been simlified and put closer to the default \LaTeX{} look and feel.
+%1. Establishing your research territory
+%2. Constructing the research gap or niche
+%3. Pointing out the gap/niche
+%4. Stating your purpose. Aim statement or research question
+%5. Highlighting benefits and mapping out the paper
 
-The purpose of the present document is threefold. It should serve (i) as a description of the document class, (ii) as an example of how to use it, and (iii) as a thesis template.
+
+%1. Statements about the field of research
+%to provide the reader with a setting or
+%context for the problem to be
+%investigated and claimed its centrality
+%or importance.
+%2. More specific statements about
+%the aspects of the problem already
+%studied by other researchers, laying
+%a foundation of information already
+%known.
+%3. Statements that indicate the need for
+%more investigation, creating a gap or
+%research niche for the present study
+%to fill.
+%4. Statements giving the purpose/
+%objectives of the writer's study or
+%outlining its main activity or findings.
+%5. Optional statement(s) that provide a
+%positive value or justification for
+%carrying out the study.
+
+%\section{RISC-V and Open-source processors}
+
+\section{Motivation}
+
+\tmp{TODO: Skriv om. Dette er direkte fra prosjektoppgaven}
+
+With the end of Dennard scaling and the recent slowdown of Moore's Law, achieving performance and energy efficiency improvements from scaling down the transistors is getting exponentially harder \cite{hennessy_computer_2019}. This has led to a shift from general-purpose processor cores to \textit{domain-specific architectures (DSAs)}. Companies need to specialize their processors to achieve higher performance and lower energy instead of using an available general-purpose processor \cite{}. 
+
+%With more companies getting their hands dirty
+
+The growing demand for specialized processors has also led to a demand for an open and modular \textit{Instruction Set Architecture (ISA)}. The RISC-V ISA, originally developed at UC Berkeley in 2010 \cite{patterson_computer_2021}, has recently gained popularity in academia and industry because of its open-source nature and modularity. The ISA consists of a base architecture with the possibility to add functionality through various standard or custom extensions\cite{waterman_risc-v_2019}. This flexibility is particularly useful for DSAs, allowing designers to start with a minimal processor and extend it with only the required features. Custom extensions enable compute-intensive tasks to be implemented in hardware and accessed through custom instructions. 
+
+Being an open-source ISA, RISC-V can be used and modified by anyone without a licensing fee. This allows a low barrier to entry and collaboration between developers and researchers. The open nature of RISC-V open-source ISA has also led to an increasingly large ecosystem of open-source processors. One such example is the CV32E40X, a processor core from the CORE-V family of processor cores from the OpenHW Group, a global organization of many companies working together to make open-source cores, tools, and software \cite{taylor_advanced_2023}. The CV32E40X is a relatively small and efficient core with a 4-stage pipeline. The core can be configured with different extensions, and also supports extending the CPU with external extensions through the eXtension interface (XIF) \cite{openhw_group_cv32e4_2022}. This processor will be used as an example throughout the project.
+
+%Previously, processor development has been done by a small handful of companies, but with the growing need for specialized processors, the need for an open and modular ISA has increased. 
+
+%\section{Processor verification \& the need for a reference model}
+
+
+Compared to trusted commercial solutions, the biggest barrier to adopting open-source processor IPs in a System-on-Chip (SoC) is the core's quality, particularly the verification effort invested in the core. Compared to open-source software, hardware typically has a much higher manufacturing cost, increasing the verification requirements \cite{kevin_mcdermott_openhw_2022}.
+With RISC-V, where anyone can make a processor, the verification responsibility is now moved from a few specialized IP suppliers to every SoC developer. 
+
+Therefore, a versatile and open verification environment is essential to RISC-V's continuing popularity and growth. Verification is a crucial aspect of processor development, consuming a significant portion of the overall development time. If every developer team were to build their verification environment from scratch, the adoption of RISC-V would likely stagnate.
+
+Conventional manual testing with predetermined outcomes can be time-consuming and inadequate to validate a processor's complex behavior thoroughly. Instead, constrained random testing is used to generate a wide range of test stimuli, covering many test cases. Variations of the "step-and-compare" methodology are widely used for processor verification \cite{taylor_advanced_2023}, where the \textit{Device Under Test (DUT)} processor core, written in \textit{Register Transfer Level (RTL)} code, runs in parallel with a golden \textit{Reference Model} written in a higher level language. This runs in a \textit{Universal Verification Methodology (UVM)} testbench environment where the DUT and the reference model are stepped through one instruction at a time. At the end of each instruction, the processor state of the DUT and reference model is compared.
+
+In RISC-V, the state of the processor is stored in multiple types of registers. The 32 \textit{general purpose registers (GPR)} are visible to the programmer, used for normal program execution, and are read from and written to by the instructions \cite{waterman_risc-v_2019}. Additionally, the \textit{program counter (PC)} is the register that holds the address of the current instruction \cite{waterman_risc-v_2019}. There is also a set of registers that are used to control and monitor the operation of the processor, called the \textit{Control and Status Registers (CSR)}. These GPR, CSR, and PC registers are compared at the end of every instruction.
+
+
+
+%\section{The challenge of verifying asynchronous events}
+
+For verification of normal instruction execution, using an \textit{Instruction Set Simulator (ISS)}, simulating the processor at the instruction level granularity is often sufficient. However, the ISS becomes inadequate when \textit{Asynchronous events}, such as interrupts and debug requests, interrupting the normal program flow, are introduced \cite{taylor_advanced_2023}. They pose a challenge because of the differing abstraction levels of the ISS and the RTL level of the DUT, which can lead to improper timing of interrupts and side effects. Asynchronous events in an ISS are synced to the beginning of an instruction, unlike in the RTL implementation, where asynchronous events can arrive at any cycle, and the timing can be affected by the state of the pipeline \cite{taylor_advanced_2023}.
+
+%\section{Approach/scope of the report}
+
+
+To overcome these limitations, the report will discuss the challenges in verifying asynchronous events and explore different approaches to building a reference model. The model will integrate a pipeline understanding and accurate interrupt simulation to solve these challenges.
+
+\Cref{ch:Background} will describe how interrupts are handled in RISC-V and how they are affected by the pipeline. We will also describe common verification techniques and verification environments, and introduce different Instruction Set Simulators.
+
+\Cref{ch:Reference Model} will discuss the design and architecture of a reference model featuring a pipeline shell modeled around an existing ISS. We will compare different pipeline shell implementations, existing ISSs, and interfaces between the pipeline shell and the ISS. The CV32E40X core from the OpenHW Group will be used as an example processor to model. Still, we will also consider how the reference model can be easily configurable to different cores.
+
+
+
+%\section{Requirements}
+%\begin{itemize}
+%    \item Cycle-level simulation
+%    \item Run in async lock-step-compare with openHW core (e.g. CV32E40X)
+%    \item Handle async events
+%    \item handle hardware real-time effects
+%    \item Pipeline understanding
+%    
+%\end{itemize}
+
+\section{Research Methodology}
+
+\tmp{Hvilke typer aktiviteter er utført for å finne svar på spørsmålene i oppgaven?}
+
+\section{Scope}
+
+\begin{itemize}
+    \item Implementation of CLINT interrupts, not CLIC, NMI, or debug requests, as many of the same principles apply to them. 
+\end{itemize}
+
+\section{Contributions}
+
+\begin{itemize}
+    \item Add Onespin support to core-v-verif
+    \item Expand CVA6 spike with enhanced rvfi support, injection of interrupts, state revertion, support for CV32E40S core
+    \item Pipeline shell implementation
+\end{itemize}
+
+
+\section{Outline}
+
+\begin{itemize}
+    \item Introduction
+    \item 
+\end{itemize}
+

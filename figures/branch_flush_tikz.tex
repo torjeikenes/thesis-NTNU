@@ -1,0 +1,69 @@
+\begin{ganttchart}[
+		x unit=1.4cm,
+		y unit chart=0.7cm,
+		canvas/.style={draw=none,fill=none}, % remove canvas borders, etc
+		vgrid={*{2}{draw=black!8}},           % vertical gray lines every unit
+		inline,                              % draw bars inline
+		group/.style={draw=none,fill=none},  % remove group borders, etc
+		bar top shift=0.1,                   % give bar 10% padding top/bottom
+		bar height=0.8,                      % bar size 80% of vertical space
+		y unit title=0.5cm,                  % crop titles a little smaller
+		title/.style={draw=none,fill=none},  % remove title borders, etc
+		include title in canvas=false        % no vertical grid in title
+	]{0}{4}
+
+    %\gantttitlelist{Cycle,IF,ID,EX,WB}{1}
+
+	\gantttitle{Cycle}{-1}
+	\gantttitle{IF}{3}
+	\gantttitle{ID}{-1}
+	\gantttitle{EX}{3}
+	\gantttitle{WB}{-1} \\
+
+	\ganttgroup[inline=false]{1}{0}{4}
+	\ganttbar[bar/.style={draw=black!80,fill=orange!40}  ]{1}{0}{0}\\
+ 
+	\ganttgroup[inline=false]{2}{0}{4}
+	\ganttbar[bar/.style={draw=black!80,fill=yellow!40}  ]{2}{0}{0}
+	\ganttbar[bar/.style={draw=black!80,fill=orange!40}  ]{1}{1}{1}\\
+ 
+	\ganttgroup[inline=false]{3}{0}{4}
+	\ganttbar[bar/.style={draw=black!80,fill=lime!40}    ]{3 B}{0}{0}
+	\ganttbar[bar/.style={draw=black!80,fill=yellow!40}  ]{2}{1}{1}
+	\ganttbar[bar/.style={draw=black!80,fill=orange!40}  ]{1}{2}{2}\\
+ 
+	\ganttgroup[inline=false]{4}{0}{4}
+	\ganttbar[bar/.style={draw=black!80,fill=green!40}   ]{4}{0}{0}
+	\ganttbar[bar/.style={draw=black!80,fill=lime!40}    ]{3 B}{1}{1} 
+	\ganttbar[bar/.style={draw=black!80,fill=yellow!40}  ]{2}{2}{2} 
+	\ganttbar[bar/.style={draw=black!80,fill=orange!40}  ]{1}{3}{3} \\
+ 
+	\ganttgroup[inline=false]{(Flush) 5}{0}{4}
+    \ganttbar[bar/.style={draw=black!80,fill=black!10}    ]{}{0}{0} 
+    \ganttbar[bar/.style={draw=black!80,fill=black!10}    ]{}{1}{1} 
+	\ganttbar[bar/.style={draw=black!80,fill=lime!40}    ]{3 B}{2}{2} 
+	\ganttbar[bar/.style={draw=black!80,fill=yellow!40}  ]{2}{3}{3}  \\
+
+
+	\ganttgroup[inline=false]{6}{0}{1}
+	\ganttbar[bar/.style={draw=black!80,fill=red!50}]{B1}{0}{0}
+	\ganttbar[bar/.style={draw=black!80,fill=lime!40}    ]{3 B}{3}{3} 
+    \\
+    
+	\ganttgroup[inline=false]{7}{0}{1}
+	\ganttbar[bar/.style={draw=black!80,fill=orange!80}    ]{B2}{0}{0}
+	\ganttbar[bar/.style={draw=black!80,fill=red!50}       ]{B1}{1}{1} \\
+	
+	\ganttgroup[inline=false]{8}{0}{1}
+	\ganttbar[bar/.style={draw=black!80,fill=yellow!80}    ]{B3}{0}{0}
+	\ganttbar[bar/.style={draw=black!80,fill=orange!80}    ]{B2}{1}{1}
+	\ganttbar[bar/.style={draw=black!80,fill=red!50}       ]{B1}{2}{2} \\
+ 
+	\ganttgroup[inline=false]{9}{0}{1}
+	\ganttbar[bar/.style={draw=black!80,fill=lime!80}      ]{B4}{0}{0}
+	\ganttbar[bar/.style={draw=black!80,fill=yellow!80}    ]{B3}{1}{1}
+	\ganttbar[bar/.style={draw=black!80,fill=orange!80}    ]{B2}{2}{2}
+	\ganttbar[bar/.style={draw=black!80,fill=red!50}       ]{B1}{3}{3} \\
+
+
+\end{ganttchart}

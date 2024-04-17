@@ -1,0 +1,275 @@
+\chapter{Reference Model}
+\label{ch:Reference Model}
+
+The main challenges discussed in \cref{sec:back_issProblem} are that when using an ISS as a reference model, asynchronous events can be taken at the wrong time, and the timing of the side effects can vary between the DUT and the reference model.
+This chapter will discuss multiple design choices to build a Reference Model that solves these challenges. To overcome these challenges, we should add a pipeline understanding to the model and use this to time asynchronous events and side effects correctly.
+
+Additionally, the model should be easily adaptable to different processor cores with different amounts of pipeline stages, allow for custom instructions to be easily integrated, and be easy to maintain. To achieve this, we will evaluate various design options in the following sections to find an optimal solution to meet the requirements. In \cref{sec:architecture}, we will discuss the basic architecture of the model, partitioning the design into a pipeline shell and an ISS. \Cref{sec:inOut} will cover the inputs and outputs to the model, \cref{sec:shell_iss_interaction} will discuss the different options for the interaction and partitioning of the model into the pipeline shell and the ISS. \Cref{sec:pipelineShell} will cover the implementation choices for the pipeline shell, and \cref{sec:choosingISS} will compare different Instruction Set Simulators to use in the reference model.
+
+
+%\section{Reference model design}
+%
+%\subsection{Design choices}
+%
+%\begin{itemize}
+%    \item Basic architecture
+%    \item Instruction inputs to the model. ELF vs UVM monitor vs RVFI input
+%    \item Asynchronous inputs to the model. UVM monitor vs RVFI vs RVVI
+%    \item Outputs from the model. RVFI
+%    \item Communication between ISS and Pipeline Shell. Closely linked vs Pipeline shell then ISS vs ISS then Pipeline shell.
+%    \item Pipeline shell implementation. Full simulation vs. ImperasDV vs. Simplified simulation
+%    \item Which ISS to build around
+%    \item Core configuration. How can the model account for different cores. What parts could be shared and which are core dependent.
+%\end{itemize}
+
+\section{Reference Model Architecture}
+\label{sec:architecture}
+
+The architecture of the Reference Model can be designed in various ways. This section will cover modeling the simulator using a micro-architectural simulator or an Instruction Set Simulator (ISS).
+
+\subsection{Model based on a Micro-architectural simulator}
+
+One approach is to build a reference model that architecturally operates the same way as the processor. This can be done either by modifying an existing micro-architectural simulator such as Gem5 from \cref{sec:gem5} or MARSS-RISCV from \cref{sec:marss}, or building it from the ground up. Using or building a micro-architectural model would allow a highly specialized model to be modeled to the specific processor. This would be very accurate but has some disadvantages.
+
+Building the entire simulator from the ground up around a specific core would be very time-consuming. A lot of the implementation would be to model core-independent RISC-V functionality, which already exists in ISSs. Additionally, building the system from the ground up increases the risk of introducing bugs into the model. Instead, we can use an existing micro-architectural simulator. These would then have to be modified both to support verification, like implementing lock-step execution and tracing, and the micro-architectural components need to be modified to support the verified core. These modifications also increase the risk of bugs. 
+
+Both of these solutions also limit the reuse of components for different processor cores and would require invasive modifications to support different processor cores. Because the functionality is embedded into multiple micro-architectural components, the modifications for different cores can also modify the functionality and RISC-V compliance of the model.
+
+One micro-architectural simulator we could use is MARSS-RISCV (\cref{sec:marss}). This is no longer in active development, with the last update in 2020. This is not ideal, as it would have to get the model back to an up-to-date state, and we could not rely on others to maintain the functionality and add new extensions.
+
+Gem5 is another micro-architectural simulator, introduced in \cref{sec:gem5}.
+It is powerful for architectural exploration and performance estimation but lacks some features useful in verification, like lock-step execution and trace output. The ability to insert custom instructions is also complicated. Gem5 already implements an in-order pipeline with its own intricacies. Since it already has a pipeline, modifying it to match the DUT core while ensuring the functionality is kept intact could be complicated. Gem5 also simulates close to the RTL level, meaning architectural bugs could be modeled in the DUT and Gem5 and not be found. \cite{noauthor_gem5_2023}
+
+
+\subsection{Model based on an Instruction Set Simulator}
+
+Another approach would be to utilize an existing ISS in the reference model. This can be done using a similar approach to the cycle-accurate simulators described in \Cref{sec:cycle-accurate}. One solution is a two-layered approach with one functional kernel and one timing shell. This partitioning allows the functional kernel to be independent of core specifics and be responsible for the functionality described in the ISA specification, while the timing shell is responsible for handling the core-specific timing of the pipeline and interaction with the rest of the system. This enhances the model's modularity, allowing the functional kernel to be reused for multiple cores, and only the timing shell requires modifications to fit different cores \cite{chiang_efficient_2009}.
+
+Using this approach, we can use a partitioning where an existing ISS can be used as the functional kernel, and we can build a specialized timing shell on top, referred to as the \textit{pipeline shell}.
+This can give the following advantages:
+
+\begin{itemize}
+    \item By using a widely tested and bug-free ISS, there are fewer possibilities of introducing bugs to the reference model. 
+    \item The ISS can be kept updated and maintained to remove bugs, keep up to date with extensions, and support adding custom extensions.
+    \item The ISS can be reused for multiple cores
+\end{itemize}
+
+However, a disadvantage is that we have to conform to the interface provided by the ISS or modify the ISS to fit the requirements needed in the model.
+
+\subsection{Architecture}
+
+Of the two approaches introduced above, the two-layered approach using an ISS achieves the best modularity, the lowest possibility of bugs, and is the easiest approach to ensure that the model is up-to-date in the future. Therefore, this approach will be used further to discuss the rest of the design choices in this chapter.
+
+\Cref{fig:env-block-diagram} shows a basic block diagram of the verification environment and the organization of the Reference Model with the proposed partitioning of the Reference Model into a \textit{Pipeline Shell} and an existing Instruction Set Simulator. 
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.75\linewidth]{pictures/ReferenceModelEnvironment.pdf}
+    \caption{A simplified block diagram of the verification environment and Reference Model Architecture.}
+    \label{fig:env-block-diagram}
+\end{figure}
+
+\section{Inputs and outputs to the reference model}
+\label{sec:inOut}
+
+This section will discuss the different choices of inputs and outputs from the reference model. The inputs to the model are instructions to execute, asynchronous interrupts, and asynchronous debug requests. To be used in a step-and-compare verification environment, the reference model should output the model's state changes through the RVFI interface described in \cref{sec:rvfi}. 
+
+\subsection{Instruction inputs}
+
+When loading instructions into the model, there are three choices: 
+we can either load an entire ELF file into the reference model, 
+use the instruction embedded in the RVFI item from the DUT, 
+or use a UVM monitor to monitor the instruction being fetched from the instruction memory from the DUT.
+
+Using the RVFI instructions and the instructions from the UVM monitor, the fetched instructions would follow the DUT. If the DUT fetches the wrong instruction, the reference model will also fetch the wrong instruction, and the bug will not be reported. If we load the ELF file into the reference model and separately fetch instructions from this file, we can verify if the DUT's instruction fetching works as intended. 
+
+\subsection{Asynchronous inputs}
+
+\subsubsection{RVFI triggered interrupt}
+
+In the approach used in the step-and-compare 2.0 methodology explained in \cref{sec:core-v-verif}, the reference model is not to be directly connected to the interrupt and debug generator. Instead, asynchronous events are signaled to the reference model (RM) through the RVFI interface output from the DUT \cite{taylor_advanced_2023}.
+
+When an asynchronous interrupt occurs in the DUT, it is notified over RVFI in the first retired instruction of the trap handler. To ensure the DUT and RM stay in sync, the RM will jump to the interrupt handler when the DUT reports the first instruction of the interrupt handler with \lstinline{rvfi_intr}.  If this is done, the DUT and RM will keep in sync as the RM is following the DUT.
+
+However, this is somewhat problematic as we can not verify if the interrupt was taken at the correct time or if the correct interrupt was taken. Therefore, we need another method to verify if the correct interrupt was taken at the correct time \cite{taylor_advanced_2023}.
+We also do not know when the asynchronous event happen, making the more advanced interrupt handling of the reference model difficult. 
+
+\subsubsection{Interrupts triggered independently of RVFI}
+
+To properly verify interrupts, we want to notify the reference model of interrupts independently of an RVFI instruction retirement when it arrives. 
+
+As the core-v-verif environment currently uses RVVI to communicate with the reference model, as explained in \cref{sec:core-v-verif}, using RVVI to interface with our reference model is convenient, to allow the reference model to be replaced easier, without modifying the verification environment too much.
+
+The RVVI-API supports this by setting the interrupt pin using the \lstinline{rvviRefNetSet(netIndex, value, when)} API. By using the \lstinline{when} parameter, we can specify which cycle the interrupt pins were set.
+
+This approach allows us to see exactly at what clock cycle the interrupt appears, which allows us to properly simulate the correct timing of the interrupt.
+
+%One possibility could be to look at the previous states when an interrupt happens and determine if an interrupt was allowed to happen. 
+%
+%We could possible "rebuild" the pipeline from the previous retired instructions, but not need to simulate the pipeline the entire time. 
+%
+%If the interrupt is inserted into the reference model at the right time, as well as being reported over rvfi....
+%we could 
+
+
+
+%\subsection{Types of reference models}
+%
+%cycle-accurate
+%
+%Discrete-event with time accounting models
+%
+%event models
+
+
+
+
+%\subsection{Reference model parallel to core.}
+%
+%\begin{itemize}
+%    \item Input is the same as the core input
+%    \item Possibly use an uvm agent to listen to bus transactions and feed into reference model 
+%    \item RVFI output
+%    \item Pass/Fail done by comparing RFVI from core and reference model
+%\end{itemize}
+
+%\subsection{RVFI input}
+%
+%\begin{itemize}
+%    \item Under normal execution, the pipeline is not simulated and the retired instruction from the core is fed into the ISS.
+%    \item When the reference model gets notified about an interrupt, it must "backtrack" and calculate the pipeline state and corresponding side-effects.
+%\end{itemize}
+
+
+%To avoid the complications with simulating the entire pipeline, we might get away with only knowing what state changes happen in each state for each instruction.
+%eg. what happens 2 cycles before instructions retire.
+
+
+\include{chapters/PipelineShell}
+
+\section{Pipeline shell and ISS interaction and partitioning}
+\label{sec:shell_iss_interaction}
+
+This section will cover the interconnection between the Pipeline shell and the ISS.
+As discussed in \cref{sec:spike} and \cref{sec:sail}, a common design in ISS implementations is a step function that executes the three functions: fetch, decode, and execute, where the execute function executes the ALU operations and writes back the results to register files. There are multiple ways of connecting the pipeline shell with the ISS, some of which will be discussed below. We assume the ELF file with instructions is loaded into the ISS for all the implementations.
+
+\subsection{Approach 1}
+\label{sec:app1}
+
+One approach is shown in \cref{fig:pipeline-iss-1}. This approach assumes a pipeline simulator with a slot for each stage, and the instructions move from slot to slot through the simulated pipeline, as discussed in \cref{sec:stagebased}. 
+
+From the dependency tree in \cref{fig:dependencyTree}, we see that the content of the IF stage does not directly affect whether an interrupt is allowed to be taken in the CV32E40X core. Additionally, as discussed \cref{sec:cv32Pipeline}, the IF stage is only responsible for updating the PC and fetching the instruction from memory but does not yet know what the instruction contains.
+
+Because of this, we can wait until the ID stage before interacting with the ISS. In the ID stage, we fetch and decode the next instruction and load the decoded instruction and the required register values into the ID slot of the pipeline simulator. Because we have the decoded instruction available, we can use this to calculate any hazards, halts, jumps, etc, in the ID stage. In the EX stage, we can use the decoded instructions to calculate halts, branches, etc. 
+
+Because executing and writeback are combined into one function in the ISS, we do not want to call the execute function from the execute stage to avoid the registers being written to at the wrong cycle. Therefore, we wait until the WB stage before running the execute+write-back function for registers to be updated at the correct time. 
+
+Since we decoded the instruction at the correct cycle, the values read from the register files in the ID stage should be correct in the WB. 
+
+One problem with this solution so far is that forwarding is not considered and will not work properly with a RAW hazard since there will be a 2-cycle delay from registers being read in the ID stage and used and calculated in the WB stage.
+Additionally, this solution assumes that no side effects are caused by the EX stage. If this is the case, for example, when communicating with the LSU, we might need to apply these side effects separately when simulating the EX stage.
+Waiting to run the execute function to the WB stage will also affect branches, as they are taken in the EX stage. Therefore, additional logic must be integrated into the pipeline shell to take branches at the correct cycle. 
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.5\linewidth]{pictures/pipeline-iss-1.pdf}
+    \caption{Pipeline shell and ISS interaction approach 1}
+    \label{fig:pipeline-iss-1}
+\end{figure}
+
+\subsection{Approach 2}
+\label{sec:app2}
+
+The second approach is shown in \cref{fig:pipeline-iss-2}. This approach is similar to the approach in \cref{sec:app2}, but splits up execution and write-back.
+This requires modifying the ISS to split up execution and write-back, returning a temporary result to the register file with a separate write-back function at a later stage.
+
+This allows us to fetch and decode in the ID stage and use the decoded instruction in the decode stage to calculate hazards, halts, jumps, etc. In the EX stage, we can call the execute function, execute the operation, cause potential side effects, or potentially branch, and get the temporary result from the execute function. In the WB stage, we can pass the temporary result to the write-back function to update the registers at the correct time.
+Since this approach reads from the register file in the ID stage and writes back in WB, we get the same dependencies as the RTL implementation. Therefore, we must implement forwarding, complicating things by moving register values between the different pipeline stages.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.5\linewidth]{pictures/pipeline-iss-2.pdf}
+    \caption{Pipeline shell and ISS interaction approach 2}
+    \label{fig:pipeline-iss-2}
+\end{figure}
+
+\subsection{Approach 3}
+\label{sec:app3}
+
+Another approach is similar to the implementation described in \cref{sec:cycle-accurate} and is shown in \cref{fig:pipeline-iss-3}. Here, the ISS is called once per instruction, executing fetch, decode, and execute before the resulting state changes are passed to the pipeline shell. In the pipeline shell, the results are used to calculate the timing. This approach could be implemented in a stage-based design like \cref{sec:stagebased} and a timing wheel approach like in \cref{sec:timeWheel}.
+
+We chose to keep the ISS intact instead of modifying it to split up the register file from the ISS. Keeping the ISS intact allows us to simplify the simulation by not simulating forwarding. This is because when the ISS operates normally, the registers are updated before executing the next instruction, so we avoid simulating forwarding for all instructions. Instead, we must take care of only the specific conditions where hazards exist and cause stalls. 
+
+Since the ISS immediately writes back to the register file, we do not achieve correct cycle-accurate behavior, as all effects of the instruction would be executed in the IF stage. Additionally, since the effects of the instruction are already executed in the IF stage when situations arise where the pipeline must be flushed, the changes done to the instructions still in the pipeline must be reverted. 
+
+To address these challenges, we could have a copy of the register file and CSR registers in the pipeline shell that gets updated at the correct clock cycles and is used to report the state changes through RVFI out of the reference model.
+
+This approach allows us to execute the whole step function in the ISS without much modification. This is also advantageous as different cores could have different requirements for interacting with the ISS at specific cycles, making this solution better suited to support different processor cores. Since the ISS interaction is standardized to a single function, the pipeline simulation is less constrained to the ISS interface. 
+
+Modifying the ISS to separate the register file can also be a tedious task, as the writeback functionality is often written into each specific instruction function in the ISS. Keeping the ISS intact will make it easier to maintain and keep updated.
+
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.5\linewidth]{pictures/pipeline-iss-3.pdf}
+    \caption{Pipeline shell and ISS interaction approach 3.}
+    \label{fig:pipeline-iss-3}
+\end{figure}
+
+\subsection{Comparison of pipeline shell to ISS approaches}
+\label{sec:pipeline-iss-comparison}
+
+Considering the three approaches above, each approach has multiple advantages and disadvantages.
+
+Approach 1 and 2 offer a tighter interconnection between the pipeline shell and the ISS, allowing us to utilize more features of the ISS while simulating the pipeline and closer resemblance to the actual RTL implementation. However, this tight coupling requires significant modifications to the ISS, altering the provided interface functions of the ISS and making it more difficult to update the ISS in the future.
+By splitting the instruction execution across the different pipeline stages, we alter the fundamental functionality of the ISS, where instead of executing one instruction at a time, it must juggle multiple instructions simultaneously, e.g., fetching one instruction before executing another instruction. This requires a thorough understanding of the ISS to ensure that it still operates as intended and that there are no unobvious interactions between the stages we do not consider.  
+
+Approach 3 circumvents these issues by not splitting up the step execution into multiple stages and instead using the step function often as part of the ISS API, allowing the ISS to fully complete an instruction before moving to the next. This is advantageous because we do not alter the ISS step functionality, and fewer modifications mean the ISS will be easier to keep up to date. Since the interaction between the pipeline shell and the ISS is not dependent on happening in a specific pipeline stage, it also makes approach 3 more adaptable to use with different processor cores. Additionally, by using approach 3, we put fewer constraints on the implementation of the pipeline shell, allowing both the stage-based simulator in \cref{sec:stagebased} and the time wheel simulation \cref{sec:timeWheel} to be used, compared to approach 1 and 2 that only allow the stage-based simulator approach. 
+%Since approach 3 is less 
+
+However, approach 3 also requires some modification to the ISS since it requires the pipeline shell to keep track of the state changes. Firstly, the ISS must be modified to report the state changes caused by each instruction when running the step function. Additionally, since we must keep a cycle-accurate version of the processor state outside of the ISS, we need to be able to update the register file and CSR values in the event of a pipeline flush to revert changes already applied to the instructions in the pipeline.
+
+In summary, approach 3 offers the best flexibility and intactness of the ISS and seems like the most suitable approach.
+
+%\subsection{Interrupt passing}
+%
+%\textbf{TODO}
+%
+%\subsection{Use register file from ISS or separate register file}
+%
+%\textbf{TODO}
+
+
+
+%\subsection{Approach 4}
+%\label{sec:app4}
+%
+%%Since all instruction essentially executes fully in the IF stage, we can not directly model the pipeline like in \cref{sec:app1} and \cref{sec:app2} above, with the instruction moving from slot to slot. For the next instruction to function properly and have access to the correct data, we can not wait until the WB stage to apply the changes since the next instruction will then calculate with the wrong data. Instead, we can follow the principle from \cite{chiang_efficient_2009}, implementing a time wheel holding all upcoming state changes for each clock cycle, a scheduler handling the implementation details, responsible for filling the time wheel, and a commander that sends commands to the ISS.
+%
+%When the time wheel reaches the clock cycle with an update event, all effects must be applied. Among other things, this requires updating the GPRs and CSRs used by the ISS.
+%
+%This requires modifying the ISS so the registers are not updated by the ISS when executing instructions but instead updated by the timing shell at the appropriate clock cycle. 
+%
+%When an interrupt occurs, the timing wheel must be analyzed to determine if the interrupt can be taken, and the timing wheel must then be updated to reflect the change of PC and flushing of pipeline stages.
+%
+%\begin{figure}[ht]
+%    \centering
+%    \includegraphics[width=0.5\linewidth]{pictures/pipeline-iss-4.pdf}
+%    \caption{Pipeline shell and ISS interaction approach 4}
+%    \label{fig:pipeline-iss-4}
+%\end{figure}
+%
+%
+%
+%Forwarding control also complicates this design. Since the whole instruction is executed simultaneously, the changes from previous instructions might not be applied yet, as they are applied in WB. 
+
+
+
+
+\include{chapters/ISS}
+
+%\subsection{Core configuration}
+%
+%The reference model should be easily configurable.
+%
+%To achieve this....

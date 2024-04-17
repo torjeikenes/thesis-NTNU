@@ -1,0 +1,484 @@
+\chapter{Pipeline Shell}
+
+%\textbf{\Cref{req:update}}
+%\textbf{\Cref{req:maintained}}
+
+
+\tmp{Describe what the pipeline shell is and what it should do}
+
+\section{Implementation strategy}
+
+\begin{enumerate}
+    \item Implement Spike integration by stepping spike when the core retires an instruction.
+    \item This should pass all synchronous tests, but not asynchronous interrupt and debug tests
+    \item Make test to pass interrupts to the RM and core
+    \item Pass interrupts to spike in sync with RVFI from the core to develop correct interrupt handling in spike
+    \item Pass interrupts to RM asynchronously. The directed test should fail since no pipeline shell is implemented
+    \item Develop pipeline shell to correctly time interrupts. The directed test should pass
+    \begin{enumerate}
+        \item Model simple sequential pipeline that passes synchronous tests
+        \item Correctly model each of the signals in \sv{interrupt_allowed} to properly time interrupts
+        \item Correctly move the instructions through the pipeline so the signals in \sv{interrupt_allowed} are properly timed
+    \end{enumerate}
+\end{enumerate}
+
+\subsection{General design choices}
+
+\begin{itemize}
+    \item Keep the pipeline shell as simple as possible. Let the ISS do as much work as possible
+    \item Keep core specialized parts contained
+\end{itemize}
+
+
+\section{Dependency of core}
+
+When deciding when instructions should move through the pipeline shell, there are multiple options. We can separate these options the two categories; A \textit{retirement dependent approach}, where instructions are moved through the pipeline based on retirements from the core, and a \textit{core independent approach} where the reference model is fully independent of the core and has to fully model the pipeline movement independent on what the core does. 
+
+\subsection{Retirement dependent pipeline shell}
+
+In a retirement-dependent pipeline shell, instructions are moved through the pipeline stages based on instruction retirements from the core. This is similar to a \textit{step-and-compare} approach from \Cref{sec:step-and-compare} where the ISS steps through an instruction when an instruction retires from the core. This allows the core and reference model to easily stay in sync without exactly mirroring the cycle-accurate execution of the core.
+
+
+\subsection{Core independent pipeline shell}
+
+In a core-independent pipeline shell, the execution would be fully independent of the core, and the movement of instructions through the pipeline would be completely contained in the pipeline shell. This complicates the pipeline shell because the pipeline shell has to exactly mirror the execution of the core at every cycle. To do this it needs to account for forwarding hazards and stalls, the exact cycle delay for \acrshort{lsu} operations, the exact cycle count of mulit-cycle instructions, etc.
+
+Instructions can be moved through the pipeline mirroring the functionality of the core, where every clock each stage reports if it is ready to receive new data, and if each stage has valid data ready, and uses this to move the data through the pipeline. Additionally, there are signals for pending interrupts, jumps, branches, exceptions, multi-cycle instructions in progress, etc. that must be considered. 
+
+
+\tmp{Use multi-cycle table from user manual}
+\tmp{40s security feature}
+
+\subsection{comparison}
+
+\begin{table}[htb]
+\centering
+\caption{Comparison of retirement and clock driven pipeline}
+\label{tab:retirementvsclock}
+\begin{tabularx}{\textwidth}{|p{15mm}|*{2}{>{\arraybackslash} X |}}
+\hline
+ & Advantages & Disadvantages \\
+\hline
+Retirement dependent
+& \begin{itemize}
+\item Simpler to model
+\item Lower chance of implementing bugs from the core
+\end{itemize}
+& \begin{itemize}
+\item Does not test if instructions retire after the right amount of cycles (Not that important?)
+\item Add specific stall cases instead of movement cases
+\item Will not be equal at every clock cycle
+\item 
+\end{itemize} \\
+\hline
+Core independent
+& \begin{itemize}
+\item Cycle-accurate equal to core
+\item 
+\end{itemize}
+& \begin{itemize}
+\item Hard to implement. Esentially all timing related implementations must be implemented in the core
+\end{itemize} \\
+\hline
+\end{tabularx}
+\end{table}
+
+
+We only need to know the state after each retirement, but cycle-accurate detail influences this as explained in \ref{}\tmp{TODO}.
+Since we only compare the core and reference model at instruction retirements, it might be sufficient with a retirement-dependent pipeline shell. If this works, it would be easier to implement and less complicated. We would not need to model as much of the core-specific details. To avoid the possibility of implementing the same bugs that might be in the core, we want to avoid implementing detailed core-specific details as much as possible.
+
+We will focus on a retirement-dependent pipeline shell going forward to determine if this is sufficient. 
+
+
+
+%\begin{enumerate}
+%    \item Should the pipeline shell calculate the correct clock cycle for each instruction? Hard for division etc which is variable.
+%    \item Can retirements be used and potential "bubbles" be calculated instead of all details 
+%    \item What in the dependency graph can be wrong if we only move the pipeline on retirements?
+%    \item - Can these occurrences be specifically handled, instead of accurately calculating all "instruction movements?"
+%    \item How should stalls be calculated?
+%    \item How should pipeline flushes be handled?
+%    \item How should multi cycle instruction be handled?
+%\end{enumerate}
+
+
+\section{Datapath / Pipeline modules design}
+
+\subsection{Pipeline stages}
+
+\textbf{Design choice:} Use a generic pipeline stage module, or specific for each stage?
+
+For the IF stage, we call the \sv{iss_step()}function to step spike. This can either be done inside of the if module with a specific stage module, or outside the module and passed in as a \sv{pipe_stage_t} input, that is used by the other stages to move data from the previous stage.
+
+\tmp{The core has a delay between the WB stage and the RVFI output, replicate this in the RM or use straight out of WB?}
+
+
+\tmp{General or specific pipeline stage modules? IF and WB are slightly different compared to the others.}
+
+\tmp{pipeline stage register content}
+
+RVFI from ISS: \textbf{\Cref{req:state}}
+
+\tmp{How are valid instructions tracked}
+
+\section{Controller module design}
+
+\subsection{Requirements}
+
+\begin{enumerate}
+    \item Determine when to step the ISS and pipeline stages based on retirements from the core
+    \item Control flushing of the pipeline stages
+    \item Control if an interrupt can be taken and corresponding flushing
+    \item Fill up pipeline after flushing
+    \item Control the ISS state revertion?
+\end{enumerate}
+
+\tmp{FSM?}
+
+\subsection{instruction stepping}
+
+When implementing a retirement dependent pipeline shell, we want to step the the ISS and pipeline stages when the core retires and instruction. 
+
+\textbf{\Cref{req:step}}
+
+\subsection{flushing/stalling}
+
+\section{Taking an interrupt}
+
+\textbf{\Cref{req:interrupt}}
+
+\begin{lstlisting}
+irq signal set
+
+interrupt_allowed == 1
+
+if pending interrupt and interrrupt allowed
+    kill if, id, ex, and wb
+    set cause
+    ack interrupt
+    store csr irq
+    set \sv{pc_set=1} and \sv{pc_mux} to \sv{PC_TRAP_IRQ}
+    Store the PC of the oldest valid instruction
+
+    CLOCK tick
+
+    in IF:
+        \lstinline{case pc_mux}
+        \lstinline{branch_addr_n = mtvec_addr_i, ctrlr_fsm_i.mtvec_pc_mux, 2'b00]; }
+        
+
+
+\end{lstlisting}
+
+
+\tmp{Use ISS to determine if it can be taken?}
+
+ In the core, an interrupt is taken if both \sv{pending_interrupt} and \sv{interrupt_allowed} is true. \sv{interrupt_allowed} is explained in \Cref{sec:interrupttiming}. \sv{pending_interrupt} is high if an interrupt is set on \sv{irq_q} and the same bit is enabled in the \sv{mie} \acrshort{csr}. Additionally, the \sv{mstatus.mie} global interrupt enable \acrshort{csr} must be set, and the privilege level muse be below 
+
+By expanding the signals responsible for \sv{pending interrupt}, we get the expression in \Cref{lst:pending_interrupt}
+
+\begin{systemverilog}[label={lst:pending_interrupt}, caption={Signal requirements for \sv{pending_interrupt}}]
+    pending_interrupt = 
+    irq_req_ctrl_o = (|irq_local_qual) && global_irq_enable = 
+    (|irq_local_qual) && (mstatis_i.mie || (priv_lvl_i < PRIV_LVL_M) = 
+    (|(irq_q & mie_i)) && (mstatis_i.mie || (priv_lvl_i < PRIV_LVL_M)
+\end{systemverilog}
+
+When \sv{pending_interrupt} is high, we know that the interrupt on \sv{irq_q} will actually be taken if \sv{interrupt_allowed} also is high. 
+
+Compared to the core, the pipeline shell of the reference model does not have access to all the CSRs without exporting them from the \acrshort{iss}. In order to determine if an incoming interrupt will actually be taken, we need to know the values of \sv{mie}, \sv{mstatus.mie} and the privilege level. As these are all kept inside the \acrshort{iss}, we either have to export these from the ISS, or determine if the interrupt will be taken inside the ISS. 
+
+This check can be combined with the \sv{iss_intr(irq)} used to signal a new interrupt to the ISS. The function can return true if the signaled interrupt will be taken, and false if any of the CRSs will cause the interrupt to not be taken. The \sv{interrupt_allowed} signal does not depend on the ISS, but rather the content of the pipeline, so the ISS will only calculate the \sv{pending_interrupt} signal. Because of this, the \sv{iss_intr(irq)} function should only be called when the \sv{interrupt_allowed} signal is high. If it is low, the processor execution should continue as usual until \sv{interrupt_allowed} goes high.
+
+In the core, the \sv{mip} bits are set every clock cycle independently of the value of \sv{interrupt_allowed} or if interrupts are enabled in the \acrshort{csr}s \cite{}.
+
+\subsubsection{Scenario: Set mip while \sv{interrupt_allowed = 1} and interrupt enabled.}
+
+Interrupt should be taken immediately.
+
+\subsubsection{Scenario: Set mip  while \sv{interrupt_allowed = 0}, interrupt enabled. Then set \sv{interrupt_allowed = 1}}
+
+Interrupt should be taken when \sv{interrupt_allowed} goes to 1. mip should remain set while \sv{interrupt_allowed} is 0
+
+\subsubsection{Scenario: Set mip  while \sv{interrupt_allowed = 1} and mie disabled, then later enable mie }
+
+\subsubsection{Scenario: Set mip  while \sv{interrupt_allowed = 0} and mie disabled, then later enabled enable mie, and set \sv{interrupt_allowed = 1}}
+
+
+\textbf{Design choice:} Call \sv{iss_intr()} every retirement, when mip changes, only when interrupts are allowed, only when interrupts are enabled?
+
+\subsubsection{requirements}
+
+\sv{mip} should remain set or not while \sv{irq_q}
+In the core \sv{mip} directly follows \sv{irq_q}, independently of the other signals. 
+
+\textbf{Design choice:} should \sv{mip} in the ISS be set every clock, every time \sv{irq_q} changes, or only when an \sv{interrupt_allowed == 1}?
+
+The \sv{iss_intr} function can be expanded take \sv{irq_q} and \sv{interrupt_allowed} as inputs. This way, it can be called either every clock, every retirement, or every time \sv{irq_q} changes. If \sv{interrupt_allowed == 0}, then the mip will be set, but the interrupt should not be taken. 
+
+In spike this functionality is not possible. If \sv{mip} is set, and the interrupt is enabled through the CSRs, the interrupt will be taken the next time spike steps. It is therefore not possible to disable an interrupt with \sv{interrupt_allowed} while keeping all the CSRs identical to the core. To implement the \sv{interrupt_allowed} functionality, we must either only set the \sv{mip} bits when \sv{interrupt_allowed == 1}, disable the interrupt via a CSR like \sv{mstatus.mie}, or internally modify spike to implement an additional check on a new \sv{interrupt_allowed} variable before taking an interrupt, for example modifying \ccode{void processor_t::take_interrupt(reg_t pending_interrupts)} from \file{processor.cc} \cite{SpikeRISCVISA2023}. 
+
+In order to minimize modifications to the internal Spike code, and minimize the effect on other parts of the code, we choose to only set the \sv{mip} bits only when \sv{interrupt_allowed == 1}. 
+
+This check can either be done in the \sv{iss_intr()} function, or before calling the function. To support the possibility changing to a solution where \sv{mip} is set independently of \sv{interrupt_allowed} like above, we implement the \sv{interrupt_allowed} check inside \sv{iss_intr()} to allow the rest of the code to be unchanged in both implementations.
+
+
+Regarding when to call the \sv{iss_intr()} function, the simplest implementation might be to call it at every positive clock edge. This avoids extra checks outside \sv{iss_intr()} to determine when it can and should be called, but instead keeps these check inside the function, dependent on implementation. 
+
+
+
+To signal to the pipeline when to flush the pipeline because the interrupt is taken, we can either use the return of \sv{iss_intr()} that says when the interrupt should be taken, or use the RVFI output from the ISS. The RVFI is only output when the core retires an instruction, but there can be some time between when the interrupt is applied and when the core retires an instruction. The \sv{interrupt_taken} signal from \sv{iss_intr()} signals when the interrutp can be taken the clock after the interrupt is signaled, more closely resembling the core functionality. 
+
+When the \sv{interrupt_taken} signal goes high, we should flush the pipeline, make the ISS take the interrupt, and fill up the pipeline so the next instruction retirement outputs the RVFI from the interrupt handler.
+
+
+
+\subsection{Pipeline flushing}
+
+\tmp{Must the pipeline be flushed on branches or jumps?}
+
+\tmp{If the ISS reports a jump or branch we can flush the pipeline.}
+
+When the interrupt is taken, the remaining instructions in the pipeline must be \glsdisp{flush}{flushed}. This requires that the instructions in the pipeline should be set to 0, and the \sv{valid} signal be set to \sv{0}. This can be done by adding a signals \sv{if_kill, id_kill, ex_kill,} and \sv{wb_kill} to each pipeline stage that kills each stage.
+
+To fill the pipeline back up we can use the \sv{pipe_count} variable to store how "full" the pipeline is. To flush the pipeline, the functionality in \Cref{lst:pipe_count}
+
+\begin{systemverilog}[label={lst:pipe_count}, caption={Systemverilog code for filling the pipeline at the start and after a flush.}]
+     // Count the amount of filled pipeline stages at the start 
+    always_ff @(posedge clk) begin
+        if (rst_n == 1'b0 || interrupt_taken_i)begin 
+            pipe_count <= 0;
+        end else if (pipe_count < 2) begin
+            pipe_count <= pipe_count + 1;
+        end else begin
+            pipe_count <= pipe_count;
+        end
+    end
+
+    // step the pipeline until the first stages are filled up to be in sync with the core
+    always_comb begin
+        if (pipe_count < 2) begin
+            step <= 1'b1;
+        end
+        else if (rvfi_i.rvfi_valid) begin
+            step <= 1'b1;
+        end
+        else begin
+            step <= 1'b0;
+        end
+
+    end
+\end{systemverilog}
+
+
+This is enough for a traditional pipeline where the instructions are committed in the last stage, but in our pipeline shell it gets more complicated because the instructions in the pipeline shell have already been fully executed in the ISS, and side effects have been applied. This is fine for normal execution, but requires that the ISS should be reverted to the state before the flushed instructions were executed.
+
+
+\subsubsection{Experiment (Commit 0c2bc90c)}
+
+\begin{clisting}
+int customTest() {
+    uint8_t interrupt = 16;
+    
+    printf("Division Test \n");
+
+    active_test = 0;
+
+    mstatus_mie_enable();
+
+    //Enable all interrupts
+    volatile uint32_t mie = (uint32_t) -1;
+    __asm__ volatile("csrw mie, %0" : : "r" (mie));
+
+    uint32_t a = 0x12341234;
+    uint32_t b = 0x00004567;
+    uint32_t result;
+
+    __asm__ volatile("divu %0, %1, %2\n\t" : "=r" (result) : "r" (a), "r" (b));
+
+    //Time interrupt in the middle of the division instruction
+    mm_ram_assert_irq(0x1 << 16, 55);
+    __asm__ volatile("divu %0, %1, %2\n\t" : "=r" (result) : "r" (a), "r" (b));
+    __asm__ volatile("divu %0, %1, %2\n\t" : "=r" (result) : "r" (a), "r" (b));
+    __asm__ volatile("divu %0, %1, %2\n\t" : "=r" (result) : "r" (a), "r" (b));
+
+    mstatus_mie_disable();
+
+    mie_disable(interrupt);
+
+    return EXIT_SUCCESS;
+}
+\end{clisting}
+
+The test applies an interrupt in the middle of an \rv{divu} instruction. During the instruction, \sv{interrupt_allowed} is stable high, so the interrupt should be taken immediately, aborting the current instruction.
+
+Running the division test in \sv{custom_test()} in \file{custom_interrupt_test.c} 
+The test is run with an implementation of flushing of pipeline stages, but not the discussed reversion of the spike states. 
+When applying an interrupt in the middle of a long division operation, the interrupts are taken at the same retirement in the core and RM.
+
+The problem arises in the interrupt handler and when returning after the interrupt handling as shown in \Cref{lst:divtest_error}.
+In the core, instruction \sv{0000135c} was the last to finish, while in spike \sv{00001360} and \sv{00001364} were fully executed before being placed in the pipeline. The test fails first in the interrupt handler because the registers differ between the core and the RM because the RM wrote to registers that were not written to in the core. When returning from the trap handler, spike has stored another PC to \sv{mepc}, since it executed more instructions before being interrupted. This causes the execution to continue 2 instruction ahead of the core after returning from the interrupt handler. 
+
+
+\begin{terminal}[caption={Errors from division test.}, label={lst:divtest_error}]
+UVM_ERROR @ 13518.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(48) reporter [Step-and-Compare] rd1_wdata core=0x12341234 and rm=0x00004325 PC=0x000008b8
+# UVM_ERROR @ 13677.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(48) reporter [Step-and-Compare] rd1_addr core=0x0000000d and rm=0x00000001 PC=0x00001360
+# UVM_ERROR @ 13677.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(48) reporter [Step-and-Compare] rd1_wdata core=0x00000007 and rm=0x00000368 PC=0x00001360
+# UVM_ERROR @ 13677.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=1368 rvfi_core.pc_rdata=1360
+# UVM_ERROR @ 13677.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(77) reporter [RVFI_INSN] rvfi_rm.insn=fffff097 rvfi_core.insn=2e7d6b3
+\end{terminal}
+
+\section{State revertion}
+
+\tmp{How and why state revertion?}
+
+\tmp{requirement from ISS}
+
+\textbf{\Cref{req:revertState}}
+
+
+%\section{Instruction package}
+%
+%In a sequential pipeline we should send each instruction with corresponding data through the pipeline. This section will discuss the contents necessary in this "instruction package".
+%
+%\begin{itemize}
+%    \item PC - Useful for debug and unique identifier for each instruction
+%    \item opcode - used to find instruction timings using Table 4 from \url{https://docs.openhwgroup.org/projects/cv32e40s-user-manual/en/latest/pipeline.html} 
+%\end{itemize}
+%
+
+\section{Filling the pipeline}
+
+For the core and reference model to run in sync, we need to sync the first retirement of the core and reference model. If we drive pipeline with clock cycles and accurate simulation, this will be handled automatically, but if we drive the pipeline based on retirements from the core, this is more complicated.
+
+When starting with an empty pipeline, the core will fill up its pipeline until retirement before the reference model starts to fill its pipeline. 
+
+One solution is to step the pipeline 3 times in the initial block, to move the first instruction into the ex stage. When the first instruction retires from the core, the pipeline will step the same instruction into the WB stage, and output the instruction retirement via RVFI. 
+
+
+%\section{Questions}
+%
+%\begin{enumerate}
+%    \item Should the pipeline shell or iss decide if an interrupt should be taken?
+%    \item Should instructions be moved based on clock cycles or core retirements?
+%    \item - Should the pipeline shell calculate the correct clock cycle for each instruction? Hard for division etc which is variable.
+%    \item - Can retirements be used and potential "bubbles" be calculated instead of all details 
+%    \item - What in the dependency graph can be wrong if we only move the pipeline on retirements?
+%    \item - - Can these occurrences be specifically handled, instead of accurately calculating all "instruction movements?"
+%    \item How should stalls be calculated?
+%    \item How should pipeline flushes be handled?
+%    \item How should multi cycle instruction be handled?
+%\end{enumerate}
+
+
+%\subsection{How should instructions be moved through the pipeline?}
+
+\section{interrupt timing}
+\label{sec:interrupttiming}
+
+In the core, whether interrupts can be taken based on the signals in \cref{lst:interrupt_allowed}. For the reference model to correctly mirror the behavior of the core, it should also determine if interrupts are allowed based on the same parameters.
+
+
+\begin{systemverilog}[caption={Requirements for an interrupt to be taken by the core from \file{rtl/cv32e40s_controller_fsm.sv} \cite{OpenhwgroupCv32e40s2024}.}, label={lst:interrupt_allowed}]
+  assign interrupt_allowed = lsu_interruptible_i && debug_interruptible && 
+                             !fencei_ongoing && !clic_ptr_in_pipeline && 
+                             sequence_interruptible && !interrupt_blanking_q && 
+                             !csr_flush_ack_q && !(ctrl_fsm_cs == SLEEP);
+\end{systemverilog}
+
+The following sections will cover how the reference model can correctly model the different parameters deciding if interrupts are allowed.
+
+
+\tmp{Directly inject the \sv{interrupt_allowed} signal from the core??}
+
+
+\subsection{LSU interruptible}
+
+
+No data request in WB
+
+\begin{systemverilog}[caption={Description of when \sv{lsu_interruptible} is high from \file{rtl/cv32e40s_load_store_unit.sv}}, label={lst:lsu_interruptible_spec}]
+  //////////////////////////////////////////////////////////////////////////////
+  // Check if LSU is interruptible
+  //////////////////////////////////////////////////////////////////////////////
+  // OBI protocol should not be violated. For non-buffered writes, the trans_
+  // signals are fed directly through to the OBI interface. Buffered writes that have
+  // been accepted by the write buffer will complete regardless of interrupts,
+  // debug and killing of stages.
+  //
+  // A trans_valid that has been high for at least one clock cycle is not
+  // allowed to retract.
+  //
+  // LSU instructions shall not be interrupted/killed if the address phase is
+  // already done, the instruction must finish with resp_valid=1 in WB
+  // stage (cnt_q > 0 until resp_valid becomes 1)
+  //
+  // For misaligned split instructions, we may interrupt during the first
+  // cycle of the first half. If the first half stays in EX for more than one
+  // cycle, we cannot interrupt it (trans_valid_q == 1). When the first half
+  // goes to WB, cnt_q != 0 will block interrupts. If the first half finishes
+  // in WB before the second half gets grant, trans_valid_q will again be
+  // 1 and block interrupts, and cnt_q will block the last half while it is in
+  // WB. 
+\end{systemverilog}
+
+The \sv{lsu_interruptible} signal is controlled by the \acrshort{lsu} in the core. It goes low when the transition has been valid for at least one clock cycle or har outstanding requests. It is reset when the transaction is done. 
+
+The amount of outstanding transfer requests is signaled by a counter \sv{cnt_q}, that counts up when a transfer request is accepted, and counts down when the transfer is done with \sv{resp_valid}.
+
+To simulate this in the reference model, we have a few considerations. We have to time when a memory request is issued, and when the response is valid.
+
+\textbf{approach 1:}
+\sv{lsu_interruptible} can be set low one cycle after a load/store instruction arrives in the EX stage.
+\sv{lsu_interruptible} can be set high again when the load/store instruction retires from the WB stage.
+
+\textbf{approach 2:}
+\sv{lsu_interruptible} can be set low one cycle after a load/store instruction arrives in the EX stage.
+The amount of clock cycles can be calculated given the instruction. Load/store instructions are handled in 1 bus transaction, while misaligned word transfers and halfword transforms use two bus transactions with two cycles in EX and 2 in WB \cite{openhwgroupPipelineDetails2023}. This can potentially be used to calculate how long \sv{lsu_interruptible} should be low.
+
+\textbf{approach 3:}
+A uvm agent listening to OBI transactions can be used to time requests and responses to correctly simulate the \sv{lsu_interruptible} signal. This is less independent of the core execution since the timing of requests is done from the core. To avoid being dependent on the core, we can use the OBI agent to only listen for responses, but start the requests from the reference model.
+
+
+\subsubsection{experiment:}
+Will the timing of LSU requests be correct in approaches 1 and 2 by setting \sv{lsu_interruptible} low one cycle after a load/store instruction arrives in the EX stage?
+
+\subsubsection{Implementation Approach 1}
+
+To correctly time LSU requests, LSU instructions must be identified in the EX stage. To achieve this, the RVFI signals received from the ISS must be used to decide whether the instruction is a valid LSU instruction. We can either add a special signal dedicated to this or use the existing RVFI signals. To keep the RVFI interface as close as possible to the standard, it is beneficial to use the signals as they are. 
+
+
+Instead of analyzing the instruction to check if it has a memory operation, check if the memory operation is valid, etc. We can let the ISS do the work, and utilize the RVFI signals to see if a memory operation was done in the ISS. RVFI has multiple memory signals that can be used. The masks \sv{rvfi_mem_rmask} and \sv{rvfi_mem_wmask} are non-zero for read and write operations respectively. We can use these signals to determine if there is a read or write operation in the EX stage.
+
+From the specification in \Cref{lst:lsu_interruptible_spec} we see that the \sv{lsu_interruptible} signal should go low one cycle after a memory request is passed to the LSU in the EX stage, and it should go high again when a memory response is received in the WB stage. 
+
+To do this in the reference model, we can utilize a  
+
+
+
+\subsection{sequence interruptible}
+
+\subsection{interrupt blanking}
+
+
+
+\subsection{debug interruptible}
+debug conditions
+\subsection{fencei ongoing}
+\subsection{clic ptr in pipeline}
+\subsection{csr flush }
+\subsection{}
+\subsection{}
+
+
+
+
+\tmp{TODO: how is the pipeline shell similar and different to a normal pipeline.}
+
+
+\section{Other asynchronous events}
+\tmp{TODO: Possibly move to a better place?}
+
+\tmp{Discuss how relevant interrupt handling is to how debug, nmi, etc. are handled }
+
+\tmp{Justify that the thesis focuses on CLINT interrupts, because debug etc are similar.}
