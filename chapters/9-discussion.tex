@@ -1,9 +1,20 @@
 \chapter{Discussion}
+\tmp{TODO}
 
 \tmp{What makes this different from other solutions? (and where to discuss this?)}
+
+\tmp{What works?}
+
+\tmp{What doesn't work?}
 
 \section{limitations}
 
 \begin{itemize}
     \item When a branch happens, the pipeline will not have the same pipeline elements in IF and ID before the branch is taken. Because the ISS takes the branch before loading the rvfi into IF, the RM pipeline will always have the correct instruction in the pipeline stages, compared to the core which might have incorrect instruction in IF and ID before a branch is taken. \tmp{This might not be an issue}
 \end{itemize}
+
+
+\chapter{Future Work}
+\tmp{TODO}
+
+ImperasDV type implementation using spike state reversion to test all legal combinations of states.

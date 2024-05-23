@@ -10,7 +10,7 @@
 %\usepackage{paralist}
 %\usepackage{subfig}
 
-
+\usepackage{svg}
 
 \usepackage{pgfgantt}
 \definecolor{blue}{HTML}{74BBC9}
@@ -47,7 +47,9 @@
 {}
 %\begin{lstlisting}[label={lst:async_int_1},caption={Trace output from asynchronous interrupts without pipeline shell}]
 
-\crefname{req}{ISS Requirement}{ISS Requirements}
+\crefname{rmReq}{RM Requirement}{RM Requirements}
+\crefname{psReq}{PS Requirement}{PS Requirements}
+\crefname{issReq}{ISS Requirement}{ISS Requirements}
 
 \title{Designing a RISC-V Reference Model for Open Source Processor Cores}
 \shorttitle{RISC-V Reference Model}
@@ -89,11 +91,12 @@
 \input{chapters/6-ISS}
 
 \input{chapters/7-Formal}
-%\input{chapters/7-results}
 
-\input{chapters/8-discussion}
+\input{chapters/8-results}
 
-\input{chapters/9-conclusion}
+\input{chapters/9-discussion}
+
+\input{chapters/10-conclusion}
 
 
 

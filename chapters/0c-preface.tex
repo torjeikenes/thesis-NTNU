@@ -1,7 +1,8 @@
 \chapter*{Preface}
 
+\section*{Acknowledgments}
 
-\section{Previous work}
+\section*{Previous work}
 
 Before this thesis, the author wrote a specialization project report \cite{torjenygaardeikenesDesigningRISCVReference2023}. The chapters and sections listed below have been reused with varying resemblance to \cite{torjenygaardeikenesDesigningRISCVReference2023}. The findings from the report will be presented in \cref{sec:specialization}.
 
@@ -13,7 +14,40 @@ Before this thesis, the author wrote a specialization project report \cite{torje
 \end{enumerate}
 
 
+\section*{Project despciption}
+Designing a RISC-V Reference Model for Open Source Processor Cores
+RISC-V is an open-source Instruction Set Architecture (ISA) that has gained remarkable traction in the semiconductor industry. However, verifying processors is a complex task and a bottleneck for RISC-V adaption. A common approach is to use constrained random verification in conjunction with a reference model to check the equivalence between the DUT and the model. 
+For a reference model-based approach to be feasible, the reference model should have a higher abstraction level than the RTL level of the core. This is necessary to reduce implementation time, ensure a modular design that can be adapted by multiple cores, and avoid the same bugs in both the core and reference model. 
+One bottleneck in verification is asynchronous events like interrupts and debug requests. To properly verify these, the model needs to have a pipeline understanding that is not present in Instruction Set Simulators (ISSs) often used today. To address this gap, this thesis will evaluate whether building a Reference Model with a “Pipeline Shell” on top of an existing ISS is a viable approach to efficiently and thoroughly verify asynchronous and synchronous events while keeping the abstraction level as high as possible. Additionally, we will evaluate if this approach can be made compatible with formal methods.
 
+\begin{itemize}
+    \item Summarize relevant findings from specialization project
+    \item Do a literature review of formal verification
+    \item Design, architect, and implement the reference model
+    \begin{itemize}
+        \item Initially RV32I, with later extensions for CV32E40S/X, and interrupts and debug requests.
+        \item Evaluate whether a “formal friendly” approach written in Systemverilog and Sail or a “traditional” simulation approach with Spike and C++ is the best approach.
+        \begin{itemize}
+            \item Evaluate if sail-riscv can be converted to SystemVerilog code that is compatible with formal methods and can be incorporated into the reference model
+            \item Determine the limitations to the reference model design if formal methods should be supported
+            \item Evaluate if the advantages gained by formal methods outweigh the disadvantages compared to only using simulation
+        \end{itemize}
+        \item Determine the minimum requirements for correctly verifying asynchronous events to keep the abstraction level as high as possible
+        \item Determine the best approach for modeling the pipeline
+        \begin{itemize}
+            \item Compare a stage-based and a cycle-based time wheel approach
+        \end{itemize}
+        \item Compare, modify, and Integrate an ISS like Spike or Sail-riscv to fit into the reference model
+        \begin{itemize}
+            \item Considering how the ISS must be integrated to support pipeline features like flushing, and how state changes can be applied at different cycles.
+        \end{itemize}
+        \item Make a generic interface to the reference model that can be compatible with formal methods
+        \item Determine how asynchronous events are inserted into the model
+        \item Implement the reference model 
+    \end{itemize}
+    \item Integrate with and evaluate a RISC-V core’s (CV32E40X/S/P) correctness using the new reference models 
+
+\end{itemize}
 
 
 %
@@ -23,6 +57,5 @@ Before this thesis, the author wrote a specialization project report \cite{torje
 %I would like to thank my supervisors Per Gunnar Kjeldsberg from NTNU, and Marton Teilgård from Silicon Laboratories Norway AS, for their guidance throughout the project.
 %
 
-\section{Acknowledgments}
 
 

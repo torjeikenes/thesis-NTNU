@@ -4,7 +4,6 @@
 %Asynchronous events pose a significant challenge in processor core verification, often leading to elusive bugs. While conventional Instruction Set Simulators (ISSs) may suffice for verification in typical execution scenarios, their instruction-level accurate abstraction level can lead to misalignments of asynchronous events to the start of instructions, resulting in incorrect interrupt timings compared to the DUT. We therefore need a Reference Model that accurately simulates the timing and correctness of asynchronous events. The reference model should have a higher abstraction level than the RTL code of the DUT, and run in sync with the DUT, serving as a golden model to verify the DUT against
 
 
-\tmp{TODO: Skriv abstract}
 
 Asynchronous events pose a significant challenge in RISC-V processor verification, often leading to elusive bugs. While conventional \textit{Instruction Set Simulators (ISS)} may suffice for verification in typical execution scenarios, their instruction-level accurate abstraction level can lead to mistimed asynchronous events and side effects compared to the \textit{Device Under Test (DUT)} processor core.
 
@@ -14,6 +13,8 @@ Therefore, a Reference Model that accurately simulates the timing and correctnes
 While existing reference models exist, they are either internal tools, expensive and proprietary, or lack comprehensive validation of asynchronous events. 
 
 To address these limitations, we explored and compared different approaches to implementing a reference model for open-source RISC-V processor cores that can accurately simulate asynchronous events at the cycle level. 
+
+\tmp{TODO: Skriv ferdig abstract}
 
 %We evaluated different design approaches, adopting a split design comprising a functional simulator using an existing ISS and a "pipeline shell" for simulating the pipeline timing. Multiple Instruction Set Simulators were compared, with Spike \cite{SpikeRISCVISA2023} emerging as the most suitable ISS, closely followed by the Sail-riscv model \cite{RISCVSailModel2023}. 
 %

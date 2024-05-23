@@ -73,16 +73,8 @@ The architecture of the pipeline shell is shown in \Cref{fig:pipeline_shell}. \t
 
 \subsection{Interaction with the ISS}
 
-There are multiple choices regarding how to interact with the ISS. Some of these are discussed in \Cref{sec:pw_partition}, where it was found beneficial to keep the ISS as intact as possible and only do one call to the ISS per instruction, instead of splitting the ISS into multiple calls for fetching, executing, writeback, etc.
-
-A decision has to be made on which state the ISS should be called from, namely if the ISS should be called from the IF stage or the WB stage. This is partly discussed in \Cref{sec:pw_partition}, which highlights some advantages of calling the ISS from IF. The main advantage is that since the instruction is fully executed in the IF stage, all the information regarding the instruction is known as the instruction travels through the pipeline. 
-
-If the ISS is called from the WB stage, we do not have any information about the instructions before the WB stage. Since the controller is dependent on the information in the pipeline stages, this requires us to separately decode the instruction before the main ISS call in WB. This either requires splitting up the the ISS call to separate fetching and decoding from the execution and writeback part. Additionally branches and jumps need to be handled outside the ISS in order to keep the contents of the pipeline stages accurate. This would be complicated as a branch might depend on a register value, which again might require forwarding and execution to be implemented.
-
-To avoid the added complexity of calling the ISS from the WB stage, we decide to call the ISS from the IF stage. This does however also have multiple downsides that will be discussed later like revertion of the ISS state on pipeline flushes in \Cref{sec:ps_revertion}, and timing of side effects in \Cref{sec:side-effects}.
-
-
-
+There are multiple choices regarding how to interact with the ISS. Some of these are discussed in \Cref{sec:pw_partition}
+\tmp{When to call the ISS: -> IF}
 
 \subsection{Compartementalizing core-specific functionality}
 
@@ -349,7 +341,7 @@ end
 
 
 \section{Timing Side effects}
-\label{sec:ps_side-effects}
+\label{sec:side-effects}
 
 \subsection{Side effects influencing interrupt timing}
 
@@ -397,9 +389,6 @@ We see that in the ISS, the interrupt is not immediately taken after the \rv{mre
 It can be beneficial to also use the CSR from the ISS, because although we want to delay the enabling of the interrupt, we want interrupts to be immediately disabled when an interrupt is taken. From the figure, we se the external CSR also delays the disabling of \rv{mstatus.mie}. If we only used the external CSR, new interrupts could be taken after another interrupt is taken. Because of this it is beneficial to use both the internal and external CSR.
 
 The same problem can occur immediately following a write to the \rv{mie} CSR that enables a previously disabled \rv{irq}. It can also be solved the same way, by storing \rv{mie} in the external CSR.
-
-\tmp{TODO: talk about \sv{interrupt_enabled}}
-
 
 
 
@@ -489,23 +478,6 @@ One disadvantage of this approach is that it leads to many more DPI function cal
 To signal to the pipeline when an interrupt is taken, and the pipeline needs to be flushed, we can either use the return of \sv{iss_intr()} that says when the interrupt should be taken or use the RVFI output from the ISS. The RVFI is only output when the core retires an instruction, but there can be some time between when the interrupt is applied and when the core retires an instruction. The \sv{interrupt_taken} signal from \sv{iss_intr()} signals when the interrupt can be taken the clock after the interrupt is signaled, more closely resembling the core functionality. 
 
 
-\subsection{Timing irq}
-
-\tmp{We need a 2 cycle delay between when the irq changes}
-\tmp{Because the RM is one cycle after the core, and the irq is also clocked one cycle into \sv{irq_q} in the core}
-
-\begin{figure}[hbt]
-    \centering
-    \begin{tikztimingtable}
-      \sv{clk}                  & 10{2C} G \\ 
-      \sv{wb_mstatus.mie}       & LL   2{2H} 7{2L} \\ 
-      \sv{interrupt_taken}      & 5{2L}  2{2H} 3{2L} \\ 
-      \sv{interrupt_enabled}    & LL 6{2H} 3{2L} \\
-    \end{tikztimingtable}
-    \caption{Timing of \sv{interrupt_enable} and \sv{mstatus.mie}}
-    \label{fig:mstatus_mie}
-\end{figure}
-
 
 
 
@@ -559,8 +531,9 @@ To signal to the pipeline when an interrupt is taken, and the pipeline needs to 
 
 \section{Flushing}
 
+\tmp{Must the pipeline be flushed on branches or jumps?}
 
-\subsection{Flush after interrupt}
+\tmp{If the ISS reports a jump or branch we can flush the pipeline.}
 
 When the interrupt is taken, the remaining instructions in the pipeline must be \glsdisp{flush}{flushed}. This requires that the instructions in the pipeline should be set to 0, and the \sv{valid} signal be set to \sv{0}. This can be done by adding signals \sv{if_flush, id_flush, ex_flush}, and \sv{wb_flush} to each pipeline stage to flush each stage.
 
@@ -577,17 +550,7 @@ Since we only take interrupts when the pipeline can safely be flushed, we can di
     end
 \end{systemverilog}
 
-\subsection{Flush after jump/branch}
-
-A normal pipeline also flushes when the core jumps or branches to a new PC \cite{pattersonComputerOrganizationDesign2021}. Since we call the ISS in the IF stage, and the ISS fully executes one instruction before the next, the ISS always executes the correct instruction after a branch or jump, and we do not get the same incorrect instructions as the the core in the pipeline that need to be flushed.
-
-
-The CV32E40S core executes jumps in the ID stage, and branches in the EX stage \cite{openhwgroupPipelineDetailsCOREV2023}. This means that the core and reference model can have a mismatch in the IF and ID stages before a jump or branch is correctly taken in the core.
-
-Looking at \Cref{fig:dependency-tree-cv32x}, we see that the state of the IF is not required for interrupt timing, and that the state of ID is only considered if it contains a \acrshort{clic} pointer. Since we for the time being only support \acrshort{clint} interrupts, we can ignore flushing the pipeline because of jumps and branches, but this assumption should be evaluated again when implementing \acrshort{clic} interrupts in future work.
-
-\section{State Revertion}
-\label{sec:ps_revertion}
+\section{State Rollback}
 
 \tmp{Why}
 In a normal pipeline, where the state changes are applied in the WB stage, flushing each pipeline stage is sufficient to discard the effects of the instruction \cite[Ch. 4]{pattersonComputerOrganizationDesign2021}.
@@ -601,102 +564,420 @@ This is one of the major disadvantages of calling the ISS in the IF stage compar
 
 This is in some ways comparable to the rollback approach used by some lock-step processors \cite{marquesLockVHeterogeneousFault2021, liDuckCoreFaultTolerantProcessor2021, nikiemaDesignLowComplexity2023} to \textit{rollback} the processor context of two synced cores if they diverge. \textcite{marquesLockVHeterogeneousFault2021} saves the state of the processor at various \glspl{checkpoint} along the execution, and if a fault is found, the state is reverted to the previous valid checkpoint.
 
-We can use a similar approach, where we store the state of the ISS into \textit{snapthots}as checkpoints we can revert back to. Since an interrupt and flush can happen at any instruction, we should have a checkpoint between every instruction.
+We can use a similar approach, where we store the state of the ISS as checkpoints we can revert back to. Since an interrupt and flush can happen at any instruction, we should have a checkpoint between every instruction.
 
 \tmp{What state elements need to be reverted}
-
-To properly revert the state of the ISS, we must be able to revert all possible external changes caused by executing an instruction. The most important registers are the 32 \acrfull{gpr} and the \acrfull{pc}, which are written to or read from at almost every instruction \cite{watermanRISCVInstructionSet2019}.
-
-Some \acrfull{csr} are also changed because of instructions and must be stored. Many CSRs are likely to remain static like the \rv{mvendorid}, \rv{misa}, and \rv{marchid}, while others may change during execution like \rv{mstatus}, \rv{mie}, and \rv{mscratch} \cite{watermanRISCVInstructionSet2021}. We can therefore either only store some relevant CSRs or store all CSRs.
-
-Additionally, since we use the ISS's internal memory simulation, we also need to revert potential memory writes that occurred for instructions that must be discarded.
 
 
 \tmp{Store states in PS or ISS}
 
-We have the choice of storing these states inside the ISS, or in the Pipeline shell. By outputting the snapshot and moving it through the pipeline, it would in theory be simple to input the state of the oldest instruction in the pipeline into the ISS, and revert back to it. In practice it may not necessarily be that easy to convert the snapshot into SystemVerilog, and have it contained enough to easily be sent through the pipeline. Another solution could be to not store the state as a snapshot, but only the state changes. This would require iterating through the pipeline stages in reverse, and reversing all the stored state changes.
-
-We choose to store the snapshot inside the ISS. This keeps the state contained and allows the snapshot to be stored in a format that is logical to the ISS, without converting it to and from Systemverilog to be sent through the pipeline. In order to revert the state from outside the ISS, we must use a function where we can specify the number of states to revert. This gives us \textbf{\Cref{issReq:revertState}}.
+\tmp{How many states to revert}
 
 \tmp{When to revert}
 
-The order of events when reverting the state is important to get right.
-The naive order could look something like this:
 
-\begin{enumerate}
-    \item Interrupt input into RM
-    \item RM decides interrupt is allowed and inputs the \rv{irq} bits into ISS to set the \rv{mip}.
-    \item The ISS reports that the interrupt will be taken
-    \item The pipeline shell is flushed
-    \item The ISS reverts to a previous state
-    \item The ISS starts running the interrupt handler
-\end{enumerate}
 
-This order is problematic. When the we run the \sv{iss_intr()} function and the interrupt is taken in the ISS, this sets the \rv{mepc} and \rv{mstatus} CSRs as explained in \Cref{sec:bg_interrupts}. By reverting the state after the interrupt is taken in the ISS like above, this discards these CSR writes, since the CSRs are reverted to a previous state. Since interrupt taking is decided inside the ISS, we can also not revert the state before running the \sv{iss_intr()} function.
 
-We must therefore revert the state before setting the \rv{mip}, but after deciding that the interrupt will be taken. We choose to revert the state from inside the ISS, instead of using a separate \sv{iss_revert()} function from the pipeline shell. We therefore add a \sv{revert_steps} parameter to the \sv{iss_revert()} function, so state revertion can be done inside the ISS.
 
-This gives us the following order:
+\section{State revertion}
+\tmp{Rollback instead?}
 
-\begin{enumerate}
-    \item Interrupt input into RM
-    \item The RM decides if interrupts are allowed and inputs \
-    Determine if interrupt will be taken with the incoming interrupt
-    \item RM decides interrupt is allowed and inputs the \rv{irq} bits into ISS to set the \rv{mip}.
-    \item - The ISS decides the interrupt will be taken
-    \item - The ISS reverts the state
-    \item - The ISS takes the interrupt and writes to the relevant CSRs
-    \item The pipeline shell is flushed
-    \item The ISS starts running the interrupt handler and 
-\end{enumerate}
+%This is enough for a traditional pipeline where the instructions are committed in the last stage, but in our pipeline shell it gets more complicated because the instructions in the pipeline shell have already been fully executed in the ISS, and side effects have been applied. This is fine for normal execution, but requires that the ISS should be reverted to the state before the flushed instructions were executed.
 
-\tmp{How many states to revert}
 
-To determine the amount of steps to revert, we can use the example in \Cref{fig:revert_example}.
-This shows the PC of the instructions in the pipeline shell, and the PC of instructions executed in the ISS. In the WB stage, we see the retired instructions in bold, which are output over RVFI. The reference model decides that interrutps are allowed after \sv{1504} is retired and calls \sv{iss_intr()}. Since \sv{1504} is the last instruction to retire, we need to discard the changes from \sv{150a}, \sv{1508}, and \sv{1506} by reverting the state of the ISS to the state before it executed \sv{1506}. After the revertion is done, the ISS can take the interrupt, and \sv{1506} will be stored in the \rv{mepc} CSR and be the first instruction to run when the interrupt handler is completed.
+\subsubsection{Experiment (Commit 0c2bc90c)}
 
-With the current implementation, we see that we always need to revert the same number of instructions for a given pipeline depth. In the case of the CV32E40S with 4 pipeline stages, we need to revert 3 instructions.
+\begin{clisting}
+int customTest() {
+    uint8_t interrupt = 16;
+    
+    printf("Division Test \n");
 
-\begin{figure}
-    \centering
-    \includegraphics[width=0.85\linewidth]{figures/revert_example.pdf}
-    \caption{Example showing the how many instructions we need to revert the state by, when flushing the pipeline.}
-    \label{fig:revert_example}
+    active_test = 0;
+
+    mstatus_mie_enable();
+
+    //Enable all interrupts
+    volatile uint32_t mie = (uint32_t) -1;
+    __asm__ volatile("csrw mie, %0" : : "r" (mie));
+
+    uint32_t a = 0x12341234;
+    uint32_t b = 0x00004567;
+    uint32_t result;
+
+    __asm__ volatile("divu %0, %1, %2\n\t" : "=r" (result) : "r" (a), "r" (b));
+
+    //Time interrupt in the middle of the division instruction
+    mm_ram_assert_irq(0x1 << 16, 55);
+    __asm__ volatile("divu %0, %1, %2\n\t" : "=r" (result) : "r" (a), "r" (b));
+    __asm__ volatile("divu %0, %1, %2\n\t" : "=r" (result) : "r" (a), "r" (b));
+    __asm__ volatile("divu %0, %1, %2\n\t" : "=r" (result) : "r" (a), "r" (b));
+
+    mstatus_mie_disable();
+
+    mie_disable(interrupt);
+
+    return EXIT_SUCCESS;
+}
+\end{clisting}
+
+The test applies an interrupt in the middle of an \rv{divu} instruction. During the instruction, \sv{interrupt_allowed} is stable high, so the interrupt should be taken immediately, aborting the current instruction.
+
+Running the division test in \sv{custom_test()} in \file{custom_interrupt_test.c} 
+The test is run with an implementation of flushing of pipeline stages, but not the discussed reversion of the spike states. 
+When applying an interrupt in the middle of a long division operation, the interrupts are taken at the same retirement in the core and RM.
+
+The problem arises in the interrupt handler and when returning after the interrupt handling as shown in \Cref{lst:divtest_error}.
+In the core, instruction \sv{0000135c} was the last to finish, while in spike \sv{00001360} and \sv{00001364} were fully executed before being placed in the pipeline. The test fails first in the interrupt handler because the registers differ between the core and the RM because the RM wrote to registers that were not written to in the core. When returning from the trap handler, spike has stored another PC to \sv{mepc}, since it executed more instructions before being interrupted. This causes the execution to continue 2 instruction ahead of the core after returning from the interrupt handler. 
+
+
+\begin{terminal}[caption={Errors from division test.}, label={lst:divtest_error}]
+UVM_ERROR @ 13518.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(48) reporter [Step-and-Compare] rd1_wdata core=0x12341234 and rm=0x00004325 PC=0x000008b8
+# UVM_ERROR @ 13677.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(48) reporter [Step-and-Compare] rd1_addr core=0x0000000d and rm=0x00000001 PC=0x00001360
+# UVM_ERROR @ 13677.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(48) reporter [Step-and-Compare] rd1_wdata core=0x00000007 and rm=0x00000368 PC=0x00001360
+# UVM_ERROR @ 13677.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=1368 rvfi_core.pc_rdata=1360
+# UVM_ERROR @ 13677.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(77) reporter [RVFI_INSN] rvfi_rm.insn=fffff097 rvfi_core.insn=2e7d6b3
+\end{terminal}
+
+
+\begin{figure}[htb]
+\centering
+\input{figures/interrupt_revert_tikz}
+\caption{\tmp{TODO: fix figure}Illustrate state reversion with ISS content and pipeline content.}
+\label{fig:interrupt_revert_addi}
 \end{figure}
+
+\begin{figure}[htb]
+\centering
+\input{figures/interrupt_revert_divu_tikz}
+\caption{\tmp{TODO: fix figure} Illustrate state reversion with ISS content and pipeline content.}
+\label{fig:interrupt_revert_divu}
+\end{figure}
+
+\subsection{Implementing revertion}
+
+\tmp{Where to store revertions}
+
+\tmp{How and why state revertion?}
+
+\tmp{TODO: Store states in ISS or pipeline shell?}
 
 \tmp{requirement from ISS}
 
+\textbf{\Cref{issReq:revertState}}
 
-%
-%\begin{figure}[htb]
-%\centering
-%\input{figures/interrupt_revert_tikz}
-%\caption{\tmp{TODO: fix figure}Illustrate state reversion with ISS content and pipeline content.}
-%\label{fig:interrupt_revert_addi}
-%\end{figure}
-%
-%\begin{figure}[htb]
-%\centering
-%\input{figures/interrupt_revert_divu_tikz}
-%\caption{\tmp{TODO: fix figure} Illustrate state reversion with ISS content and pipeline content.}
-%\label{fig:interrupt_revert_divu}
-%\end{figure}
+\subsection{When to revert state}
+
+We need to revert the state when the ISS has executed instruction that are flushed in the pipeline.
+Below we will discuss some scenarios:
+
+\subsubsection{One IRQ during addi instructions}
+
+\subsubsection{Multiple IRQs}
+
+When multiple IRQs are set the core will start with one of them and unset this bit in mip. 
 
 
+When the core is done handling the interrupt and another interrupt is already set in the mip, the next interrupt should be taken immediately after returning with \rv{mret}. In this case, the ISS might not need to revert the state if it takes the next interrupt immediately and does not execute any "unnecessary" instructions. 
 
+In this scenario \sv{interrupt_taken} will only be high on the first interrupt, but not the second one. This is because the new \rv{mip} is set when \rv{mstatus.mie} is disabled while the first interrupt is taken. When \rv{mstatus.mie} is enabled after the first interrupt is done, it does not report interrupt taken, but spike still takes the interrupt. This does not flush the pipeline the second time. The second interrupt does not require flushing the pipeline because the second interrupt being taken is expected behavior and will already be in the pipeline, and therefore not require a flush.
+
+The problem that does arrive is that the RM executes one "normal" instruction between \rv{mret} and the first instruction of the interrupt handler. 
+
+When an interrupt should be taken in spike, it needs to step one time to set the PC and state to the correct state and another time to actually execute the first instruction of the interrupt handler. Because \ccode{will_take_interrupt(mip)} does not function correctly for a second interrupt, the step that should execute the interrupt, only sets up the interrupt, but does not actually step the instruction.
+
+
+\textbf{Choice:} Flush pipeline when \sv{iss_intr()} returns 1 or when the RVFI reports an interrupt. delay problems...
+
+\textbf{Choice:} Do not flush IF on interrupt, since this contains the instruction handler
+Both have above points have to be done at the same time.
+
+\textbf{TEST} modify \sv{spike_interrupt} to return true if it will be taken considering \rv{mstatus.mie} going from 0 to 1
+
+\textbf{modification:} Remove \ccode{old_en_irq==0} from \ccode{will_trigger_interrupt}.
+
+This might make state revertion happen when it is not necessary
+
+
+
+
+\subsubsection{Testing revertion}
+
+\ccode{revertTest()} places an interrupt after a store operation to see if the state and memory operation is reverted.
+
+The required number of instructions to revert differs between the revertTest and division test. In the revertTest, the core retires two? instruction after mip is set
+\begin{terminal}
+   20514.000 ns | IF 000013dc  1| ID 000013da 1| EX 000013d8 1 | WB 000013d6 1 | RVFI 000013d4 1|| ID 000013d8 | EX 000013d6 | WB 000013d4 || ia 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 | RVFI | C_ADDI   | 000013d4
+   20517.000 ns | IF 000013de  1| ID 000013dc 1| EX 000013da 1 | WB 000013d8 1 | RVFI 000013d6 1|| ID 000013da | EX 000013d8 | WB 000013d6 || ia 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 | RVFI | C_ADDI   | 000013d6
+   20520.000 ns | IF 000013e0  1| ID 000013de 1| EX 000013dc 1 | WB 000013da 1 | RVFI 000013d8 1|| ID 000013dc | EX 000013da | WB 000013d8 || ia 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 | RVFI | C_ADDI   | 000013d8
+   20523.000 ns | IF 000013e2  1| ID 000013e0 1| EX 000013de 1 | WB 000013dc 1 | RVFI 000013da 1|| ID 000013de | EX 000013dc | WB 000013da || ia 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 | RVFI | C_ADDI   | 000013da
+MIP set to: 00010000
+   20526.000 ns | IF 000013e4  1| ID 000013e2 1| EX 000013e0 1 | WB 000013de 1 | RVFI 000013dc 1|| ID 000013e0 | EX 000013de | WB 000013dc || ia 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 | RVFI | C_ADDI   | 000013dc
+   20529.000 ns | IF 000013e8  0| ID 000013e4 0| EX 000013e2 0 | WB 000013e0 0 | RVFI 000013de 1|| ID 00000000 | EX 00000000 | WB 00000000 || ia 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+MIP set to: 00000000
+   20532.000 ns | IF 00000040  0| ID 000013e4 0| EX 000013e2 0 | WB 000013e0 0 | RVFI 000013de 0|| ID 00000040 | EX 00000000 | WB 00000000 || ia 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   20535.000 ns | IF 00000040  0| ID 000013e4 0| EX 000013e2 0 | WB 000013e0 0 | RVFI 000013de 0|| ID 00000856 | EX 00000040 | WB 00000000 || ia 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   20538.000 ns | IF 00000040  1| ID 000013e4 0| EX 000013e2 0 | WB 000013e0 0 | RVFI 000013de 0|| ID 00000856 | EX 00000040 | WB 00000000 || ia 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   20541.000 ns | IF 00000044  0| ID 00000040 1| EX 000013e2 0 | WB 000013e0 0 | RVFI 000013de 0|| ID 00000856 | EX 00000040 | WB 00000000 || ia 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   20544.000 ns | IF 00000856  0| ID 00000040 1| EX 00000040 1 | WB 000013e0 0 | RVFI 000013de 0|| ID 00000856 | EX 00000040 | WB 00000000 || ia 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   20547.000 ns | IF 00000856  0| ID 00000040 0| EX 00000040 1 | WB 00000040 1 | RVFI 000013de 0|| ID 00000856 | EX 00000040 | WB 00000000 || ia 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   20550.000 ns | IF 00000856  1| ID 00000040 0| EX 00000040 0 | WB 00000040 1 | RVFI 000013de 0|| ID 00000856 | EX 00000040 | WB 00000000 || ia 0 | li 1 / 1 | db 1 | f 0 | cp 0 | si 0 | ib 0 | cf 0 | sl 0 |
+   20553.000 ns | IF 00000856  1| ID 00000856 1| EX 00000040 0 | WB 00000040 0 | RVFI 00000040 1|| ID 00000858 | EX 00000856 | WB 00000040 || ia 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 | RVFI | JAL      | 00000040    
+\end{terminal}
+
+
+
+
+\subsection{What determines the amount of revertion steps?}
+
+We do not always want to revert the same number of states. This is shown when running \ccode{revertTest} and \ccode{divisionTest}. In the first test the interrupt is injected in the middle of multiple \rv{addi} instructions, that retire every clock, while in the division test, the interrupt is injected in the middle of a long division operation.
+
+In the \rv{addi} example, reverting 2 instruction is sufficient, while in the \rv{divu} example, we need to revert 3 instructions.
+
+The two examples are shown in \Cref{fig:interrupt_revert_addi} for the \rv{addi} example, and \Cref{fig:interrupt_revert_divu} for the \rv{divu} example.
+
+
+\tmp{Theory 1: One more step if we did not step this/last clock?}
+
+\begin{systemverilog}
+    always_ff @(posedge clknrst_if.clk) begin
+        if (step_q) begin
+            interrupt_taken = iss_intr(interrupt_if_i.irq, interrupt_allowed, 1);
+        end else begin
+            interrupt_taken = iss_intr(interrupt_if_i.irq, interrupt_allowed, 2);
+        end
+    end
+\end{systemverilog}
+
+\tmp{Theory 2: One more step if instruction in WB is not valid?}
+
+
+
+\subsubsection{Experiment: Variable state revertion}
+
+
+\textbf{Directed tests}
+
+The first test involves two directed tests \ccode{divisionTest()} and \ccode{addTest}. Each injects an interrupts into the middle of a \rv{divu} instruction or a \rv{addi} instruction. Previous testing has shown that these tests require different amount of revertion steps.
+
+\textbf{\ccode{interrupt_test}}
+
+\textbf{Injecting \sv{interrupt_allowed} directly into the reference model }
+
+\begin{systemverilog}
+    always_ff @(posedge clknrst_if.clk) begin
+        if (step_q) begin
+            interrupt_taken = iss_intr(interrupt_if_i.irq, interrupt_allowed, 1);
+        end else begin
+            interrupt_taken = iss_intr(interrupt_if_i.irq, interrupt_allowed, 2);
+        end
+    end
+\end{systemverilog}
+
+
+
+\textbf{Issue: Fails in TEST 2- Trigger all irqs at once}
+
+In the example below, the state is reverted to \sv{0x0000152e}, when it should revert to \sv{0x0000152a}
+
+\begin{terminal}
+   87198.000 ns | IF 00001524  0| ID 00001520 1| EX 0000151c 0 | WB 0000151c 1 | RVFI 00000524 0|| ID 00001524  1| EX 00001520 1 | WB 0000151c 1 | RVFI 00000524 0| ia 1 / 1 | li 1 / 0 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   87201.000 ns | IF 00001524  1| ID 00001520 0| EX 00001520 1 | WB 0000151c 0 | RVFI 0000151c 1|| ID 00001528  1| EX 00001524 1 | WB 00001520 1 | RVFI 0000151c 1| ia 1 / 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 | RVFI | LUI      | 0000151c
+   87204.000 ns | IF 00001528  0| ID 00001524 1| EX 00001520 0 | WB 00001520 1 | RVFI 0000151c 0|| ID 00001528  1| EX 00001524 1 | WB 00001520 1 | RVFI 0000151c 0| ia 0 / 0 | li 0 / 0 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   87207.000 ns | IF 00001528  1| ID 00001524 0| EX 00001524 1 | WB 00001520 0 | RVFI 00001520 1|| ID 0000152a  1| EX 00001528 1 | WB 00001524 1 | RVFI 00001520 1| ia 0 / 0 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 1 | cf 0 | sl 0 | RVFI | SW       | 00001520
+   87210.000 ns | IF 0000152a  0| ID 00001528 1| EX 00001524 0 | WB 00001524 1 | RVFI 00001520 0|| ID 0000152a  1| EX 00001528 1 | WB 00001524 1 | RVFI 00001520 0| ia 0 / 0 | li 0 / 0 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   87213.000 ns | IF 0000152a  1| ID 00001528 0| EX 00001528 1 | WB 00001524 0 | RVFI 00001524 1|| ID 0000152e  1| EX 0000152a 1 | WB 00001528 1 | RVFI 00001524 1| ia 0 / 0 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 1 | cf 0 | sl 0 | RVFI | SW       | 00001524
+   87216.000 ns | IF 0000152e  0| ID 0000152a 1| EX 00001528 0 | WB 00001528 1 | RVFI 00001524 0|| ID 0000152e  1| EX 0000152a 1 | WB 00001528 1 | RVFI 00001524 0| ia 0 / 0 | li 0 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+MIP set to: ffffffff
+   87219.000 ns | IF 0000152e  1| ID 0000152a 1| EX 00001528 0 | WB 00001528 1 | RVFI 00001524 0|| ID 0000152e  1| EX 0000152a 1 | WB 00001528 1 | RVFI 00001524 0| ia 0 / 0 | li 0 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 1 | cf 0 | sl 0 |
+   87222.000 ns | IF 00001532  0| ID 0000152e 0| EX 0000152a 1 | WB 00001528 0 | RVFI 00001528 1|| ID 00001532  1| EX 0000152e 1 | WB 0000152a 1 | RVFI 00001528 1| ia 0 / 0 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 1 | cf 0 | sl 0 | RVFI | C_SW     | 00001528
+   87225.000 ns | IF 00001532  0| ID 0000152e 0| EX 0000152a 0 | WB 0000152a 0 | RVFI 00001528 0|| ID 00001532  1| EX 0000152e 1 | WB 0000152a 1 | RVFI 00001528 0| ia 1 / 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+MIP set to: 7fffffff
+   87228.000 ns | IF 0000007c  0| ID 0000152e 0| EX 0000152a 0 | WB 0000152a 0 | RVFI 00001528 0|| ID 00001532  1| EX 00000000 0 | WB 00000000 0 | RVFI 00001528 0| ia 1 / 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+\end{terminal}
+
+
+\tmp{TODO: Move the fail below to interrupt handling in spike}
+\textbf{Issue: Fails in TEST 2- Trigger all irqs at once}
+
+\begin{terminal}
+# UVM_INFO @ 16.800 ns : uvmt_cv32e40s_base_test.sv(294) uvm_test_top [BASE TEST] set load_instr_mem
+# UVM_INFO @ 17.300 ns : uvma_clknrst_if.sv(65) reporter [CLKNRST] Changing clock period to 1.500 ns
+# UVM_INFO @ 114.300 ns : uvmt_cv32e40s_firmware_test.sv(178) uvm_test_top [TEST] Started RUN
+# TEST 1 - TRIGGER ALL IRQS IN SEQUENCE:
+# TEST 2 - TRIGGER ALL IRQS AT ONCE:
+# UVM_ERROR @ 87252.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(77) reporter [RVFI_INSN] rvfi_rm.insn=170006f rvfi_core.insn=7b50006f
+# UVM_ERROR @ 87252.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=40 rvfi_core.pc_rdata=7c
+# UVM_ERROR @ 87252.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(101) reporter [RVFI_INTR] rvfi_rm.intr=85 rvfi_core.intr=fd
+# UVM_ERROR @ 87264.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=856 rvfi_core.pc_rdata=1030
+# UVM_ERROR @ 87270.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=858 rvfi_core.pc_rdata=1032
+# UVM_ERROR @ 87273.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(48) reporter [Step-and-Compare] rd1_wdata core=0x0000001f and rm=0x00000010 PC=0x00001036
+# UVM_ERROR @ 87273.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(77) reporter [RVFI_INSN] rvfi_rm.insn=4541 rvfi_core.insn=457d
+# UVM_ERROR @ 87273.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=85c rvfi_core.pc_rdata=1036
+# UVM_ERROR @ 87276.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=85e rvfi_core.pc_rdata=1038
+# UVM_ERROR @ 87282.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=860 rvfi_core.pc_rdata=103a
+# UVM_ERROR @ 87285.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=862 rvfi_core.pc_rdata=103c
+# UVM_ERROR @ 87291.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=866 rvfi_core.pc_rdata=1040
+# UVM_ERROR @ 87297.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=86a rvfi_core.pc_rdata=1044
+# UVM_ERROR @ 87303.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=86e rvfi_core.pc_rdata=1048
+# UVM_ERROR @ 87309.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=872 rvfi_core.pc_rdata=104c
+# UVM_ERROR @ 87318.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=876 rvfi_core.pc_rdata=1050
+# UVM_ERROR @ 87324.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=87a rvfi_core.pc_rdata=1054
+# UVM_ERROR @ 87333.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=87e rvfi_core.pc_rdata=1058
+# UVM_ERROR @ 87339.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=882 rvfi_core.pc_rdata=105c
+# UVM_ERROR @ 87345.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=886 rvfi_core.pc_rdata=1060
+
+\end{terminal}
+
+The RM jumps to \sv{PC: 0x40 (m_fast0_irq_handler)} while the core jumps to \sv{PC: 0x7c (m_fast15_irq_handler)}
+
+Converting the value in \sv{rvfi_intr}, we see that \sv{0x85 >> 3 => 0x10} \sv{0xfd >> 3 => 0x1f}. 
+We see that the core and the ISS takes different interrupts when all interrupts are enabled.
+
+
+The RISC-V specification specify the priority order of the standard interrupt bits (bit 0 to 15) in \rv{mip}, but does not specify a priority order for the custom external interrupts in bit 16 to 31 \cite{watermanRISCVInstructionSet2021}, as these can be platform specific. In CV32E40S the external interrupt with the highest ID will get the highest priority \cite{openhwgroupExceptionsInterruptsCOREV2023}.
+
+To make the interrupt priorities the same in the core and spike we can add this to spike 
+
+\begin{clisting}
+  const bool nmie = !(state.mnstatus && !get_field(state.mnstatus->read(), MNSTATUS_NMIE));
+  if (!state.debug_mode && nmie && enabled_interrupts) {
+    if (enabled_interrupts & (1 << 31))
+      enabled_interrupts = (1 << 31);
+    else if (enabled_interrupts & (1 << 30))
+      enabled_interrupts = (1 << 30);
+    else if (enabled_interrupts & (1 << 29))
+      enabled_interrupts = (1 << 29);
+    else if (enabled_interrupts & (1 << 28))
+      enabled_interrupts = (1 << 28);
+    else if (enabled_interrupts & (1 << 27))
+      enabled_interrupts = (1 << 27);
+    else if (enabled_interrupts & (1 << 26))
+      enabled_interrupts = (1 << 26);
+    else if (enabled_interrupts & (1 << 25))
+      enabled_interrupts = (1 << 25);
+    else if (enabled_interrupts & (1 << 24))
+      enabled_interrupts = (1 << 24);
+    else if (enabled_interrupts & (1 << 23))
+      enabled_interrupts = (1 << 23);
+    else if (enabled_interrupts & (1 << 22))
+      enabled_interrupts = (1 << 22);
+    else if (enabled_interrupts & (1 << 21))
+      enabled_interrupts = (1 << 21);
+    else if (enabled_interrupts & (1 << 20))
+      enabled_interrupts = (1 << 20);
+    else if (enabled_interrupts & (1 << 19))
+      enabled_interrupts = (1 << 19);
+    else if (enabled_interrupts & (1 << 18))
+      enabled_interrupts = (1 << 18);
+    else if (enabled_interrupts & (1 << 17))
+      enabled_interrupts = (1 << 17);
+    else if (enabled_interrupts & (1 << 16))
+      enabled_interrupts = (1 << 16);
+    //// nonstandard interrupts have highest priority
+    //if (enabled_interrupts >> (IRQ_M_EXT + 1))
+    //  enabled_interrupts = enabled_interrupts >> (IRQ_M_EXT + 1) << (IRQ_M_EXT + 1);
+    // standard interrupt priority is MEI, MSI, MTI, SEI, SSI, STI
+\end{clisting}
+
+This solves the priority issues in spike.
+
+
+\subsection{Prolem}
+
+\textbf{Situation:} When multiple IRQs are enabled, the core and RM mismatch when it returns from one interrupt with \rv{mret} and should immediately take the next interrupt. The reference model here takes an extra instruction before taking the next interrupt.
+
+
+
+%\tmp{Explain interrupt vector tables}
+%In non-vectored mode, all interrupts jump to the base of the vector table in \rv{mtvec}, while in vectored mode the interrupts jumps to the base address plus four times 
+
+
+
+\tmp{TODO: show experiments with different amount of revertion steps}
 
 \tmp{TODO: Discuss somewhere (not here) that this rollback technique could be used to implement an ImperasDV type approach}
 
-\section{Interrupt allowed}
+%\section{Instruction package}
+%
+%In a sequential pipeline we should send each instruction with corresponding data through the pipeline. This section will discuss the contents necessary in this "instruction package".
+%
+%\begin{itemize}
+%    \item PC - Useful for debug and unique identifier for each instruction
+%    \item opcode - used to find instruction timings using Table 4 from \url{https://docs.openhwgroup.org/projects/cv32e40s-user-manual/en/latest/pipeline.html} 
+%\end{itemize}
+%
+
+
+%\section{Questions}
+%
+%\begin{enumerate}
+%    \item Should the pipeline shell or iss decide if an interrupt should be taken?
+%    \item Should instructions be moved based on clock cycles or core retirements?
+%    \item - Should the pipeline shell calculate the correct clock cycle for each instruction? Hard for division etc which is variable.
+%    \item - Can retirements be used and potential "bubbles" be calculated instead of all details 
+%    \item - What in the dependency graph can be wrong if we only move the pipeline on retirements?
+%    \item - - Can these occurrences be specifically handled, instead of accurately calculating all "instruction movements?"
+%    \item How should stalls be calculated?
+%    \item How should pipeline flushes be handled?
+%    \item How should multi cycle instruction be handled?
+%\end{enumerate}
+
+
+%\subsection{How should instructions be moved through the pipeline?}
+
+
+\subsubsection{TEST: 2 interrupts enabled }
+
+In the following test, the step implementation of state revertion is used. Spike reverts one step to to \ccode{1734} instead of to \ccode{1730}.
+\begin{terminal}
+   12915.000 ns | IF 00001726  0| ID 00001722 1| EX 0000171e 0 | WB 0000171e 1 | RVFI 0000171a 0|| ID 00001726  1| EX 00001722 1 | WB 0000171e 1 | RVFI 0000171a 0| ia 0 / 0 | it 0 |  li 0 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   12918.000 ns | IF 00001726  1| ID 00001722 1| EX 0000171e 0 | WB 0000171e 1 | RVFI 0000171a 0|| ID 00001726  1| EX 00001722 1 | WB 0000171e 1 | RVFI 0000171a 0| ia 0 / 0 | it 0 |  li 0 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 1 | cf 0 | sl 0 |
+   12921.000 ns | IF 0000172a  1| ID 00001726 1| EX 00001722 1 | WB 0000171e 0 | RVFI 0000171e 1|| ID 0000172a  1| EX 00001726 1 | WB 00001722 1 | RVFI 0000171e 1| ia 0 / 0 | it 0 |  li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 1 | cf 0 | sl 0 | RVFI | SW       | 0000171e
+   12924.000 ns | IF 0000172c  1| ID 0000172a 1| EX 00001726 1 | WB 00001722 1 | RVFI 0000171e 0|| ID 0000172a  1| EX 00001726 1 | WB 00001722 1 | RVFI 0000171e 0| ia 1 / 1 | it 0 |  li 1 / 0 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   12927.000 ns | IF 00001730  0| ID 0000172c 1| EX 0000172a 1 | WB 00001726 1 | RVFI 00001722 1|| ID 0000172c  1| EX 0000172a 1 | WB 00001726 1 | RVFI 00001722 1| ia 0 / 0 | it 0 |  li 0 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 | RVFI | LUI      | 00001722
+   12930.000 ns | IF 00001730  1| ID 0000172c 0| EX 0000172c 1 | WB 0000172a 1 | RVFI 00001726 1|| ID 00001730  1| EX 0000172c 1 | WB 0000172a 1 | RVFI 00001726 1| ia 0 / 0 | it 0 |  li 0 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 1 | cf 0 | sl 0 | RVFI | SW       | 00001726
+MIP set to: c0000000
+   12933.000 ns | IF 00001730  1| ID 0000172c 0| EX 0000172c 1 | WB 0000172a 1 | RVFI 00001726 0|| ID 00001730  1| EX 0000172c 1 | WB 0000172a 1 | RVFI 00001726 0| ia 0 / 0 | it 0 |  li 0 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 1 | cf 0 | sl 0 |
+   12936.000 ns | IF 00001734  1| ID 00001730 0| EX 0000172c 0 | WB 0000172c 1 | RVFI 0000172a 1|| ID 00001734  1| EX 00001730 1 | WB 0000172c 1 | RVFI 0000172a 1| ia 0 / 0 | it 0 |  li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 1 | cf 0 | sl 0 | RVFI | C_SW     | 0000172a
+   12939.000 ns | IF 00001734  0| ID 00001730 0| EX 0000172c 0 | WB 0000172c 0 | RVFI 0000172c 1|| ID 00000500  1| EX 00001734 1 | WB 00001730 1 | RVFI 0000172c 1| ia 1 / 1 | it 1 |  li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 | RVFI | ADDI     | 0000172c
+MIP set to: 40000000
+   12942.000 ns | IF 0000007c  0| ID 00001730 0| EX 0000172c 0 | WB 0000172c 0 | RVFI 0000172c 0|| ID 00000000  0| EX 00000000 0 | WB 00000000 0 | RVFI 0000172c 0| ia 1 / 1 | it 0 |  li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   12945.000 ns | IF 0000007c  0| ID 00001730 0| EX 0000172c 0 | WB 0000172c 0 | RVFI 0000172c 0|| ID 0000007c  1| EX 00000000 0 | WB 00000000 0 | RVFI 00000000 0| ia 1 / 1 | it 0 |  li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   12948.000 ns | IF 0000007c  1| ID 00001730 0| EX 0000172c 0 | WB 0000172c 0 | RVFI 0000172c 0|| ID 00001030  1| EX 0000007c 1 | WB 00000000 0 | RVFI 00000000 0| ia 1 / 1 | it 0 |  li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   12951.000 ns | IF 00000080  0| ID 0000007c 1| EX 0000172c 0 | WB 0000172c 0 | RVFI 0000172c 0|| ID 00001032  1| EX 00001030 1 | WB 0000007c 1 | RVFI 00000000 0| ia 1 / 1 | it 0 |  li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   12954.000 ns | IF 00001030  0| ID 0000007c 1| EX 0000007c 1 | WB 0000172c 0 | RVFI 0000172c 0|| ID 00001032  1| EX 00001030 1 | WB 0000007c 1 | RVFI 00000000 0| ia 1 / 1 | it 0 |  li 1 / 0 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   12957.000 ns | IF 00001030  0| ID 0000007c 0| EX 0000007c 1 | WB 0000007c 1 | RVFI 0000172c 0|| ID 00001032  1| EX 00001030 1 | WB 0000007c 1 | RVFI 00000000 0| ia 1 / 1 | it 0 |  li 1 / 0 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   12960.000 ns | IF 00001030  1| ID 0000007c 0| EX 0000007c 0 | WB 0000007c 1 | RVFI 0000172c 0|| ID 00001032  1| EX 00001030 1 | WB 0000007c 1 | RVFI 00000000 0| ia 0 / 0 | it 0 |  li 1 / 0 | db 1 | f 0 | cp 0 | si 0 | ib 0 | cf 0 | sl 0 |
+   12963.000 ns | IF 00001030  1| ID 00001030 1| EX 0000007c 0 | WB 0000007c 0 | RVFI 0000007c 1|| ID 00001036  1| EX 00001032 1 | WB 00001030 1 | RVFI 0000007c 1| ia 1 / 0 | it 0 |  li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 | RVFI | JAL      | 0000007c 
+\end{terminal}
+
+FIX? -> Revert 2 instead of 1 instructions
+
+\textbf{IRQ test 2 - ALL interrupts FAIL} After the last interrupt it reverts, when it should not revert -> \ccode{will_take_interrupt()} returned true for S level interrupts, which should not be enabled. -> Add \ccode{ENABLED_IRQ_MASK} to match core
+
+
+\subsection{Timing irq}
+
+\tmp{We need a 2 cycle delay between when the irq changes}
+
+\begin{figure}[hbt]
+    \centering
+    \begin{tikztimingtable}
+      \sv{clk}                  & 10{2C} G \\ 
+      \sv{wb_mstatus.mie}       & LL   2{2H} 7{2L} \\ 
+      \sv{interrupt_taken}      & 5{2L}  2{2H} 3{2L} \\ 
+      \sv{interrupt_enabled}    & LL 6{2H} 3{2L} \\
+    \end{tikztimingtable}
+    \caption{Timing of \sv{interrupt_enable} and \sv{mstatus.mie}}
+    \label{fig:mstatus_mie}
+\end{figure}
+
+
+\section{Taking interrupts}
 \label{sec:interrupttiming}
 
-The \sv{interrupt_enabled} signal is an important signal in the CV32E40S core, that determines if an interrupt can be taken, given the current pipeline state. This is the reason we need a pipeline shell to properly time interrupts. \Cref{fig:dependency-tree-cv32x} shows the complexity of this signal, shows it id depends on the different pipeline stages, in addition to what influences the cycle-accuracy of each pipeline stage.
-
-To have a reference model that is independent of the core, all of the components in the \sv{interrupt_allowed} signal should be properly modeled in the reference model and recreated. 
-In order to reduce the scope of this thesis, the \sv{interrupt_allowed} signal is not modeled in the reference model. It is instead directly injected from the DUT core in order to implement the the rest of the reference model. 
-
-Although the \sv{interrupt_allowed} signal is not implemented, the following section will provide a brief discussion on the possible implementation and challenges.
-
+\tmp{Directly inject the \sv{interrupt_allowed} signal from the core??}
 
 In the core, whether interrupts can be taken based on the signals in \cref{lst:interrupt_allowed}. For the reference model to correctly mirror the behavior of the core, it should also determine if interrupts are allowed based on the same parameters.
 
@@ -794,13 +1075,13 @@ To do this in the reference model, we can utilize a
 
 
 \section{Other asynchronous events}
-
-As the previous sections only have focused on interrupts, this section will briefly look at how the work done for interrupts can transfer over to other asynchronous events such as debug requests and \acrfull{nmi}.
 \tmp{TODO: Possibly move to a better place?}
 
 \tmp{Discuss how relevant interrupt handling is to how debug, nmi, etc. are handled }
 
 \tmp{Justify that the thesis focuses on CLINT interrupts, because debug etc are similar.}
+
+
 
 \subsection{Debug}
 
@@ -808,33 +1089,36 @@ CV32E40S supports the debug specification from \cite{pauldonahueRISCVDebugSuppor
 
 \sv{debug_req_i} is used to externally trigger a debug event and can be thought of as the "debug interrupt" \cite{openhwgroupDebugTriggerCOREV2023}.
 
-In the core, taking of debug requests is determined similarly to interrupts by the use of the signals \sv{pending_async_debug} and \sv{async_debug_allowed}.
+In the core, taking of interrupts is determined similarly to interrupts by the use of the signals \sv{pending_async_debug} and \sv{async_debug_allowed}.
+
+\sv{pending_sync_debug} and \sv{sync_debug_allowed}.
 
 \sv{async_debug_allowed} shown in \Cref{lst:async_debug_allowed} is very similar to the \sv{interrupt_allowed} signal used for interrupts with the only difference being, \sv{!woke_to_interrupt_q} instead of \sv{interrupt_blanking_q} and it does not use the \sv{debug_interruptible} signal that \sv{interrupt_allowed} uses\cite{OpenhwgroupCv32e40s2024}. 
 
-\subsection{Similarities to interrutps}
-
-\subsubsection{Revertion after debug}
-
-\tmp{debug mode also causes pipeline flush, and requires revertion of the ISS}
-
-\subsubsection{Delay debug mode with pipeline}
-
-\tmp{Delay debug mode the same way we delay csrs for interrupts}
-\subsubsection{Two debug requests after eachother}
-
-We get the same problem when a debug request returns from debug mode with \rv{dret} and goes straight into another debug request, as when an interrupt returns from the interrupt handler with \rv{mret} and takes another interrupt. The problem here is that Spike runs a few instructions ahead, and applied the side effects of the \rv{dret} instruction prematurely, causing the \sv{iss_set_debug()} function to set \sv{debug_taken} and flush the pipeline prematurely.
-
-For interrupts, this is solved by exporting the relevant CSRs through RVFI, passing them through the pipeline, and using these to correctly time the changes.
-
-\rv{dret} restores the PC and privileged to the values stored in \rv{dpc} and \rv{dcsr}, and exits debug mode. The side effect that influences the timing of debug requests is that \ccode{debug_mode} is turned off in \rv{dret}. the \ccode{debug_mode} is used by the \ccode{set_debug} method to determine if a new debug request can be made, or if the processor is currently in the debug mode. We must therefore delay this signal to when the pipeline shell is out of debug mode, and not only when spike has exited debug mode. 
-
-The debug mode is output to RVFI via the \sv{rvfi_dbg_mode} signal. One solution is therefore to use this to update a copy of \sv{debug_mode} in the pipeline shell. One problem with this is that the \sv{rvfi_dbg_mode} reports high when in \rv{dret} since the instruction is run in debug mode, but since \rv{dret} disables debug mode, we want to set our local copy to 0 when the \rv{dret} instruction leaves WB. 
-
-\tmp{TODO: solve this. Pass a separate dbg mode signal through the stages, update internally in spike with saved states, or have a special "if dret" signal to set debug mode to 0}
-
-
-
+\begin{systemverilog}[caption={\sv{async_debug_allowed} from \file{cv32e40s_controller_fsm.sv} \cite{OpenhwgroupCv32e40s2024}.}, label={lst:async_debug_allowed}]
+  // External debug will kill insn in WB, do not allow if LSU is not interruptible, a fence.i handshake is taking place
+  // or if an offloaded instruction is in WB.
+  // LSU will not be interruptible if the outstanding counter != 0, or
+  // a trans_valid has been clocked without ex_valid && wb_ready handshake.
+  // When a fencei is present in WB and the LSU has completed all tranfers, the fencei handshake will be initiated. This must complete and the fencei instruction must retire before allowing external debug.
+  // Any multi operation instruction (table jumps, push/pop and double moves) may not be interrupted once the first operation has completed its operation in WB.
+  //   - This is guarded with using the sequence_interruptible, which tracks sequence progress through the WB stage.
+  // When a CLIC pointer is in the pipeline stages EX or WB, we must block debug.
+  //   - Debug would otherwise kill the pointer and use the address of the pointer for dpc. A following dret would then return to the mtvt table, losing program progress.
+  //
+  // Debug entry because of haltreq is disallowed when the LSU is busy and therefore
+  // haltreq can only cause debug entry on the instruction following a load or store that
+  // keep the LSU busy. If such load or store however is being single stepped or has an
+  // associated breakpoint or watchpoint, then debug will be entered because of that
+  // lower priority reason even though haltreq is asserted. This is okay because if instruction
+  // timing is considered haltreq should be considered only asserted on the following
+  // instruction (i.e. the asynchronous haltreq signal is considered asserted too late to
+  // impact the current instruction in the pipeline).
+  // If the core woke up from sleep due to interrupts, the wakeup reason will be honored
+  // by not allowing async debug the cycle after wakeup.
+  assign async_debug_allowed = lsu_interruptible_i && !fencei_ongoing && !clic_ptr_in_pipeline && sequence_interruptible &&
+                               !woke_to_interrupt_q && !csr_flush_ack_q && !(ctrl_fsm_cs == SLEEP); 
+\end{systemverilog}
 
 
 \subsection{CLIC Interrupts}
@@ -847,10 +1131,6 @@ CLIC and CLINT both use the same \sv{pending_interrupt} and \sv{interrupt_allowe
 \sv{nmi_allowed} is equal to \sv{interrupt_allowed}, except \sv{!interrupt_blanking_q} is replaced by \sv{!(woke_to_debug_q || woke_to_interrupt_q)}
 
 
-
-
-
-
 \subsection{Similarities to CLINT interrupts}
 
 From above we see that \sv{lsu_interruptible_i}, \sv{fencei_ongoing clic_ptr_in_pipeline}, \sv{sequence_interruptible}, \sv{csr_flush_ack_q}, and \sv{ctrl_fsm_cs} are all common signals for \sv{interrupt_allowed}, \sv{async_debug_allowed}, and \sv{nmi_allowed}. These signals are the signals that are influenced by the pipeline contents, and solving how these can be used to properly time the asynchronous events is common for all of these events.
@@ -860,11 +1140,6 @@ By using CLINT interrupts as an example to verify if this approach for determini
 
 
 
-\subsection{WFI}
-
-\tmp{TODO}
-
-\tmp{We disable wfi in the ISS, so that the timing is done in the pipeline shell}
 
 \section{Complicated asynchronous cases to test}
 \tmp{TODO: Move somewhere else?}

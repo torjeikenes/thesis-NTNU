@@ -1,0 +1,21 @@
+\begin{tikzpicture}[x=1.05cm,y=0.7cm]
+\stacktop{}
+
+    \small
+   
+    \bcell{Above bottom} \cellptr{Stack pointer here}
+    \bcell{Bottom} 
+
+
+\cell{\rv{c.lwsp x15,8(x2)}}
+\cell{\rv{c.addi x15,1}}
+\cell{\rv{c.swsp x15,8(x2)}}
+\cell{\rv{c.lwsp x15,12(x2)}}
+\cell{\rv{c.addi x15,1}}
+\cell{\rv{c.swsp x15,12(x2)}}
+\cell{\rv{c.lwsp x15,16(x2)}}
+
+\stackbottom{}
+
+
+\end{tikzpicture}

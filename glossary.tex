@@ -59,12 +59,24 @@
     description=When an instruction is \gls{commited} after being in the WB stage and is no longer in the pipeline.
 }
 
+\newglossaryentry{step}
+{
+    name=Step,
+    description=When the ISS executes one instruction, or the instructions move to the next pipeline stage.
+}
+
+\newglossaryentry{checkpoint}{
+    name=checkpoint,
+    despcription=Points along the execution the processor can revert to, where the state of the processor has been stored.
+}
+
 % --------------------
 % ----- Acronyms -----
 % --------------------
 
 \newacronym{riscv}{RISC-V}{Reduced Instruction Set Computer (RISC) Five}
 \newacronym{iss}{ISS}{Instruction Set Simulator}
+\newacronym{uvm}{UVM}{Universal Verification Methodology}
 \newacronym{dut}{DUT}{Device Under Test}
 \newacronym{fev}{FEV}{Formal Equivalence Verification}
 \newacronym{rtl}{RTL}{Register Transfer Level}
@@ -73,12 +85,22 @@
 \newacronym{sva}{SVA}{SystemVerilog Assertions}
 \newacronym{fv}{FV}{Formal Verification}
 \newacronym{rvfi}{RVFI}{RISC-V Formal Interface}
+\newacronym{rvvi}{RVVI}{RISC-V Verification Interface}
 \newacronym{bsp}{BSP}{Board Support Package}
+\newacronym{gpr}{GPR}{General purpose registers}
+\newacronym{pc}{PC}{Program Counter}
 \newacronym{if}{IF}{Instruction Fetch}
 \newacronym{id}{ID}{Instruction Decode}
 \newacronym{ex}{EX}{Execute}
 \newacronym{wb}{WB}{Write-back}
 \newacronym{lsu}{LSU}{Load Store Unit}
 \newacronym{csr}{CSR}{Control and Status Register}
+\newacronym{vip}{VIP}{Verification IP}
+\newacronym{nmi}{NMI}{Non-maskable Interrupt}
+\newacronym{dsa}{DSA}{domain-specific architectures}
+\newacronym{dm}{DM}{Debug Module}
+\newacronym{clic}{CLIC}{Core-Local Interrupt Controller}
+\newacronym{clint}{CLINT}{Core Local Interrupt Controller}
+
 
 

@@ -94,26 +94,27 @@ However, some instructions also have \textit{side effects}, which means that the
 
 \Cref{fig:jump_flush} shows a similar example with a flush instruction (3 J) instead of a branch instruction. Because branches are taken in the ID stage in the CV32E40S core, only the IF stage needs to be flushed and there is only one cycle delay before the first instruction after the jump.
 
-\begin{figure}[htb]
+\begin{figure}[htbp]
 \centering
 \input{figures/interrupt_flush_tikz}
 \caption{Pipeline flush during an interrupt.}
 \label{fig:interrupt_flush}
 \end{figure}
 
-\begin{figure}[htb]
+\begin{figure}[htbp]
 \centering
 \input{figures/branch_flush_tikz}
 \caption{Pipeline flush during a branch.}
 \label{fig:branch_flush}
 \end{figure}
 
-\begin{figure}[htb]
+\begin{figure}[htbp]
 \centering
 \input{figures/jump_flush_tikz}
 \caption{Pipeline flush during a jump.}
 \label{fig:jump_flush}
 \end{figure}
+
 
 %\begin{figure}
 %    \centering
@@ -158,7 +159,7 @@ In the RISC-V specification, there is a distinction between interrupts and excep
 An \textit{asynchronous event} can either be an external interrupt or a debug request. This event happens independently of the normal program flow and clock cycle. In the report, we will mostly focus on interrupts as examples of asynchronous events, but many of the same timing problems presented will also apply to debug requests.
 
 
-The CV32E40S supports two different interrupt architectures, the simpler, non-preemptable  \textit{CLINT} interrupt controller and the more sophisticated \textit{CLIC} interrupt controller, which supports nested interrupts with interrupt prioritization, and a larger amount of interrupts (1024 in CV32E40S)\cite{openhwgroupExceptionsInterruptsCOREV2023}. 
+The CV32E40S supports two different interrupt architectures, the simpler, non-preemptable \acrfull{clint} and the more sophisticated \acrfull{clic}, which supports nested interrupts with interrupt prioritization, and a larger number of interrupts \cite{openhwgroupExceptionsInterruptsCOREV2023}. 
 
 
 To simplify the explanation, we will focus on the CLINT implementation as an example of how interrupts are handled. However, we will also briefly discuss the differences between CLINT and CLIC. 
@@ -175,6 +176,8 @@ The current PC is captured into the \lstinline{mepc} CSR to continue the interru
 The interrupt cause is saved into the \lstinline{mcause} register, which the trap handler uses to determine the correct handling.
 Since CLINT is non-preemptive, the core disables interrupts while in the trap handler by clearing the \lstinline{mstatus.mie} register, after saving the previous state to \lstinline{mstatus.mpie} to be able to revert it afterwards. 
 The interrupts handler is looked up in the vector table \lstinline{mtvec}, and this base address is jumped to if non-vectored mode is enabled, or if vectored mode is enabled, the core jumps to the base address plus an offset address of 4 times the interrupt ID. This requires \textit{flushing} the pipeline, discarding the unfinished instructions.
+
+
 The interrupt handler ends with the \lstinline{mret} instruction, which reverts the program counter to the PC saved in \lstinline{mepc}, and reverts \lstinline{mstatus.mie} from \lstinline{mstatus.mpie}.
 
 \subsection{Non-Maskable interrupts - NMI}
@@ -190,6 +193,23 @@ The \textit{Core Local Interrupt Controller (CLIC)} is a more advanced interrupt
 
 The pipeline state can affect the timing of interrupts. When an interrupt occurs, the processor must halt normal execution at the current instruction and switch to the interrupt handler. When the core takes the interrupt and jumps to the interrupt handler, the pipeline stages must be flushed or killed. This involves discarding the unfinished instructions currently in the pipeline. However, the pipeline may not always be in a state where it can be safely flushed. This can occur in multiple scenarios, such as if the processor is mid-execution of a multi-cycle instruction or has an outstanding memory operation. This requires the core to wait for the pipeline to be \textit{interruptible} before taking the interrupt \cite{taylorAdvancedRISCVVerification2023}.
 
+
+
+
+
+\tmp{Forklar med \Cref{fig:interrupt_flush}}
+
+\section{Debug requests}
+\label{sec:bg_debug}
+
+Debug support is an essential part of a processor, to allow developers to gain visibility and control of the processor, especially when implemented physically in hardware. CV32E40S supports the RISC-V Debug Specification \cite{pauldonahueRISCVDebugSupport2023} to support low level debugging access to the processor. The specification defines a common interface used by \acrfull{dm} on the RISC-V platform, but external to the core. This \acrshort{dm} is further controlled by a Debugger on a Debug Host (eg. gdb on a laptop), through Debug Transport Hardware (eg. JTAG), and through different transport modules and interfaces. 
+
+The Debug Mode of the core can be entered synchronously through \rv{ebreak} instructions, or asynchronously through the \rv{debug_req_i} input signal to the core used by the \acrshort{dm} \cite{openhwgroupDebugTriggerCOREV2023}.
+
+When the core enters the the debug mode, the current PC is saved to the \rv{dpc} CSR, the cause of the debug is saved in the \rv{dcsr} CSR, and the privilege is set in \rv{prv}. The PC is then redirected to a location given in the \rv{dm_haltaddr_i} port, where the processor starts executing the debug control code from \cite{openhwgroupDebugTriggerCOREV2023}.
+
+To exit from debug mode, the \rv{dret} instruction is executed, which restores the PC from \rv{dpc} and resumes normal execution at the privilege level set in \rv{prv} and \rv{v} \cite{pauldonahueRISCVDebugSupport2023}.
+
 \section{Processor verification Techniques}
 \label{sec:bg_verificationTech}
 
@@ -200,6 +220,337 @@ A common approach to processor verification is the \textit{step-and-compare} met
 \subsection{step-and-compare}
 \label{sec:step-and-compare}
 The step-and-compare methodology is popular since the state is continuously compared between the DUT and the RM, and there are no wasted cycles after a failure. This is an advantage compared to other methodologies such as post-simulation trace log checking and post-simulation signature checking \cite{duncangrahamRISCVVerificationImplications2023}, where the program has to fully complete before comparing the logs and determining if the test has passed or failed.
+
+\section{Instruction Set Simulators (ISS) }
+\label{sec:bg_iss}
+
+An \textit{Instruction Set Simulator (ISS)} is a simulator that simulates the processor execution at an instruction granularity.
+It only takes the ISA as a basis and ignores implementation-specifics like the pipeline.
+There are many available Instruction Set Simulators for RISC-V, some of which are discussed below.
+
+%\subsection{QEMU}
+%\label{sec:qemu}
+%
+%\textit{QEMU} is an open-source full-system emulator that can run various operating systems on multiple hardware platforms. It supports multiple ISAs, one of which is RISC-V \cite{qemu_project_developers_about_2023}. 
+%It uses portable dynamic binary translation to translate full code blocks from one another ISA to RISC-V. QEMU is made to be fast, and multiple optimizations and simplifications are made at the expense of accuracy. For instance, interrupts are not checked at every instruction but at every new code block, so interrupts may be mistimed. \cite{bellard_qemu_2005}
+%
+%\subsection{Rv8}
+%\label{sec:rv8}
+%
+%\textit{Rv8} is another open-source ISS that uses just-in-time dynamic binary translation, similar to QEMU. Like QEMU, it is also focused on speed, does optimizations at the expense of accuracy, and may be hard to use for verification \cite{clark_rv8_2017}.
+%
+%\subsection{R2VM}
+%\label{sec:R2VM}
+%
+%The \textit{Rust RISC-V Virtual Machine (R2VM)} \cite{guo_accelerate_2020} is an ISS written in Rust. It utilizes \textit{dynamic binary translation (DBT)} to translate code blocks from the RISC-V ISA to the host's native code. 
+%
+%The simulator also simulates a 5-stage pipeline. This implementation models the pipeline during the DBT code generation and uses different "hooks" that run at the start of a block, before an instruction, after an instruction, and after a taken branch. The hooks generate microarchitectural simulation code and are used to calculate the number of cycles it takes for an instruction to complete. 
+%
+%Because the simulator uses DBT, interrupts are checked only at the end of basic blocks since it is difficult to interrupt DBT-ed code \cite{guo_accelerate_2020}. This can be accepted in the R2VM simulator as it is intended for simulating timing, but is not optimal for verification.
+%
+%
+%
+%\subsection{riscvOVPsim}
+%\label{sec:riscvOVPsim}
+%
+%\textit{riscvOVPsim} is a free ISS from Imperas. Imperas is a leading processor simulation company. It is instruction-accurate with support for most official RISC-V extensions. It allows configuring the model with different configurations and standard extensions, but riscvOVPsim only works with the standard RISC-V extensions and does not allow users to add custom instructions and extensions without acquiring a license from Imperas. \cite{imperas_software_ltd_risc-v_2023}.
+%
+%\textit{riscvOVPsimPlus} is an expanded version of riscvOVPsim that adds trace output and a GDB debug interface. It allows an execution log to be output and compared after execution. \cite{imperas_software_ltd_risc-v_2023}
+
+\subsection{Spike}
+\label{sec:spike}
+
+\textit{Spike} is an open-source functional instruction-accurate ISS written for RISC-V. It is written in C++ and is relatively simple to use and extend. It is widely used in both academia for research and teaching, and in industry as a golden functional reference to multiple RISC-V cores. Spike is the official RISC-V ISS developed alongside the RISC-V specification as the golden model since 2010 and is now maintained by RISC-V International. \cite{SpikeRISCVISA2023}
+
+Spike supports a wide variety of extensions and makes it relatively simple to include custom extensions.
+The widespread adoption of Spike is a big advantage as it has been thoroughly tested, leaving few bugs, and is likely to be kept up-to-date for the foreseeable future. 
+
+Spike loads in an ELF binary file holding the instructions to be run.
+\tmp{More on how spike works?}
+%Spike revolves around a \lstinline{step()} function in the \lstinline{execute.cc} file that fetches, decodes, and executes an instruction. This is divided into one function \lstinline{_mmu->access_icache(pc)} that fetches an already decoded instruction (with \lstinline{decode()}) with the type \lstinline{insn_fetch_t}, and either run \lstinline{execute_insn_fast()} or \lstinline{execute_insn_logged()} to execute the instruction quickly or slowly with logging. In Spike, the execute functions also write the results to the simulated register file \cite{SpikeRISCVISA2023}.
+
+\subsection{Sail-riscv}
+\label{sec:sail}
+
+\textit{Sail-riscv} is a model of RISC-V written in the Sail language. Sail is a language specifically for specifying instruction set architectures for a processor. It is intended as being a precise definition of the ISA to avoid ambiguity of an ISA specification written in text or pseudocode \cite{armstrongSailInstructionsetSemantics2023}. It features an OCaml parser and backend, allowing the generation of latex documentation, executable emulators in C and OCaml, theorem prover definitions, and type checking. 
+
+Sail-riscv is the sail specification for RISC-V and has been adopted as the golden formal model by the RISC-V Foundation\cite{RISCVSailModel2023}. 
+The C-emulator generated from the sail-riscv model makes it possible to use the model as an ISS. The emulator mixes autogenerated code from the sail model with handwritten wrapper code. The generator can be configured to use different extensions, and custom extensions written in Sail can also be included in the simulator. 
+
+Sail-riscv also revolves around a \lstinline{step()} function. Inside the step function, instructions are fetched with the \lstinline{fetch()} function, decoded with \lstinline{ext_decode()}, and executed with \lstinline{execute()}. Execute also writes the data back to the register file and executes side effects. \cite{RISCVSailModel2023}
+
+
+%\begin{itemize}
+%  \item Emulator generated from the risc-v sail specification.
+%  \item the c emulator is an interpreter. Fetches and decodes instructions from emulated ram. \cite{}
+%  \item Supports RVFI\_DII (Risc-V Formal Interface - Direct Instruction Injection)
+%  \item Supports RV32I, RV64I, M, A, C, F, D, Zicsr and N extensions
+%  \item \textbf{Lacking} support for multiple extensions: E, Zmmul, Zicntr, Zihpm, Zifencei... 
+%  \item openHW has been considering implementing these in sail \textbf{but unclear what the status is}. 
+%  \item base counters and timers
+%  \item Machine-level and supervisor-level
+%  \item supports CLINT
+%\end{itemize}
+
+
+%\section{Micro-Architectural simulators}
+%
+%Micro-architectural simulators simulate computer systems by modeling the different underlying hardware components, achieving cycle-accurate simulation \cite{akram_survey_2019}. Some micro-architectural simulators will be introduced below.
+%
+%
+%\subsection{Gem5}
+%\label{sec:gem5}
+%
+%\textit{Gem5} is an open-source architecture simulator. It decouples the ISA semantics from the CPU model, allowing the simulation of multiple ISAs and CPU models. It has support for atomic, in-order, and out-of-order CPU models, and recently received support for RISC-V \cite{roelke_risc5_2017} \cite{hin_supporting_2021} \cite{lowe-power_gem5_2020}. 
+%
+%Gem5 is popular for architectural exploration but lacks some features that might be necessary for verification. For example, it lacks support for running in lock-step execution, lacks a trace output for each cycle, and is non-trivial to add custom instructions and extensions.
+%
+%While Gem5 is cycle-accurate, significant modifications to the included prebuilt CPU models are necessary to represent the DUT core accurately. 
+%
+%Gem5 is actively developed and maintained and is likely to continue getting support. \cite{noauthor_gem5_2023}
+%
+%%\begin{itemize}
+%%    \item Open source architecture simulator
+%%    \item Hardware is black boxes with tunable latencies and attributes
+%%    \item Multiple CPU models; atomic, in-order, out-of-order
+%%    \item Decouples ISA semantics from the CPU models
+%%    \item Might be slow compared to other ISS alternatives
+%%    \item Syscall Emulation (SE) mode simulation or Full System (FS) mode simulation
+%%\end{itemize}
+%%
+%%Gem5 is intended for performance evaluation, so to use it for validation, some work has to be done.
+%%We need to support:
+%%
+%%\begin{itemize}
+%%    \item Lock-step execution
+%%    \item trace output for each cycle
+%%    \item Ability to supoprt custom extensions and instructions
+%%    \item Modify the cpu model to resemble the core to be simulated.
+%%    \item Modularity in choosing RISC-V extensions
+%%\end{itemize}
+%
+%%Gem5 is more complex than spike and sail, but might be harder to modify without altering side effects
+%%
+%%Gem5 might lead to more work to modify and/or might be more messy.
+%%
+%%Could become too similar to the RTL, and possibly have the same bugs.
+%
+%
+%%\subsection{TinyEMU}
+%%
+%%\begin{itemize}
+%%    \item System emulator
+%%    \item Small and simple
+%%\end{itemize}
+%
+%\subsection{MARSS-RISCV}
+%\label{sec:marss}
+%
+%\textit{MARSS-RISCV} is an open-source cycle-level micro-architectural simulator for RISC-V, built on top of the TinyEMU emulator. It has cycle-level models for both in-order and out-of-order pipelines, configurable with 5-stage- and 6-stage pipelines \cite{kothari_marss-riscv_2019}. It is also intended for full system simulation, performance evaluation, or architectural exploration, not verification.
+%
+%It currently only supports the RV32GC and RV64GC ISA extensions. The last commit to the project was 3 years ago (Dec 9, 2020), and it has multiple reported unfixed bugs that are several years old.
+%
+%To simulate the pipeline, the simulated core has a \lstinline{CPUStage} object for each pipeline stage, with info about the stage. Among other things, it holds an \lstinline{InstructinoLatch} object that serves as a placeholder for a single instruction, containing the decoded instruction and other information about the instruction that is updated as it moves through the pipeline \cite{gaurav_kothari_marss-riscv_2020}.
+%Each pipeline stage also has a function responsible for running the stage and moving the instruction placeholder to the next stage if allowed. To ensure stalls are considered, the functions are run in reverse order, from WB to IF.
+%
+%
+%%\begin{itemize}
+%%  \item cycle-level
+%%  \item Multi core
+%%  \item Written in rust
+%%  \item 5 stage in-order pipeline
+%%  \item Mostly focused on performance and simulating timing of pipeline.
+%%  \item Interrupts only handled at the end of code blocks.
+%%\end{itemize}
+
+\section{Existing RISC-V Reference Model Solutions}
+\label{sec:bg_existingReference}
+
+Many RISC-V cores use Instruction Set Simulators as the Reference Model. Some of these implementations will be introduced below.
+
+\subsection{riscvOVPsim}
+
+OVPsim was used in the core-v-verif verification environment before switching to ImperasDV using the step-and-compare methodology. The RVFI output from the core was monitored by an RVFI monitor, which determined the instruction type. An RVVI driver was responsible for driving the reference model using the different RVVI-API functions. The \lstinline{stepi(REQ req)} function was used to step the reference model in normal execution. When an interrupt occurred in the DUT, \lstinline{stepi_ext_intr(rvvi_ovpsim_seq_item.intr_id)} or \lstinline{stepi_nmi_load_fault()} was used to notify the riscvOVPsim of the interrupt \cite{openhwgroupOpenhwgroupCorevverif2023}.
+
+\subsection{Spike}
+
+Spike has been used as a reference model in multiple RISC-V cores, and some of the implementations are described below.
+
+\subsubsection{CVA6 spike tandem reference model}
+\label{back:cva6}
+
+CVA6 is another core from the OpenHW Group and uses the same verification environment as the CV32E40S core, with some modifications. A tandem verification approach with Spike is currently being developed to verify the CVA6 core. They use Spike, with a few patches, as a reference model.
+
+The implementation revolves around the \lstinline{step()} in Spike, which is expanded to output an RVFI item after running a step. This is passed to the scoreboard in the verification environment, where it is compared to the DUT. The \lstinline{spike_step()} function is called from the verification environment as a SystemVerilog "DPI" function and executes the \lstinline{step())} function in Spike \cite{openhwgroupOpenhwgroupCorevverif2023}.
+
+Interrupts are reported from the DUT through the RVFI interface as described in \cref{sec:rvfi}. This way, the interrupts are taken at the same instruction in the DUT and Reference Model, but it can not verify if this is the correct time to do so.
+
+Certain sections in the RISC-V ISA specification use terms like "may" or "can". This ambiguity has led to discrepancies between the Spike Reference Model and the CVA6 core due to differences in the interpretation of the specification. There is ongoing work to find these discrepancies \footnote{\url{https://github.com/openhwgroup/cva6/issues/1346}} and patch Spike to operate the same way as the CVA6 core. 
+
+%\begin{itemize}
+%    \item CVA6 is another core from openHW. It also uses the verification environment from core-v-verif 
+%    \item Currently in development
+%    \item Another core-v core from openHWgroup
+%    \item Uses spike as a reference model
+%    \item Added some patches to spike
+%    \item Added the classes \lstinline{Processor} and \lstinline{Simulation}
+%    \item Expands the \lstinline{step()} function to build an rvfi item after running a step. This is output from spike and compared with the core in \lstinline{run_phase()} in \lstinline{uvmc_rvfi_scoreboard.sv}
+%    \item uses dpi to integrate the \lstinline{spike_step()} function into the uvm environmen
+%    \item Interrupts follow the DUT \textbf{Virker det som} \url{https://github.com/MarioOpenHWGroup/core-v-verif/blob/doc/SpikeAPI/cva6/docs/SpikeAPI/API.md}
+%    \item One challenge is that spike allows more behaviour than CVA6 and must be constrained \url{https://github.com/openhwgroup/cva6/issues/1403}
+%\end{itemize}
+%
+%
+%From commit message: 
+%\url{https://github.com/openhwgroup/core-v-verif/commit/73cf832a1f5ffa453112b2f6ffc30a340ef623e7}
+%
+%\url{https://github.com/openhwgroup/core-v-verif/compare/master...MarioOpenHWGroup:core-v-verif:feature/spike-tandem}
+%
+%\begin{lstlisting}
+%    
+%[TANDEM] Added to the RVFI agent the tandem functionality
+%* vendor/patches/riscv/riscv-isa-sim/0005-install-shared-disasm-lib.patch:
+%  New.
+%* vendor/riscv/riscv-isa-sim/disasm/disasm.mk.in
+%  (disasm_install_shared_lib): Ditto.
+%* vendor/riscv/riscv-isa-sim/riscv/execute.cc (processor_t::step): Save the
+%  bit pattern of most recently fetched instruction in processor state.
+%* vendor/riscv/riscv-isa-sim/riscv/processor.h (struct state_t): Add the
+% bit pattern of the most recently fetched instruction to processor state.
+%* One monitor to execute the RM instructions when the instructions are
+% commited by the core.
+%* One scoreboard to get the transactions from core and RM
+%* Unified monitor to RVFI with several threads to look to each one of
+% the commit ports
+%* Functionality st_rvfi2seq and seq2rvfi has been added to convert
+% structs into transactions and the other way around
+%* Added RM and Spike classes to implement the RM functionality
+%
+%riscv-isa-sim:
+%* Add extended classes for Processor and Simulation
+%  * These clases implement the extended functionality that we want to
+% modify to spike to minimize the modifications to the base code
+%* Add a params system to control the behaviour of the core from the
+% SV code.
+%* The API described for Spike has to be implemented in order to compare
+% more things.
+%* Add context_t mechanism to be able to step the simulation with ease
+%* Reimplemented max_steps mechanism
+%* Add bootrom file in order to add our custom bootrom.
+%* Add params to control the generation of dram and bootrom
+%* Add mechanism to be able to run the modified spike as an standalone
+% binary without having issues
+%* Add dpi functions to load binary to get sections and symbols
+%
+%\end{lstlisting}
+
+
+\subsubsection{Spike cosim in Ibex RISC-V core}
+\label{back:Ibex}
+
+Ibex is another open-source RISC-V core from lowRISC. It currently uses Spike for co-simulation and verification. It uses a step-and-compare-based approach, but instead of outputting the changed processor state through RVFI to a separate compare module, Spike is extended to internally compare Spike against the DUT changes. Spike is also expanded to take the RVFI item from the DUT as an input and use this for comparison. To inject interrupts into Spike, the added functions \lstinline{set_nmi()}, \lstinline{set_mip}, \lstinline{set_debug_req} are called from over DPI from \lstinline{ibex_cosim_scoreboard.sv}.
+Ibex also extends RVFI with the \lstinline{rvfi_ext_irq_valid} signal to report an interrupt not associated with an instruction, not setting \lstinline{rvfi_valid}. This keeps the order of the interrupts correct in comparison to the retired instructions instead of passing interrupts independent of RVFI. This also allows multiple interrupts to happen between two instruction retirements \cite{ethzurichanduniversityofbolognaCosimulationSystem2023}. 
+
+%\begin{itemize}
+%    \item Uses spike as an ISS for cosimulation
+%    \item Does not extend to 
+%    \item When the DUT receives an interrupts and sends this in the rvfi item, this is sent to spike using \lstinline{set_nmi()}, \lstinline{set_mip}, \lstinline{set_debug_req} etc. in \lstinline{ibex_cosim_scoreboard.sv}
+%    \item Extends rvfi with \lstinline{rvfi_ext_irq_valid} to signal an interrupt not associated with an instruction, not setting \lstinline{rvfi_valid}. This keeps the order of the interrupts correct in comparison to the retired instructions, instead of passing interrupts independent of RVFI. This also allows multiple interrupts to happen between two instruction retirements.
+%    \item Interrupts follows the DUT, leaving a verification hole
+%    
+%\end{itemize}
+
+
+\subsection{ImperasDV}
+\label{sec:imperasdv}
+
+In the third generation of the core-v-verif environment, the ImperasDV \acrfull{vip} was integrated. This implements the RVVI-API functions and contains a reference model and comparison with the DUT, scoreboard, etc. Moving the comparison into the VIP allows for more control when verifying the correct execution of asynchronous events \cite{taylorAdvancedRISCVVerification2023}. Imperas DV is a closed-source IP requiring a license to use. Therefore, we do not know how ImperasDV works internally, but looking at the surrounding implementation \cite{openhwgroupOpenhwgroupCorevverif2023} and output logs \footnote{\url{https://github.com/openhwgroup/core-v-verif/issues/2082}}, we can get a simple idea of how it works. This will be explained below.
+
+ImperasDV uses the RVVI-API to pass retired instructions into the VIP from the DUT trace. When an interrupt or other asynchronous event occurs to the DUT, the \textit{net changes}, or signals that have changed, are pushed to ImperasDV with \lstinline{rvvi.net_push()} function. ImperasDV then analyzes all the legal sets of actions to determine if any of them converge to the provided DUT state. ImperasDV will try to apply every legal net change in different orders and execute until retirement happens. It will then then compare the state changes with the state changes of the DUT. If none of the state changes match the DUT, an error is thrown, indicating that the DUT did an illegal state change.
+
+
+This is an improvement from the step-and-compare methodology previously used with riscvOVPsim, as interrupts no longer follow the DUT. Instead, ImperasDV verifies that the state transition of the DUT is legal. Although this is an improvement, it still leaves some holes in the verification coverage.
+ImperasDV still has no pipeline awareness and can only verify that the DUTs state transition is legal, but not whether it was the correct legal state change according to the pipeline state \cite{taylorAdvancedRISCVVerification2023}.
+
+%Since ImperasDV is a closed verification IP, we do not know how ImperasDV works internally. More work is needed to build this functionality to implement a similar approach.  
+
+
+%\Cref{lst:imperasDV-a} shows an example of the output log from ImperasDV when the core DUT has made an illegal state change in the special case when an NMI occurs in debug mode. The listing shows the current and pending net changes, as well as the new DUT state.
+%
+%\begin{lstlisting}[caption=Error log from ImperasDV from \url{https://github.com/openhwgroup/core-v-verif/issues/2082} ,label={lst:imperasDV-a}]
+%Info (IDV) Currently applied nets:
+%Info (IDV)  - nmi => 1
+%Info (IDV)  - irq_id_i => 17
+%Info (IDV)  - irq_lev_i => be
+%Info (IDV)  - irq_sec_i => 3
+%Info (IDV)  - haltreq => 1
+%Info (IDV) Pending net changes:
+%Info (IDV)  - Group 3:
+%Info (IDV)  -          nmi_cause => 1025,  age = 0 cycles, 0 retires
+%Info (IDV)  - Group 4:
+%Info (IDV)  -            haltreq => 0,  age = 10 cycles, 0 retires
+%Info (IDV) DUT state change (hartId: 0):
+%Info (IDV)  - dut.pc               - 0x1a110800 debug_rom+0
+%Info (IDV)  - dut.mstatus          - 0x00001880 SD:0 TW:0 MPRV:0 XS:0(Off) FS:0(Off) MPP:3 VS:0(Off) MPIE:1 UBE:0 MIE:0
+%Info (IDV)  - dut.mepc             - 0x0001c072
+%Info (IDV)  - dut.mcause           - 0xb8000401 Interrupt:1 minhv:0 mpp:3 mpie:1 mpil:0 Code:1025
+%Info (IDV)  - dut.dcsr             - 0x400004d3 debugver:4 ebreakm:0 ebreaku:0 stepie:0 stopcount:1 stoptime:0 cause:3(haltreq) mprven:1 nmip:0 prv:3(M-mode)
+%Info (IDV)  - dut.dpc              - 0x00000000
+%\end{lstlisting}
+%
+%
+%\Cref{lst:imperasDVb} shows a shortened version of the log, showing how ImperasDV explores the different state changes. 
+%
+%
+%
+%\begin{lstlisting}[caption=Shortened error log from ImperasDV from \url{https://github.com/openhwgroup/core-v-verif/issues/2082} ,label={lst:imperasDVb}]
+%Reference state change evaluation tree (HartId: 0):
+%Net haltreq => 0x0 { when:2980 }
+%+  Net nmi_cause => 0x401 { when:2990 }
+%   +  Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0xb8000401, mstatus:0x1880 }
+%      +  Retire { pc:0x0(__jvt_base+0) }
+%
+%Net haltreq => 0x0 { when:2980 }
+%+  Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0xb8000fff, mstatus:0x1880 }
+%   +  Net nmi_cause => 0x401 { when:2990 }
+%      +  Retire { pc:0x0(__jvt_base+0) }
+%        
+%Net haltreq => 0x0 { when:2980 }
+%+  Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0xb8000fff, mstatus:0x1880 }
+%   +  Retire { pc:0x0(__jvt_base+0) }
+%     
+%Net nmi_cause => 0x401 { when:2990 }
+%+  Net haltreq => 0x0 { when:2980 }
+%   +  Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0xb8000401, mstatus:0x1880 }
+%      +  Retire { pc:0x0(__jvt_base+0) }
+%        
+%Net nmi_cause => 0x401 { when:2990 }
+%+  Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0x88000011, mstatus:0x88 }
+%   +  Retire { pc:0x1a110800(debug_rom+0) }
+%     
+%Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0x88000011, mstatus:0x88 }
+%+  Net nmi_cause => 0x401 { when:2990 }
+%   +  Retire { pc:0x1a110800(debug_rom+0) }
+%     
+%Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0x88000011, mstatus:0x88 }
+%+  Retire { pc:0x1a110800(debug_rom+0) }
+%
+%\end{lstlisting}
+
+\subsection{Onespin RISC-V}
+
+Onespin has a RISC-V verification solution OneSpin RISC-V Integrity Verification Solution. \cite{onespinsolutionsAssuringIntegrityRISCV2019} 
+This works by formalizing the ISA into a set of SystemVerilog Assertions.
+
+formal and simulation friendly
+
+Each instruction is translated to a single operational assertion that can map to sequential or pipelined implementation \cite{onespinsolutionsAssuringIntegrityRISCV2019}.
+
+Used to verify the Rocket Core with all instructions, privilege levels, interrupts and exceptions mapped into assertions \cite{onespinsolutionsAssuringIntegrityRISCV2019}.
+
+To implement this approach, it would require the model to be fully described using assertions.
+
+
 
 
 \section{CV32E40S Verification Environment}
@@ -320,323 +671,6 @@ Interrupts can be passed to the reference model using \lstinline{rvviRefNetSet(n
 
 
 
-\section{Instruction Set Simulators (ISS) }
-\label{sec:bg_iss}
-
-An \textit{Instruction Set Simulator (ISS)} is a simulator that simulates the processor execution at an instruction granularity.
-It only takes the ISA as a basis and ignores implementation-specifics like the pipeline.
-There are many available Instruction Set Simulators for RISC-V, some of which are discussed below.
-
-%\subsection{QEMU}
-%\label{sec:qemu}
-%
-%\textit{QEMU} is an open-source full-system emulator that can run various operating systems on multiple hardware platforms. It supports multiple ISAs, one of which is RISC-V \cite{qemu_project_developers_about_2023}. 
-%It uses portable dynamic binary translation to translate full code blocks from one another ISA to RISC-V. QEMU is made to be fast, and multiple optimizations and simplifications are made at the expense of accuracy. For instance, interrupts are not checked at every instruction but at every new code block, so interrupts may be mistimed. \cite{bellard_qemu_2005}
-%
-%\subsection{Rv8}
-%\label{sec:rv8}
-%
-%\textit{Rv8} is another open-source ISS that uses just-in-time dynamic binary translation, similar to QEMU. Like QEMU, it is also focused on speed, does optimizations at the expense of accuracy, and may be hard to use for verification \cite{clark_rv8_2017}.
-%
-%\subsection{R2VM}
-%\label{sec:R2VM}
-%
-%The \textit{Rust RISC-V Virtual Machine (R2VM)} \cite{guo_accelerate_2020} is an ISS written in Rust. It utilizes \textit{dynamic binary translation (DBT)} to translate code blocks from the RISC-V ISA to the host's native code. 
-%
-%The simulator also simulates a 5-stage pipeline. This implementation models the pipeline during the DBT code generation and uses different "hooks" that run at the start of a block, before an instruction, after an instruction, and after a taken branch. The hooks generate microarchitectural simulation code and are used to calculate the number of cycles it takes for an instruction to complete. 
-%
-%Because the simulator uses DBT, interrupts are checked only at the end of basic blocks since it is difficult to interrupt DBT-ed code \cite{guo_accelerate_2020}. This can be accepted in the R2VM simulator as it is intended for simulating timing, but is not optimal for verification.
-%
-%
-%
-%\subsection{riscvOVPsim}
-%\label{sec:riscvOVPsim}
-%
-%\textit{riscvOVPsim} is a free ISS from Imperas. Imperas is a leading processor simulation company. It is instruction-accurate with support for most official RISC-V extensions. It allows configuring the model with different configurations and standard extensions, but riscvOVPsim only works with the standard RISC-V extensions and does not allow users to add custom instructions and extensions without acquiring a license from Imperas. \cite{imperas_software_ltd_risc-v_2023}.
-%
-%\textit{riscvOVPsimPlus} is an expanded version of riscvOVPsim that adds trace output and a GDB debug interface. It allows an execution log to be output and compared after execution. \cite{imperas_software_ltd_risc-v_2023}
-
-\subsection{Spike}
-\label{sec:spike}
-
-\textit{Spike} is an open-source functional instruction-accurate ISS written for RISC-V. It is written in C++ and is relatively simple to use and extend. It is widely used in both academia for research and teaching, and in industry as a golden functional reference to multiple RISC-V cores. Spike is the official RISC-V ISS developed alongside the RISC-V specification as the golden model since 2010 and is now maintained by RISC-V International. \cite{SpikeRISCVISA2023}
-
-Spike supports a wide variety of extensions and makes it relatively simple to include custom extensions.
-The widespread adoption of Spike is a big advantage as it has been thoroughly tested, leaving few bugs, and is likely to be kept up-to-date for the foreseeable future. 
-
-Spike loads in an ELF file holding the instructions to be run.
-Spike revolves around a \lstinline{step()} function in the \lstinline{execute.cc} file that fetches, decodes, and executes an instruction. This is divided into one function \lstinline{_mmu->access_icache(pc)} that fetches an already decoded instruction (with \lstinline{decode()}) with the type \lstinline{insn_fetch_t}, and either run \lstinline{execute_insn_fast()} or \lstinline{execute_insn_logged()} to execute the instruction quickly or slowly with logging. In Spike, the execute functions also write the results to the simulated register file \cite{SpikeRISCVISA2023}.
-
-\subsection{Sail-riscv}
-\label{sec:sail}
-
-\textit{Sail-riscv} is a model of RISC-V written in the Sail language. Sail is a language specifically for specifying instruction set architectures for a processor. It is intended as being a precise definition of the ISA to avoid ambiguity of an ISA specification written in text or pseudocode \cite{armstrongSailInstructionsetSemantics2023}. It features an OCaml parser and backend, allowing the generation of latex documentation, executable emulators in C and OCaml, theorem prover definitions, and type checking. 
-
-Sail-riscv is the sail specification for RISC-V and has been adopted as the golden formal model by the RISC-V Foundation\cite{RISCVSailModel2023}. 
-The C-emulator generated from the sail-riscv model makes it possible to use the model as an ISS. The emulator mixes autogenerated code from the sail model with handwritten wrapper code. The generator can be configured to use different extensions, and custom extensions written in Sail can also be included in the simulator. 
-
-Sail-riscv also revolves around a \lstinline{step()} function. Inside the step function, instructions are fetched with the \lstinline{fetch()} function, decoded with \lstinline{ext_decode()}, and executed with \lstinline{execute()}. Execute also writes the data back to the register file and executes side effects. \cite{RISCVSailModel2023}
-
-
-%\begin{itemize}
-%  \item Emulator generated from the risc-v sail specification.
-%  \item the c emulator is an interpreter. Fetches and decodes instructions from emulated ram. \cite{}
-%  \item Supports RVFI\_DII (Risc-V Formal Interface - Direct Instruction Injection)
-%  \item Supports RV32I, RV64I, M, A, C, F, D, Zicsr and N extensions
-%  \item \textbf{Lacking} support for multiple extensions: E, Zmmul, Zicntr, Zihpm, Zifencei... 
-%  \item openHW has been considering implementing these in sail \textbf{but unclear what the status is}. 
-%  \item base counters and timers
-%  \item Machine-level and supervisor-level
-%  \item supports CLINT
-%\end{itemize}
-
-
-%\section{Micro-Architectural simulators}
-%
-%Micro-architectural simulators simulate computer systems by modeling the different underlying hardware components, achieving cycle-accurate simulation \cite{akram_survey_2019}. Some micro-architectural simulators will be introduced below.
-%
-%
-%\subsection{Gem5}
-%\label{sec:gem5}
-%
-%\textit{Gem5} is an open-source architecture simulator. It decouples the ISA semantics from the CPU model, allowing the simulation of multiple ISAs and CPU models. It has support for atomic, in-order, and out-of-order CPU models, and recently received support for RISC-V \cite{roelke_risc5_2017} \cite{hin_supporting_2021} \cite{lowe-power_gem5_2020}. 
-%
-%Gem5 is popular for architectural exploration but lacks some features that might be necessary for verification. For example, it lacks support for running in lock-step execution, lacks a trace output for each cycle, and is non-trivial to add custom instructions and extensions.
-%
-%While Gem5 is cycle-accurate, significant modifications to the included prebuilt CPU models are necessary to represent the DUT core accurately. 
-%
-%Gem5 is actively developed and maintained and is likely to continue getting support. \cite{noauthor_gem5_2023}
-%
-%%\begin{itemize}
-%%    \item Open source architecture simulator
-%%    \item Hardware is black boxes with tunable latencies and attributes
-%%    \item Multiple CPU models; atomic, in-order, out-of-order
-%%    \item Decouples ISA semantics from the CPU models
-%%    \item Might be slow compared to other ISS alternatives
-%%    \item Syscall Emulation (SE) mode simulation or Full System (FS) mode simulation
-%%\end{itemize}
-%%
-%%Gem5 is intended for performance evaluation, so to use it for validation, some work has to be done.
-%%We need to support:
-%%
-%%\begin{itemize}
-%%    \item Lock-step execution
-%%    \item trace output for each cycle
-%%    \item Ability to supoprt custom extensions and instructions
-%%    \item Modify the cpu model to resemble the core to be simulated.
-%%    \item Modularity in choosing RISC-V extensions
-%%\end{itemize}
-%
-%%Gem5 is more complex than spike and sail, but might be harder to modify without altering side effects
-%%
-%%Gem5 might lead to more work to modify and/or might be more messy.
-%%
-%%Could become too similar to the RTL, and possibly have the same bugs.
-%
-%
-%%\subsection{TinyEMU}
-%%
-%%\begin{itemize}
-%%    \item System emulator
-%%    \item Small and simple
-%%\end{itemize}
-%
-%\subsection{MARSS-RISCV}
-%\label{sec:marss}
-%
-%\textit{MARSS-RISCV} is an open-source cycle-level micro-architectural simulator for RISC-V, built on top of the TinyEMU emulator. It has cycle-level models for both in-order and out-of-order pipelines, configurable with 5-stage- and 6-stage pipelines \cite{kothari_marss-riscv_2019}. It is also intended for full system simulation, performance evaluation, or architectural exploration, not verification.
-%
-%It currently only supports the RV32GC and RV64GC ISA extensions. The last commit to the project was 3 years ago (Dec 9, 2020), and it has multiple reported unfixed bugs that are several years old.
-%
-%To simulate the pipeline, the simulated core has a \lstinline{CPUStage} object for each pipeline stage, with info about the stage. Among other things, it holds an \lstinline{InstructinoLatch} object that serves as a placeholder for a single instruction, containing the decoded instruction and other information about the instruction that is updated as it moves through the pipeline \cite{gaurav_kothari_marss-riscv_2020}.
-%Each pipeline stage also has a function responsible for running the stage and moving the instruction placeholder to the next stage if allowed. To ensure stalls are considered, the functions are run in reverse order, from WB to IF.
-%
-%
-%%\begin{itemize}
-%%  \item cycle-level
-%%  \item Multi core
-%%  \item Written in rust
-%%  \item 5 stage in-order pipeline
-%%  \item Mostly focused on performance and simulating timing of pipeline.
-%%  \item Interrupts only handled at the end of code blocks.
-%%\end{itemize}
-
-
-
-
-\section{Existing RISC-V Reference Model Solutions}
-\label{sec:bg_existingReference}
-
-Many RISC-V cores use Instruction Set Simulators as the Reference Model. Some of these implementations will be introduced below.
-
-\subsection{riscvOVPsim}
-
-OVPsim was used in the core-v-verif verification environment before switching to ImperasDV using the step-and-compare methodology. The RVFI output from the core was monitored by an RVFI monitor, which determined the instruction type. An RVVI driver was responsible for driving the reference model using the different RVVI-API functions. The \lstinline{stepi(REQ req)} function was used to step the reference model in normal execution. When an interrupt occurred in the DUT, \lstinline{stepi_ext_intr(rvvi_ovpsim_seq_item.intr_id)} or \lstinline{stepi_nmi_load_fault()} was used to notify the riscvOVPsim of the interrupt \cite{openhwgroupOpenhwgroupCorevverif2023}.
-
-\subsection{Spike}
-
-Spike has been used as a reference model in multiple RISC-V cores, and some of the implementations are described below.
-
-\subsubsection{CVA6 spike tandem reference model}
-\label{back:cva6}
-
-CVA6 is another core from the OpenHW Group and uses the same verification environment as the CV32E40S core, with some modifications. A tandem verification approach with Spike is currently being developed to verify the CVA6 core. They use Spike, with a few patches, as a reference model.
-
-The implementation revolves around the \lstinline{step()} in Spike, which is expanded to output an RVFI item after running a step. This is passed to the scoreboard in the verification environment, where it is compared to the DUT. The \lstinline{spike_step()} function is called from the verification environment as a SystemVerilog "DPI" function and executes the \lstinline{step())} function in Spike \cite{openhwgroupOpenhwgroupCorevverif2023}.
-
-Interrupts are reported from the DUT through the RVFI interface as described in \cref{sec:rvfi}. This way, the interrupts are taken at the same instruction in the DUT and Reference Model, but it can not verify if this is the correct time to do so.
-
-Certain sections in the RISC-V ISA specification use terms like "may" or "can". This ambiguity has led to discrepancies between the Spike Reference Model and the CVA6 core due to differences in the interpretation of the specification. There is ongoing work to find these discrepancies \footnote{\url{https://github.com/openhwgroup/cva6/issues/1346}} and patch Spike to operate the same way as the CVA6 core. 
-
-%\begin{itemize}
-%    \item CVA6 is another core from openHW. It also uses the verification environment from core-v-verif 
-%    \item Currently in development
-%    \item Another core-v core from openHWgroup
-%    \item Uses spike as a reference model
-%    \item Added some patches to spike
-%    \item Added the classes \lstinline{Processor} and \lstinline{Simulation}
-%    \item Expands the \lstinline{step()} function to build an rvfi item after running a step. This is output from spike and compared with the core in \lstinline{run_phase()} in \lstinline{uvmc_rvfi_scoreboard.sv}
-%    \item uses dpi to integrate the \lstinline{spike_step()} function into the uvm environmen
-%    \item Interrupts follow the DUT \textbf{Virker det som} \url{https://github.com/MarioOpenHWGroup/core-v-verif/blob/doc/SpikeAPI/cva6/docs/SpikeAPI/API.md}
-%    \item One challenge is that spike allows more behaviour than CVA6 and must be constrained \url{https://github.com/openhwgroup/cva6/issues/1403}
-%\end{itemize}
-%
-%
-%From commit message: 
-%\url{https://github.com/openhwgroup/core-v-verif/commit/73cf832a1f5ffa453112b2f6ffc30a340ef623e7}
-%
-%\url{https://github.com/openhwgroup/core-v-verif/compare/master...MarioOpenHWGroup:core-v-verif:feature/spike-tandem}
-%
-%\begin{lstlisting}
-%    
-%[TANDEM] Added to the RVFI agent the tandem functionality
-%* vendor/patches/riscv/riscv-isa-sim/0005-install-shared-disasm-lib.patch:
-%  New.
-%* vendor/riscv/riscv-isa-sim/disasm/disasm.mk.in
-%  (disasm_install_shared_lib): Ditto.
-%* vendor/riscv/riscv-isa-sim/riscv/execute.cc (processor_t::step): Save the
-%  bit pattern of most recently fetched instruction in processor state.
-%* vendor/riscv/riscv-isa-sim/riscv/processor.h (struct state_t): Add the
-% bit pattern of the most recently fetched instruction to processor state.
-%* One monitor to execute the RM instructions when the instructions are
-% commited by the core.
-%* One scoreboard to get the transactions from core and RM
-%* Unified monitor to RVFI with several threads to look to each one of
-% the commit ports
-%* Functionality st_rvfi2seq and seq2rvfi has been added to convert
-% structs into transactions and the other way around
-%* Added RM and Spike classes to implement the RM functionality
-%
-%riscv-isa-sim:
-%* Add extended classes for Processor and Simulation
-%  * These clases implement the extended functionality that we want to
-% modify to spike to minimize the modifications to the base code
-%* Add a params system to control the behaviour of the core from the
-% SV code.
-%* The API described for Spike has to be implemented in order to compare
-% more things.
-%* Add context_t mechanism to be able to step the simulation with ease
-%* Reimplemented max_steps mechanism
-%* Add bootrom file in order to add our custom bootrom.
-%* Add params to control the generation of dram and bootrom
-%* Add mechanism to be able to run the modified spike as an standalone
-% binary without having issues
-%* Add dpi functions to load binary to get sections and symbols
-%
-%\end{lstlisting}
-
-
-\subsubsection{Spike cosim in Ibex RISC-V core}
-\label{back:Ibex}
-
-Ibex is another open-source RISC-V core from lowRISC. It currently uses Spike for co-simulation and verification. It uses a step-and-compare-based approach, but instead of outputting the changed processor state through RVFI to a separate compare module, Spike is extended to internally compare Spike against the DUT changes. Spike is also expanded to take the RVFI item from the DUT as an input and use this for comparison. To inject interrupts into Spike, the added functions \lstinline{set_nmi()}, \lstinline{set_mip}, \lstinline{set_debug_req} are called from over DPI from \lstinline{ibex_cosim_scoreboard.sv}.
-Ibex also extends RVFI with the \lstinline{rvfi_ext_irq_valid} signal to report an interrupt not associated with an instruction, not setting \lstinline{rvfi_valid}. This keeps the order of the interrupts correct in comparison to the retired instructions instead of passing interrupts independent of RVFI. This also allows multiple interrupts to happen between two instruction retirements \cite{ethzurichanduniversityofbolognaCosimulationSystem2023}. 
-
-%\begin{itemize}
-%    \item Uses spike as an ISS for cosimulation
-%    \item Does not extend to 
-%    \item When the DUT receives an interrupts and sends this in the rvfi item, this is sent to spike using \lstinline{set_nmi()}, \lstinline{set_mip}, \lstinline{set_debug_req} etc. in \lstinline{ibex_cosim_scoreboard.sv}
-%    \item Extends rvfi with \lstinline{rvfi_ext_irq_valid} to signal an interrupt not associated with an instruction, not setting \lstinline{rvfi_valid}. This keeps the order of the interrupts correct in comparison to the retired instructions, instead of passing interrupts independent of RVFI. This also allows multiple interrupts to happen between two instruction retirements.
-%    \item Interrupts follows the DUT, leaving a verification hole
-%    
-%\end{itemize}
-
-
-\subsection{ImperasDV}
-\label{sec:imperasdv}
-
-In the third generation of the core-v-verif environment, the ImperasDV \textit{Verification IP (VIP)} was integrated. This implements the RVVI-API functions and contains a reference model and comparison with the DUT, scoreboard, etc. Moving the comparison into the VIP allows for more control when verifying the correct execution of asynchronous events \cite{taylorAdvancedRISCVVerification2023}. Imperas DV is a closed-source IP requiring a license to use. Therefore, we do not know how ImperasDV works internally, but looking at the surrounding implementation \cite{openhwgroupOpenhwgroupCorevverif2023} and output logs \footnote{\url{https://github.com/openhwgroup/core-v-verif/issues/2082}}, we can get a simple idea of how it works. This will be explained below.
-
-ImperasDV uses the RVVI-API to pass retired instructions into the VIP from the DUT trace. When an interrupt or other asynchronous event occurs to the DUT, the \textit{net changes}, or signals that have changed, are pushed to ImperasDV with \lstinline{rvvi.net_push()} function. ImperasDV then analyzes all the legal sets of actions to determine if any of them converge to the provided DUT state. ImperasDV will try to apply every legal net change in different orders and execute until retirement happens. It will then then compare the state changes with the state changes of the DUT. If none of the state changes match the DUT, an error is thrown, indicating that the DUT did an illegal state change.
-
-
-This is an improvement from the step-and-compare methodology previously used with riscvOVPsim, as interrupts no longer follow the DUT. Instead, ImperasDV verifies that the state transition of the DUT is legal. Although this is an improvement, it still leaves some holes in the verification coverage.
-ImperasDV still has no pipeline awareness and can only verify that the DUTs state transition is legal, but not whether it was the correct legal state change according to the pipeline state \cite{taylorAdvancedRISCVVerification2023}.
-
-%Since ImperasDV is a closed verification IP, we do not know how ImperasDV works internally. More work is needed to build this functionality to implement a similar approach.  
-
-
-%\Cref{lst:imperasDV-a} shows an example of the output log from ImperasDV when the core DUT has made an illegal state change in the special case when an NMI occurs in debug mode. The listing shows the current and pending net changes, as well as the new DUT state.
-%
-%\begin{lstlisting}[caption=Error log from ImperasDV from \url{https://github.com/openhwgroup/core-v-verif/issues/2082} ,label={lst:imperasDV-a}]
-%Info (IDV) Currently applied nets:
-%Info (IDV)  - nmi => 1
-%Info (IDV)  - irq_id_i => 17
-%Info (IDV)  - irq_lev_i => be
-%Info (IDV)  - irq_sec_i => 3
-%Info (IDV)  - haltreq => 1
-%Info (IDV) Pending net changes:
-%Info (IDV)  - Group 3:
-%Info (IDV)  -          nmi_cause => 1025,  age = 0 cycles, 0 retires
-%Info (IDV)  - Group 4:
-%Info (IDV)  -            haltreq => 0,  age = 10 cycles, 0 retires
-%Info (IDV) DUT state change (hartId: 0):
-%Info (IDV)  - dut.pc               - 0x1a110800 debug_rom+0
-%Info (IDV)  - dut.mstatus          - 0x00001880 SD:0 TW:0 MPRV:0 XS:0(Off) FS:0(Off) MPP:3 VS:0(Off) MPIE:1 UBE:0 MIE:0
-%Info (IDV)  - dut.mepc             - 0x0001c072
-%Info (IDV)  - dut.mcause           - 0xb8000401 Interrupt:1 minhv:0 mpp:3 mpie:1 mpil:0 Code:1025
-%Info (IDV)  - dut.dcsr             - 0x400004d3 debugver:4 ebreakm:0 ebreaku:0 stepie:0 stopcount:1 stoptime:0 cause:3(haltreq) mprven:1 nmip:0 prv:3(M-mode)
-%Info (IDV)  - dut.dpc              - 0x00000000
-%\end{lstlisting}
-%
-%
-%\Cref{lst:imperasDVb} shows a shortened version of the log, showing how ImperasDV explores the different state changes. 
-%
-%
-%
-%\begin{lstlisting}[caption=Shortened error log from ImperasDV from \url{https://github.com/openhwgroup/core-v-verif/issues/2082} ,label={lst:imperasDVb}]
-%Reference state change evaluation tree (HartId: 0):
-%Net haltreq => 0x0 { when:2980 }
-%+  Net nmi_cause => 0x401 { when:2990 }
-%   +  Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0xb8000401, mstatus:0x1880 }
-%      +  Retire { pc:0x0(__jvt_base+0) }
-%
-%Net haltreq => 0x0 { when:2980 }
-%+  Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0xb8000fff, mstatus:0x1880 }
-%   +  Net nmi_cause => 0x401 { when:2990 }
-%      +  Retire { pc:0x0(__jvt_base+0) }
-%        
-%Net haltreq => 0x0 { when:2980 }
-%+  Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0xb8000fff, mstatus:0x1880 }
-%   +  Retire { pc:0x0(__jvt_base+0) }
-%     
-%Net nmi_cause => 0x401 { when:2990 }
-%+  Net haltreq => 0x0 { when:2980 }
-%   +  Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0xb8000401, mstatus:0x1880 }
-%      +  Retire { pc:0x0(__jvt_base+0) }
-%        
-%Net nmi_cause => 0x401 { when:2990 }
-%+  Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0x88000011, mstatus:0x88 }
-%   +  Retire { pc:0x1a110800(debug_rom+0) }
-%     
-%Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0x88000011, mstatus:0x88 }
-%+  Net nmi_cause => 0x401 { when:2990 }
-%   +  Retire { pc:0x1a110800(debug_rom+0) }
-%     
-%Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0x88000011, mstatus:0x88 }
-%+  Retire { pc:0x1a110800(debug_rom+0) }
-%
-%\end{lstlisting}
 
 
 
@@ -644,7 +678,7 @@ ImperasDV still has no pipeline awareness and can only verify that the DUTs stat
 \section{The problem with using an ISS as a reference model}
 \label{sec:back_issProblem}
 
-All the implementations from \cref{sec:bg_existingReference} except ImperasDV uses an ISS as a reference model. Taylor et al. discuss multiple problems when using an ISS as a reference model\cite{taylorAdvancedRISCVVerification2023}. The first problem is the difference in abstraction level between the DUT and the ISS. On one hand, DUT is typically simulated at a clock-cycle accurate Register Transfer Level. On the other hand, ISSs are simulated with time modeled at the instruction level, with cycle timing of memory interfaces and pipeline operation abstracted away. This leads to an inconsistency between the two. For instance, the RTL model might take multiple clock cycles to complete an instruction while the ISS executes it in one cycle.
+All the implementations from \cref{sec:bg_existingReference} except ImperasDV uses an ISS as a reference model. \textcite{taylorAdvancedRISCVVerification2023}  discuss multiple problems when using an ISS as a reference model. The first problem is the difference in abstraction level between the DUT and the ISS. On one hand, the DUT is typically simulated at a clock-cycle accurate Register Transfer Level. On the other hand, ISSs are simulated with time modeled at the instruction level, with the cycle timing of memory interfaces and pipeline operation abstracted away. This leads to an inconsistency between the two. For instance, the RTL model might take multiple clock cycles to complete an instruction while the ISS executes it in one cycle.
 
 When there are no asynchronous events, the ISS can accurately predict the execution of instructions. The problem arises with asynchronous events. In an instruction-accurate simulator, interrupts and debug requests are seen as happening at the beginning of a new instruction, while in the DUT, they could happen in the middle of a multi-cycle instruction. In addition, the ISS does not know the state of the pipeline. In some cases, as explained in \cref{sec:bg_pipeline}, the pipeline has states where interrupts can not immediately be taken, causing a mismatch where the ISS takes the interrupt before the DUT.
 
@@ -654,7 +688,7 @@ Another problem discussed is the timing of \textit{side effects}, which are stat
 
 \tmp{Expand this with examples}
 
-\tmp{Should this be moved outside of background?}
+\tmp{Should this be moved outside of background and use more custom examples?}
 
 %This has typically been done with the "step-and-compare" methodology, where the DUT runs until an instruction retires, then the RTL clock is stopped and the reference model is run until it also retires an instruction. At this point, the testbench compares the states in the DUT and RM before starting the RTL clock again.
 
@@ -773,6 +807,8 @@ The cycle-accurate simulator loads instruction traces from the circular queue an
 
 \section{Formal Verification}
 
+\tmp{TODO: Må jeg ha med SVA?}
+
 \tmp{TODO: expand and rewrite}
 
 Formal verification is using mathematical tools to analyze the space of possible behaviors of a design \cite{seligmanFormalVerificationEssential2015}.
@@ -818,18 +854,6 @@ Requirements for sequential \acrshort{fev} is:
 %\end{itemize}
 
 
-\section{Onespin RISC-V}
-
-Onespin has a RISC-V verification solution OneSpin RISC-V Integrity Verification Solution. \cite{onespinsolutionsAssuringIntegrityRISCV2019} 
-This works by formalizing the ISA into a set of SystemVerilog Assertions.
-
-formal and simulation friendly
-
-Each instruction is translated to a single operational assertion that can map to sequential or pipelined implementation \cite{onespinsolutionsAssuringIntegrityRISCV2019}.
-
-Used to verify the Rocket Core with all instructions, privilege levels, interrupts and exceptions mapped into assertions \cite{onespinsolutionsAssuringIntegrityRISCV2019}.
-
-To implement this approach, it would require the model to be fully described using assertions.
 
 \section{Tools}
 
@@ -849,6 +873,8 @@ Mostly used to verify:
 \end{itemize}
 
 \subsection{Onespin}
+
+\tmp{TODO: Explain onespin}
 
 360 EC-RTL \footnote{\url{https://www.onespin.com/products/360-ec-rtl}}
 

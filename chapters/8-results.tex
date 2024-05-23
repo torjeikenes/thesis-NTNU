@@ -1,0 +1,99 @@
+\chapter{Results}
+\tmp{TODO}
+
+
+\section{Taking interrrupts given \sv{interrupt_allowed}}
+
+\subsection{Directed interrupt test}
+
+
+\subsection{Random test}
+
+\sv{corev_rand_interrupt}
+
+Interrupt while \sv{interrupt_allowed = 0}
+-> Spike reverted state
+
+\begin{terminal}
+terminate called after throwing an instance of 'trap_load_address_misaligned'
+\end{terminal}
+
+
+\begin{terminal}
+core   0: 0x0000031e (0xf4188e83) lb      t4, -191(a7)
+core   0: 3 0x0000031e (0xf4188e83) x29 0x00000000 mem 0x00018c86
+core   0: 0x00000322 (0xfa4c4703) lbu     a4, -92(s8)
+core   0: 3 0x00000322 (0xfa4c4703) x14 0x00000000 mem 0x0001e397
+core   0: 0x00000326 (0xfe530f23) sb      t0, -2(t1)
+core   0: 3 0x00000326 (0xfe530f23) mem 0x000223ae 0xa4 pre mem 0x000223ae 0x00
+core   0: 0x0000032a (0x8f030e83) lb      t4, -1808(t1)
+core   0: 3 0x0000032a (0x8f030e83) x29 0x00000000 mem 0x00021ca0
+core   0: 0x0000032e (0x005c0a23) sb      t0, 20(s8)
+core   0: 3 0x0000032e (0x005c0a23) mem 0x0001e407 0xa4 pre mem 0x0001e407 0x00
+spike_interrupt
+pc: 32e | pc: 32a | pc: 326 | pc: 322 | 
+revert from PC: 332 to PC: 32a
+revert mem pc: 32e num: 1
+revert mem: addr: 1e407 val: 0 size: 1
+\end{terminal}
+
+\textbf{Two mistakes:}
+
+1. revertion while \sv{interrupt_allowed=0} 
+
+2. load address misaligned while state revertion
+
+
+the Second error should not happen, but was caused by mistake. We can still fix error 2 even though it should not have been caused because of error 1.
+
+
+
+\section{Comparison to Previous Solutions}
+
+An important result of this report is how this implementation compares to other available solutions. The implementation will therefore be compared to using a traditional ISS, to the ImperasDV Verification IP, and the previous two-layered cycle-accurate approaches from \Cref{sec:bg_cycle-accurate}. 
+
+\subsection{Traditional ISS}
+
+The problems with using a traditional \acrshort{iss} are introduced in \Cref{sec:back_issProblem}.
+Because of their instruction accurate timing model, they have problems with asynchronous events. 
+
+Using the Spike implementation used with the CVA6 core as an example, this uses \sv{write_rvfi_instruction()}, which takes in the rvfi output from the core and passes it to spike. 
+
+Using the step-and-compare 2.0 approach discussed in \cite{taylorAdvancedRISCVVerification2023} as an example, one approach to support asynchronous events is to only connect asynchronous events to the core and not the ISS. When the core reports that an interrupt or debug request is taken over \acrshort{rvfi}, this is passed to the ISS, which then also takes the specified interrupt or debug request. The problem with this approach is that it is not able to correctly verify which asynchronous event should be taken and if this is taken at the correct instruction. 
+
+The implementation discussed in this report attempts to solve this problem. Our reference model takes asynchronous interrutps and debug requests as inputs to the model and uses these independently of the core to determine how the processor should respond to the various inputs. 
+
+Our current implementation does rely on the \sv{interrupt_allowed} signal from the core to determine if an interrupt is allowed to be taken. Although it does depend on the core, the reference model still independently decides which interrupt or debug request should be taken, minimizing the verification hole with a traditional ISS.
+
+\subsection{ImperasDV}
+
+ImperasDV introduced in \Cref{sec:imperasdv}, is a proprietary \acrfull{vip} from Imperas. This solves handling of asynchronous events by forking the execution to explore different possible state changes. ImperasDV is used with \acrshort{rvvi}, where CSRs and memory regions modified asynchronously are marked as volatile. Asyncronous inputs to the core like \sv{irq} and \sv{haltreq} are passed to ImperasDV as net changes. ImperasDV analyzes the possible next states considering the next instruction and incoming net changes. It will then go down each fork to see if this ends up at the same state as the DUT. 
+
+The problem (and advantage) of this is that it does not contain the core specific pipeline details. If the core for example took an interrupt, which should not be taken because of pipeline details, this could possibly not be detected. \tmp{TODO: Verify this}
+
+\tmp{TODO: Our implementation bla bla bla}
+
+\tmp{ImperasDV resembles a formal approach by analyzing all possible states. Since it does not model the pipeline, it may allow a superset of the actual allowed states.}
+
+\subsection{Previous two-layered approaches}
+
+Our implementation has many similarities to the two-layered approaches from \textcite{leeFaCSimFastCycleAccurate2008} and \textcite{chiangEfficientTwolayeredCycleaccurate2009} introduced in \Cref{sec:bg_cycle-accurate}. As with our implementation, they feature one functional, untimed kernel, and one timing shell, which is responsible for correct cycle-accurate timing the user-visible values. 
+
+The major difference is in the design of the timing shell. \textcite{chiangEfficientTwolayeredCycleaccurate2009} solution uses a scheduler that distributes the state changes into different cycle slots, as shown in \Cref{fig:timeshell}. Instead of moving these cycle slots every cycle, we use pipeline slots, where a controller module decides at which cycles the instructions should step through the pipeline. This more closely relates to an actual pipeline implementation, making the functionality easier to grasp for the developer.
+
+Neither of these implementations is available or implemented for RISC-V, so a direct comparison of functionality is not possible. We will therefore compare these to our implementation by using an example and deducing how these solutions would handle this. 
+
+
+
+One difference is that Chiang and Huangs timing shell is implemented in SystemC, while our pipeline shell is implemented in SystemVerilog. This allows for the ISS to be replaced with a SystemVerilog compiled ISS in the future, in order to support formal verification.  
+
+Aditionally, none of the solutions specify how they would work in lock-step execution.
+FaCSim is meant to be used for performance evaluation and architectural exploration \cite{leeFaCSimFastCycleAccurate2008}. It claims to have an error margin of $6.79 \%$, when compared to the $100 \%$ cycle-accurate simulator, ARMulator \cite{leeFaCSimFastCycleAccurate2008}.
+
+For a cycle-accurate simulator to be used for verification, we would ideally have 0 errors. A single randomly generated corev-dv test usually contains between 5000 to 50000 instructions \cite{OpenhwgroupCv32e40s2024}. With an error margin of $7 \%$, the implementation would lead to many mismatches if used directly as a cycle-accurate simulator, running cycle by cycle parallel to the core. 
+
+Although a fully cycle-accurate comparison between the core and reference model is hard to achieve with this implementation, the important aspect is that instructions are ordered correctly at the instruction level. This does not necessarily require full cycle-accuracy if lock-step execution is implemented with this solution. By waiting until both the core and reference model has retired, before comparing the two, we might mitigate some of these errors. Although, the fact that some inaccuracies exist, means that we can not trust the results of the comparison $100\%$.
+
+
+
+
