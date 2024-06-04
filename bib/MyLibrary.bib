@@ -204,7 +204,6 @@
   doi = {10.1109/LATW.2013.6562666},
   abstract = {Digital applications complexity makes it harder every day to discover and debug behavioral inconsistencies at register transfer level (RTL). Aiming to bring a solution, several techniques have appeared as alternatives to verify that a circuit description meets the requirements of its corresponding functional specification. Simulation is widely applied due to its convenience to uncover early design bugs, but is far from providing the exhaustiveness acquired through formal methods, for which improved and new tools continue to appear. On the other hand, formal verification can suffer from problems such as state-space explosion or modeling inaccuracy. Then, it is vital to develop new ways to check a design for consistency fast and comprehensively. In this paper, we propose a sequential equivalence checking (SEC) formalism and an algorith m, for use between a specification, written at electronic system level (ESL), and an implementation, written at RTL. Given that equivalence is checked between different levels of abstraction, it is no longer valid to perform SEC on single states, thus, we show a scheme to extract and compare complete sequences of states in order to determine if the design intention, which is described in the ESL specification, is contained and respected by the RTL implementation. The results obtained suggest that our methodology can be applied efficiently on real designs.},
   eventtitle = {2013 14th {{Latin American Test Workshop}} - {{LATW}}},
-  isbn = {978-1-4799-0597-3 978-1-4799-0595-9 978-1-4799-0596-6},
   langid = {english},
   keywords = {notion},
   file = {/home/torje/Zotero/storage/YSRDWEP8/Castro Marquez et al. - 2013 - Formal equivalence checking between high-level and.pdf}
@@ -243,7 +242,6 @@
   doi = {10.1109/VDAT.2009.5158138},
   abstract = {In this paper, we propose a new processor modeling technique that partitions a cycle-accurate model into two layers, an inner functional kernel and an outer timing shell. The kernel is an untimed but high-speed instruction set simulator (ISS) and is suitable for software development; while the timing shell provides additional timing details for cycle-accurate hardware behavior. When a new processor member is added to the family, it demands only a new timing shell because the kernel is identical to that of its ancestors sharing the same instruction set architecture (ISA). It not only helps ensure functional consistency but significantly reduces the model development time. We take two processors with a same ISA, an ARM7-like one and an ARM9-like one, as our modeling examples to demonstrate the feasibility of the proposed technique. Finally, the experimental results show that, on average our two-layered cycle-accurate model is about 30 times faster than the RTL model in simulation.},
   eventtitle = {2009 {{International Symposium}} on {{VLSI Design}}, {{Automation}} and {{Test}} ({{VLSI-DAT}})},
-  isbn = {978-1-4244-2781-9},
   langid = {english},
   keywords = {notion},
   file = {/home/torje/Zotero/storage/RHWB9V98/Chiang and Huang - 2009 - Efficient two-layered cycle-accurate modeling tech.pdf}
@@ -338,16 +336,6 @@
   langid = {english},
   keywords = {notion},
   file = {/home/torje/Zotero/storage/34N8R8SU/Clark and Hoult - 2017 - rv8 a high performance RISC-V to x86 binary trans.pdf}
-}
-
-@online{CorevverifCv32e40sBsp,
-  title = {Core-v-Verif/Cv32e40s/Bsp at Master · Openhwgroup/Core-v-Verif},
-  url = {https://github.com/openhwgroup/core-v-verif/tree/master/cv32e40s/bsp},
-  urldate = {2024-02-15},
-  abstract = {Functional verification project for the CORE-V family of RISC-V cores. - openhwgroup/core-v-verif},
-  langid = {english},
-  organization = {GitHub},
-  file = {/home/torje/Zotero/storage/WSMFB5Y3/bsp.html}
 }
 
 @inproceedings{davideschiavoneSlowSteadyWins2017,
@@ -633,7 +621,7 @@
   location = {Cambridge, Mass},
   isbn = {978-0-12-811905-1},
   langid = {english},
-  pagetotal = {617},
+  keywords = {notion},
   file = {/home/torje/Zotero/storage/N4UT9YHU/Hennessy - Computer Architecture.pdf}
 }
 
@@ -711,6 +699,19 @@
   file = {/home/torje/Zotero/storage/3ZBERXZ3/iss-imperas-instruction-set-simulator.html}
 }
 
+@online{ISSMismatchPending2023,
+  title = {{{ISS}}: [{{Mismatch}}] {{Pending}} Debug Request with Nmip and Dret Fails to Detect Debug Mode as Valid next State · {{Issue}} \#2082 · Openhwgroup/Core-v-Verif},
+  shorttitle = {{{ISS}}},
+  date = {2023-07-26},
+  url = {https://github.com/openhwgroup/core-v-verif/issues/2082},
+  urldate = {2024-06-01},
+  abstract = {When there is a pending nmi in debug mode, upon dret, the ISS fails evaluate the state where the jump to the exception handler is interrupted by this pending debug halt-request Type Functionally in...},
+  langid = {english},
+  organization = {GitHub},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/EBUKYGH7/2082.html}
+}
+
 @inproceedings{jebaliEnsuringConsistencyCycleAccurate2018,
   title = {Ensuring {{Consistency}} between {{Cycle-Accurate}} and {{Instruction Set Simulators}}},
   booktitle = {2018 18th {{International Conference}} on {{Application}} of {{Concurrency}} to {{System Design}} ({{ACSD}})},
@@ -780,6 +781,23 @@
   urldate = {2023-09-08},
   keywords = {notion},
   file = {/home/torje/Zotero/storage/Z4DLTFWB/latest.html}
+}
+
+@article{kumarEquivalenceCheckingUsing2015,
+  title = {Equivalence {{Checking}} Using {{Assertion}} Based {{Technique}}},
+  author = {Kumar, Shailesh and Arvikar, Sameer and Jha, Saurabh and K. Gupta, Tarun},
+  date = {2015-06-18},
+  journaltitle = {International Journal of Computer Applications},
+  shortjournal = {IJCA},
+  volume = {120},
+  number = {14},
+  pages = {39--43},
+  issn = {09758887},
+  doi = {10.5120/21299-4349},
+  abstract = {This paper presents approach to equivalence checking methodology for large analog/mixed signal systems such as HDMI-PHY, USB-PHY (Transceiver). We verify the equivalence between a behavioral model and its electrical equivalent (Spice netlist) by applying same inputs to both representations. Inputs to spice are given through a D2A. The output waveforms are then compared to find the equivalence. We have implemented SystemVerilog assertions for critical timing checks. We are using digital-on-top (DoT) approach, SystemVerilog assertions are applied in the testbench, means the same assertions are applied to behavioral output as well as to the output of spice which is converted from analog to digital. We have given margin (rise/fall time) in assertions to ensure that assertion should comply with the allowed difference in spice and model output.},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/R6ADVEE8/Kumar et al. - 2015 - Equivalence Checking using Assertion based Techniq.pdf}
 }
 
 @article{lebedevTestEnvironmentVerification2020,
@@ -1076,7 +1094,6 @@
   doi = {10.1109/DSN-S58398.2023.00062},
   abstract = {Embedded systems in critical domains require both hard real-time and reliable execution. Real-time execution requires bounds in the worst-case execution time, while reliable execution is under threat, as systems are becoming more and more sensitive to transient faults. Thus, systems should be enhanced with fault-tolerant mechanisms with bounded error detection and correction overhead. Such mechanisms are typically based on redundancy at different granularity levels. Coarse-grained granularity has low comparison overhead, but may jeopardize timing guarantees. Fine-grained granularity immediately detects and corrects the error, but its implementation has increased design complexity. To mitigate this design complexity, we leverage high-level specification languages to design intrusive fine-grained lockstep processors based on the use of shadow registers and rollback, with bounded error detection and correction time, being appropriate for critical systems.},
   eventtitle = {2023 53rd {{Annual IEEE}}/{{IFIP International Conference}} on {{Dependable Systems}} and {{Networks}} - {{Supplemental Volume}} ({{DSN-S}})},
-  isbn = {9798350325454},
   langid = {english},
   keywords = {notion},
   file = {/home/torje/Zotero/storage/LC2DDDZR/Nikiema et al. - 2023 - Design with low complexity fine-grained Dual Core .pdf}
@@ -1113,14 +1130,37 @@
   file = {/home/torje/Zotero/storage/M7NCW8RK/RISC-V White Paper_062019.pdf}
 }
 
-@software{OpenhwgroupCv32e40s2024,
-  title = {Openhwgroup/Cv32e40s},
+@misc{onespinsolutionsgmbhUserManualOneSpin,
+  title = {User {{Manual}}: {{OneSpin}} 360™ {{Version}} 2021.2.3},
+  author = {{OneSpin Solutions GmbH}},
+  date = {2021-12-16},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/RDGJZ4Z4/User_Manual.pdf}
+}
+
+@online{openhwgroupCorevverifCv32e40sBsp,
+  title = {Core-v-Verif/Cv32e40s/Bsp at Master · Openhwgroup/Core-v-Verif},
+  author = {{OpenHW Group}},
+  url = {https://github.com/openhwgroup/core-v-verif/tree/master/cv32e40s/bsp},
+  urldate = {2024-02-15},
+  abstract = {Functional verification project for the CORE-V family of RISC-V cores. - openhwgroup/core-v-verif},
+  langid = {english},
+  organization = {GitHub},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/WSMFB5Y3/bsp.html}
+}
+
+@software{openhwgroupCv32e40s2024,
+  title = {Cv32e40s},
+  namea = {{OpenHW Group}},
+  nameatype = {collaborator},
   date = {2024-03-13T12:43:29Z},
   origdate = {2021-02-23T09:39:51Z},
   url = {https://github.com/openhwgroup/cv32e40s},
   urldate = {2024-03-22},
   abstract = {4 stage, in-order, secure RISC-V core based on the CV32E40P},
-  organization = {OpenHW Group}
+  organization = {OpenHW Group},
+  keywords = {notion}
 }
 
 @online{openhwgroupCV32E4SimulationTestbench2022,
@@ -1175,7 +1215,7 @@
 }
 
 @online{openhwgroupPipelineDetailsCOREV2023,
-  title = {Pipeline {{Details}} — {{CORE-V CV32E40X User Manual}} Documentation},
+  title = {Pipeline {{Details}} — {{CORE-V CV32E40S User Manual}} Documentation},
   namea = {{OpenHW Group}},
   nameatype = {collaborator},
   date = {2023},
@@ -1308,6 +1348,15 @@
   urldate = {2023-12-06},
   keywords = {notion},
   file = {/home/torje/Zotero/storage/VB5QS2A9/index.html}
+}
+
+@article{ReferenceManualOneSpin,
+  title = {Reference {{Manual}}: {{OneSpin}} 360 {{Version}} 2021.2.3},
+  author = {{OneSpin Solutions GmbH}},
+  date = {2021-12-16},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/CPKH3FAW/Reference Manual OneSpin 360 Version 2021.2.3.pdf}
 }
 
 @article{reidEndtoEndVerificationARM,
@@ -1483,6 +1532,20 @@
   file = {/home/torje/Zotero/storage/CSD4ZU7H/risc-v-vs-arm-a-comprehensive-comparison-of-processor-architectures.html}
 }
 
+@book{spearSystemVerilogVerificationGuide2012,
+  title = {{{SystemVerilog}} for {{Verification}}: {{A Guide}} to {{Learning}} the {{Testbench Language Features}}},
+  shorttitle = {{{SystemVerilog}} for {{Verification}}},
+  author = {Spear, Chris and Tumbush, Greg},
+  date = {2012},
+  publisher = {Springer US},
+  location = {Boston, MA},
+  doi = {10.1007/978-1-4614-0715-7},
+  isbn = {978-1-4614-0714-0 978-1-4614-0715-7},
+  langid = {english},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/8PDU7Z9N/Spear and Tumbush - 2012 - SystemVerilog for Verification A Guide to Learnin.pdf}
+}
+
 @online{SpikeRISCVISA2023,
   title = {Spike {{RISC-V ISA Simulator}}},
   date = {2023-09-07T21:53:09Z},
@@ -1604,6 +1667,16 @@
   urldate = {2023-12-06},
   keywords = {notion},
   file = {/home/torje/Zotero/storage/RCLNAIR7/target-riscv.html}
+}
+
+@report{theshdgroupRISCVMarketReport2024,
+  title = {{{RISC-V Market Report}}: {{Application Forecasts}} in a {{Heterogeneous World}} (Abridged Version)},
+  author = {{The SHD Group}},
+  date = {2024-01},
+  url = {https://theshdgroup.com/wp-content/uploads/2024/01/RISC-V-Market-Analysis-2024-Abridged-Report-updated.b.pdf},
+  urldate = {2024-05-31},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/8K7KKUVM/RISC-V-Market-Analysis-2024-Abridged-Report-updated.b.pdf}
 }
 
 @report{torjenygaardeikenesDesigningRISCVReference2023,

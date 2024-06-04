@@ -1,0 +1,112 @@
+\chapter{Problems and solutions implementing spike support}
+
+\begin{enumerate}
+
+\item \textbf{Issue:} \lstinline{mem_rdata} is 0 when using \lstinline{mem_read_commits}
+  \begin{description}
+    \item[Cause:] Spike only stores the address of memory reads, but stores both address and value for writes.
+    \item[Resolution:] [Spike] The read value should be the same as rd, so we can use the rd value as the memory read value.
+  \end{description}
+
+\item \textbf{Issue:} Wrong address with multiple memory accesses in one instruction. This is a problem with Zcmp.
+  \begin{description}
+    \item[Temporary Fix:] [Compare] Disable for now. \textbf{TODO:} Handle multiple memory accesses.
+  \end{description}
+
+\item \textbf{Issue:} \lstinline{mem_rdata} mismatch between RM and Core
+  \begin{description}
+    \item[Resolution:] [Compare] Only the \lstinline{mem_wdata} and \lstinline{mem_rdata} bytes that are high in \lstinline{mem_(w/r)mask} should be compared, as the other bytes can be different.
+  \end{description}
+
+\item \textbf{Issue:} \lstinline{rd1_wdata} is sometimes mismatched
+  \begin{description}
+    \item[Cause:] When \lstinline{rd1_addr} is 0, \lstinline{rd1_wdata} data is not guaranteed to be 0.
+    \item[Resolution:] [Compare] Only check \lstinline{rd1_wdata} if the address is not 0.
+  \end{description}
+
+\item \textbf{Issue:} \lstinline{csr_priv_gen_test} insn mismatch at PC \lstinline{0x00000000}
+
+\item \textbf{Issue:} Trap mismatch for illegal instruction type
+  \begin{description}
+    \item[Cause:] Spike generated wrong rvfi for trap.
+    \item[Resolution:] [Spike] Generate correct trap rvfi in spike.
+  \end{description}
+
+\item \textbf{Issue:} Interrupt mismatch
+  \begin{description}
+    \item[\textbf{TODO:}] Interrupt rvfi must be added. The \lstinline{intr} signal must be delayed until the first instruction of the interrupt handler.
+  \end{description}
+
+\item \textbf{Test:} \lstinline{cv32e40s_readonly_csr_access_test}:
+  \begin{description}
+    \item[Issue:] \lstinline{rd1_addr} mismatch on \lstinline{csrrs} instruction causing trap.
+    \item[Cause:] TODO
+    \item[Resolution:] [Compare] Ignore \lstinline{rd1_addr} on trap.
+  \end{description}
+
+\item \textbf{Test:} \lstinline{cv32e40s_csr_access_test}:
+  \begin{description}
+    \item[Issue:] In the core \lstinline{mcycle} is 0 after 3 instructions, but in Spike it is 3.
+    \item[Cause:] \lstinline{mcountinhibit} is 0 in RM and 5 in core and \lstinline{mcycle} is increased regardless of \lstinline{mcountinhibit}
+    \item[Resolution1:] [Spike] Reset \lstinline{mcountinhibit} to 5 like in the core.
+    \item[Resolotion2:] [Spike] Check if the \lstinline{mcountinhibit} bit is high before increasing (or not) \lstinline{mcycle} in spike.
+  \end{description}
+
+\item \textbf{Issue:} \lstinline{mcycleh} is 2 when core is 0
+  \begin{description}
+    \item[Cause:] Spike has "hack" to add one on write to take into account the coming bump of \lstinline{mcycle} \texttt{FFFFFFFF}.
+    \item[Resolution:] \textbf{FIX(ish):} Revert a hack that adds 1 to account for upcoming bump. TODO: make sure modifications work for all cases.
+  \end{description}
+
+\item \textbf{Issue:} \lstinline{mstatus} mismatch \lstinline{core = 0x00201880 and rm = 0x00200080}
+  \begin{description}
+    \item[Problem:] The difference is \lstinline{MPP = 3} for core and 0 for RM.
+    \item[\textbf{TODO:}] \tmp{This is not solved yet}
+  \end{description}
+  
+\item \textbf{Issue:} CSRs are wrong in hello world test
+  \begin{description}
+    \item[Cause:] CSRs (\lstinline{marchid, misa, mvendorid, and mimpid}) are configured differently in spike and core
+    \item[Resolution:] Change CSRs in \lstinline{state_t::reset()} in \lstinline{processor.cc}.
+  \end{description}
+  
+\item \textbf{Issue:} RVFI mismatch: cm.popret reports rd1 = x0 from core but rd1 = x2 from RM 
+  \begin{description}
+    \item[Cause:] RVFI reporting is done differently
+    \item[Resolution:] [Spike] Check if the instruction is a popret instruction and set rd1 to 0 if it is in 
+  \end{description}
+
+\item \textbf{Issue:} When setting all mie bits in spike, only bit 3, 7, and 11 are set. Bit 16-30 used for custom interrupts are not set 
+  \begin{description}
+    \item[Cause:] The \lstinline{csrrw} instruction writes a csr with a mask. The mask for writing to \lstinline{mie} is generated using \lstinline{reg_t mie_csr_t::write_mask} in \lstinline{csrs.cc}. This does not enable all custom interrupt bits(16-31) like the core does.
+    \item[Resolution:] [Spike] Add custom interrupt bits (16-31) to mie write mask in spike
+  \end{description}
+  
+
+\item \textbf{Issue:} RVFI intr signal is incorrectly timed. The trap signal should be active when the trap arrives, but the intr signal should be active on the first instruction of the trap handler.
+  \begin{description}
+    \item[Cause:] 
+    \item[Resolution:] [Spike] Store the rvfi trap signal until the next step, when the rvfi intr signal is set to the previous trap signal
+  \end{description}
+
+\item \textbf{Issue:} Differentiate between trap and interrupt to output correct rvfi.intr signal.
+  \begin{description}
+    \item[Cause:] When spike takes an interrupt it throws a \lstinline{trap_t(cause)} and sets the msb of cause to 1 to show the trap is an interrupt. When a synchronous trap is encountered, the cause is not marked with the high msb. This cause is stored in the \lstinline{which_trap} variable in the \lstinline{Processor} class, but this is stored as an \lstinline{uint8_t}, which discards the information stored in the msb.
+    \item[Resolution:] [Spike] By changing \lstinline{which_trap} to an \lstinline{uint32_t} we can differentiate between interrupts and traps when building the rvfi signals.
+  \end{description}
+
+\item \textbf{Issue:} Mip sometimes not being set to 0 in spike
+  \begin{description}
+    \item[Cause:] in \ccode{set_mip}, we don't get to set mip to 0 if \sv{mstatus.mie} is 0
+    \item[Resolution:] [Spike] Make \ccode{will_take_interrupt(mip)} function to make it more clear
+  \end{description}
+
+\item \textbf{Issue:} State revertion of memory writes caused alignment error
+  \begin{description}
+    \item[Cause:] When reverting state the memory would always be stored as \ccode{uint64_t}
+    \item[Resolution:] [Spike] Make a switch case to cast the correct variable size 
+  \end{description}
+
+  
+\end{enumerate}
+

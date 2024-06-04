@@ -4,12 +4,12 @@
 This chapter will discuss multiple architectural design choices to build a Reference Model. This chapter will focus on the overall design and architecture, while \Cref{ch:PipelineShell} and \Cref{ch:ISS} will focus on the details of the pipeline shell and ISS. Each of these chapters will feature a requirement list for the components. Throughout the chapter, requirements for ISS will be indicated with \textbf{ISS requirement X}, and requirements for the pipeline shell will be indicated with \textbf{PS requirement X}, both linking to the corresponding requirements at the beginning of each corresponding chapter.
 
 \section{Reference Model Requirements}
-\tmp{TODO}
+\label{sec:rm_req}
+
 The main challenges discussed in \cref{sec:back_issProblem} are that when using an ISS as a reference model, asynchronous events can be taken at the wrong time or in the wrong order, and the timing of the side effects can vary between the DUT and the reference model. This happens because the ISS does not have the necessary core-specific pipeline understanding to know how to respond to these asynchronous events.
 
 To overcome these challenges, we should build a reference model that adds a pipeline understanding to the model and use this to time asynchronous events and side effects correctly.
 
-Since testbenches shared by multiple cores, like core-v-verif, have become more common, the effort required to modify the reference model for a new core should be as low as possible.
 
 
 
@@ -22,23 +22,23 @@ The requirements of the reference model are collected in the requirement list be
     \item \textbf{The order of the retired instructions should exactly match the core.} \label[rmReq]{rmReq:order}
     \par This requirement expresses the main problem the reference model should solve, avoiding problems like the example shown in \Cref{fig:lw_example}. Note that the requirement does not specify full cycle-accurate simulation; only accurate timing of instructions is required. Although cycle-accurate modeling might be required to order instructions correctly with asynchronous events, this also opens up the possibility of other approaches.
     
-    \item \textbf{The reference model should not allow more state changes than the core } \label[rmReq]{rmReq:}
-    \par This requirement highlights the problem with ImperasDV described in \ref{}.
+    %\item \textbf{The reference model should not allow more state changes than the core } \label[rmReq]{rmReq:}
+    %\par This requirement highlights the problem with ImperasDV described in \ref{}.
 
     \item \textbf{Read the same ELF binary file as the core} \label[rmReq]{rmReq:binary}
     \par The reference model must be able to run the same test program as the core, requiring that it can run the same ELF binary file as the core without any modifications to the program or memory map.
 
     \item \textbf{Output the state changes for comparison at every instruction retirement} \label[rmReq]{rmReq:stateOutput}
-    \par To be able to compare the execution of the reference model with the core, we must output the state changes at every instruction retirement. Since the cores in core-v-verif support \acrshort{rvfi} \cite{}, we should also output the state changes as \acrshort{rvfi} or the superset \acrshort{rvvi}.
+    \par To be able to compare the execution of the reference model with the core, we must output the state changes at every instruction retirement. Since the cores in core-v-verif support \acrshort{rvfi} \cite{openhwgroupCorevverifCv32e40sBsp}, we should also output the state changes as \acrshort{rvfi} or \acrshort{rvvi}.
 
     \item \textbf{Take interrupts and debug requests as inputs independently of the core.} \label[rmReq]{rmReq:asyncInputs}
-    \par As described in \ref{}, an ISS can take asynchronous events in sync with the core by not taking these events directly as inputs but instead using the \acrshort{rvfi} output from the core to take the same interrupt or debug request as the core. With the reference model, we want to avoid the verification hole that occurs when the ISS only follows asynchronous events of the core and does not actually decide for itself which event to take. 
+    \par As described in \ref{sec:back_issProblem}, an ISS can take asynchronous events in sync with the core by not taking these events directly as inputs but instead using the \acrshort{rvfi} output from the core to take the same interrupt or debug request as the core. With the reference model, we want to avoid the verification hole that occurs when the ISS only follows asynchronous events of the core and does not actually decide for itself which event to take. 
 
     \item \textbf{Configurable with the same extensions supported by the core.} \label[rmReq]{rmReq:extensions}
-    \par Some cores allow for different extensions to be enabled or disabled. In order to match the core, the reference model should also be configurable with different RISC-V extensions.\textbf{\Cref{issReq:custom}}
+    \par Some cores allow for different extensions to be enabled or disabled. In order to match the core, the reference model should also be configurable with different RISC-V extensions.
     
     \item \textbf{The RM should be as easy as possible to modify to support different cores.} \label[rmReq]{rmReq:modifyable}
-    \par The reference model should be usable by different cores, so the effort required to adapt the reference model to a new core should be as low as possible.
+    \par Since testbenches shared by multiple cores, like core-v-verif, have become more common, the effort required to modify the reference model for a new core should be as low as possible.
     
    % \item \textbf{Run in lock-step with the core} \label[rmReq]{rmReq:lock-step}
    % \par 
@@ -52,11 +52,8 @@ The requirements of the reference model are collected in the requirement list be
     
 \end{enumerate}
 
-\Cref{rmReq:order}
-
 
 \section{Architecture}
-\tmp{TODO: Må utdypes endel}
 
 As discussed in \Cref{sec:pw_architecture}, the specialization report proposed implementing the reference model with a two-layered modeling technique inspired by the work of \textcite{chiangEfficientTwolayeredCycleaccurate2009} and \textcite{leeFaCSimFastCycleAccurate2008}, which both divided the model into one untimed functional simulator and one timing shell responsible for correctly timing the results generated in the functional simulator. This way, the functional simulator can be general enough to be used by many different cores, while all the core-specific functionality is contained in the timing shell.
 
@@ -65,11 +62,7 @@ In order to fulfill \Cref{rmReq:modifyable}, we implement a similar two-layered 
 As discussed in \Cref{sec:pw_architecture}, we can use an existing \acrshort{iss} as the functional simulator and implement the core-specific timing module around it, which we will call the \gls{ps} from now on. An ISS steps one instruction at a time and completely finishes all execution of an instruction before moving on to the next. This makes it easy to export a \ccode{step()} function that allows the ISS to do an untimed step, executing one instruction at a time. Since the ISS contains all the functionality, including registers and memory, it must also return the state changes caused by the instruction. This can then be passed to the pipeline shell to time these changes correctly and use them to control the ISS.
 
 
-\Cref{fig:architecture} shows a block diagram of the proposed architecture for the reference model and relevant surrounding modules.\tmp{explain figure}
-
-\tmp{How is core specific funtionality is kept separate}
-
-
+\Cref{fig:architecture} shows a block diagram of the proposed architecture for the reference model and relevant surrounding modules. This shows both the pipeline shell and ISS inside the reference model. The test program, interrupts, and debug requests are inserted into the core and pipeline shell, and the RVFI outputs from both are compared in the compare module.
 
 \begin{figure}
     \centering
@@ -78,9 +71,10 @@ As discussed in \Cref{sec:pw_architecture}, we can use an existing \acrshort{iss
     \label{fig:architecture}
 \end{figure}
 
+
 \section{Reference Model language}
 
-The core-v-verif is mainly written in SystemVerilog \cite{openhwgroupOpenhwgroupCorevverif2023}, while many ISSs are written in C++ or other high-level languages \cite{SpikeRISCVISA2023}.
+The core-v-verif is mainly written in SystemVerilog \cite{openhwgroupOpenhwgroupCorevverif2023}, while many ISSs are written in \cpp or other high-level languages \cite{SpikeRISCVISA2023}.
 We therefore have to decide what language to implement the reference model in.
 
 In order to fulfill \textbf{\Cref{rmReq:formal}} and have the possibility of using formal verification, it is best to model the simulator in SystemVerilog. This also makes it easier to pass in nets from the rest of the testbench and model parallel components like the pipeline. One disadvantage of using the same language as the core we want to model, is that we are more likely to model the reference model similar to the core, potentially modeling the same bugs in both. 
@@ -99,7 +93,7 @@ To comply with \Cref{rmReq:formal} we want to avoid limiting the possibility of 
 Additionally the CV32E40S and other OpenHW cores currently support RVFI, but not the RVVI-Tracer. This currently requires converting the RVFI signals to RVVI-Trace signals that are passed to the reference model over the RVVI-API. 
 Although RVVI in itself is open, many of the complimentary components like \sv{trace2cov}, \sv{trace2api}, and \sv{trace2log} are proprietary Imperas components. To use RVVI for our reference model, we would have to model replacements for these components anyway it order to convert from RVVI-Trace to RVVI-API. 
 
-The design of RVVI also adds some limitations to how the reference model can be built and still support RVVI. Although RVVI is an open standard, it was developed by Imperas and is influenced by the design of ImperasDV. The RVVI-API supports a step-and-compare methodology, where all controls are based on functions. This includes functions for passing the DUT states to the reference model and functions for comparing each state\cite{riscv-verificationRISCVVerificationInterface2023}. As will be discussed further in \ref{}, we also want to implement a compare module that supports assertions, which is complicated by the design of RVVI. 
+The design of RVVI also adds some limitations to how the reference model can be built and still support RVVI. Although RVVI is an open standard, it was developed by Imperas and is influenced by the design of ImperasDV. The RVVI-API supports a step-and-compare methodology, where all controls are based on functions. This includes functions for passing the DUT states to the reference model and functions for comparing each state\cite{riscv-verificationRISCVVerificationInterface2023}. As will be discussed further in \ref{sec:des_comparison}, we also want to implement a comparison module that supports assertions, which is complicated by the design of RVVI. 
 In \Cref{sec:ps_dependency}, we will also discuss how the reference model should depend on the core. Here, the design of RVVI implicitly restricts our choices. 
 
 To keep our implementation choices independent of RVVI's design and also keep support for formal verification possible, we choose not to support RVVI during the development of the model. Instead, we will make our own interface that can grow to complement the functionality of the reference model. If we discover that the chosen design is compatible with RVVI, support for this can be added in the future, as there are many advantages to using a standardized interface \cite{riscv-verificationRISCVVerificationInterface2023}.
@@ -144,131 +138,87 @@ Because the CV32E40S core and other OpenHW cores use RVFI, it makes sense for th
 
 \section{Partitioning between ISS and Pipeline shell}
 
-The specialization project also discussed different partitionings and the corresponding interaction between the Pipeline Shell and ISS, described in \Cref{sec:pw_partition}. The report discussed 3 different partitionings, and concluded with a partition that keeps the ISS intact, and a \sv{step()} function executes one whole instruction, and returns only the state changes from this instruction. 
+The specialization project also discussed different partitionings and the corresponding interaction between the Pipeline Shell and ISS, described in \Cref{sec:pw_partition}. The report discussed 3 different partitionings and concluded with a partition that keeps the ISS intact, with a \sv{step()} function executing one whole instruction and returning only the state changes from this instruction. 
 
-We want to fulfill \Cref{rmReq:modifyable} and make the reference model modifiable to different cores. To accomplish this, we should clearly separate core-specific functionality, from core-independent functionality. To adhere to the two-layered approach discussed above, we do not want any core-specific details in the ISS, but we still want the ISS to do most of the functional execution. 
+We want to fulfill \Cref{rmReq:modifyable} and make the reference model modifiable to different cores. To accomplish this, we should clearly separate core-specific functionality from core-independent functionality. To adhere to the two-layered approach discussed above, we do not want any core-specific details in the ISS, but we still want the ISS to do most of the functional execution. 
 
 Because of this, and because we want to limit the modifications to the ISS as much as possible, we choose to load the ELF binary file directly into the ISS instead of into the pipeline shell. This gives us \textbf{\Cref{issReq:binaries}}. Additionally, we will use the GPRs, CSRs, PC, and other registers inside the ISS instead of copying them to the pipeline shell. As discussed in \Cref{sec:pw_partition}, using the registers local to the ISS, we also avoid simulating forwarding, since all the modifications from an instruction is completed before the next instruction is started.
 
-Using the same rationale; we also want to use the memory simulator inside the ISS.
+Using the same rationale; we also want to use the memory simulation inside the ISS.
 
-One disadvantage of using the local registers and memory of the ISS is that these can contain some core-specific functionality like memory mapping and implementation-specific changes to \acrshort{csr}s. This leads to an ISS that is not fully core-independent. Because many of these details are can be configured once when configuring the ISS, we can allow this. This gives us \textbf{\Cref{issReq:csr}}, stating that the ISS must be configurable to match the core.
+One disadvantage of using the local registers and memory of the ISS is that these can contain some core-specific functionality like memory mapping and 
+implementation-specific changes to \acrshort{csr}s. This leads to an ISS that is not fully core-independent. Because many of these details can be configured once when configuring the ISS, we can allow this. This gives us \textbf{\Cref{issReq:csr}}, stating that the ISS must be configurable to match the core.
 
-Because the ISS is responsible for the functional execution of the instruction, it also needs to be configurable to support different RISC-V extensions, as expressed in \textbf{\Cref{rmReq:extensions}}. This gives us \textbf{\Cref{issReq:custom}}. \tmp{sjekk req.}
+Because the ISS is responsible for the functional execution of the instructions, it also needs to be configurable to support different RISC-V extensions, as expressed in \textbf{\Cref{rmReq:extensions}}. This gives us \textbf{\Cref{issReq:custom}}. 
 
 
-Because the ISS is responsible for fetching instructions, executing the instructions, updating registers, and writing to and from memory, this needs to be reported out of the ISS as well. All of this should then be reported out of the ISS and handled and timed by the pipeline shell. We want to use a standard interface to report these changes because we want to support the possibility of exchanging the ISS in the future. Since we want to use RVFI as an output of the reference model, it also makes sense to report state changes from the ISS using RVFI. This gives us \textbf{\Cref{issReq:state}} and \textbf{\Cref{psReq:rvfi}}.
+Because the ISS is responsible for fetching instructions, executing the instructions, updating registers, and writing to and from memory, this also needs to be reported out of the ISS. This should then be reported out of the ISS and handled and timed by the pipeline shell. We want to use a standard interface to report these changes to support the possibility of exchanging the ISS in the future. Since we want to use RVFI as an output of the reference model, it also makes sense to report state changes from the ISS using RVFI. This gives us \textbf{\Cref{issReq:state}} and \textbf{\Cref{psReq:rvfiIn}}.
+
+\Cref{rmReq:asyncInputs} states that the reference model should take asynchronous events as inputs. Since the pipeline shell is responsible for the timing of asynchronous events, these inputs should also be input into the pipeline shell, giving us \Cref{psReq:async_input}. Since timing asynchronous events rely on core-specific pipeline details, the pipeline shell should control when asynchronous events are taken, and inform the ISS when to take these, giving us \Cref{psReq:async_control}.
+
+\tmp{Partitioning of interrupt handline her istedenfor ch 5??}
+
 
 \section{ISS Interface}
 
-\tmp{Move to \Cref{ch:ISS}}?
+Since we want to keep as much of the core functionality in the pipeline shell as possible, the ISS should be as generic as possible. With this distinct separation between the pipeline shell and the ISS, we should also make the ISS easily replaceable. This gives us \textbf{\Cref{issReq:replacable}}. 
 
-\tmp{Rewrite:}
+In order to make the ISS replaceable, we should create an ISS wrapper with generic functions called by the rest of the reference model. This way, the underlying ISS in the wrapper can be replaced without replacing the functions in the rest of the reference model.
+We can use functions to interact with the ISS from the reference model, since these work with RTL code and C over DPI. Functions do not consume time in SystemVerilog \cite{mehtaIntroductionSystemVerilog2021}, so using these to control the ISS ensures that the ISS remains functional, and that only the pipeline shell is responsible for timing.
 
-\begin{itemize}
-    \item Use a wrapper to easily change out ISS later
-    \item Use functions to interface with the ISS, since these work both with C functions over DPI and RTL code. Functions are not allowed to take time. This allows us to add the time ourselves with the pipeline shell.
-\end{itemize}
-
-ISS interface requirement:
+To control the ISS, we need to implement the following functions, but the specifics will be discussed in \Cref{ch:ISS}.
 
 \begin{itemize}
-    \item Load ELF binary file \textbf{\Cref{issReq:binaries}}
-    \item Step through one instruction and return state changes (RVFI)
-    \item Inform of interrupts
-    
+    \item \sv{iss_init(...)} - Load ELF binary file and configure the ISS.
+    \item \sv{iss_step(...)} - Step through one instruction and return state changes (RVFI)
+    \item \sv{iss_intr(...)} - Inform of asynchronous interrupts
+    \item \sv{iss_debug(...)} - Inform of asynchronous debug requests
 \end{itemize}
+
 
 
 
 \section{Supporting Formal Verification}
 
-\Cref{rmReq:formal} states that, if possible, support for formal verification should not be hindered. Formal verification has many benefits compared to simulation as discussed in \ref{}, so a future goal is to have a full reference model compatible with formal verification.
+\Cref{rmReq:formal} states that, if possible, support for formal verification should not be hindered. Formal verification has many benefits compared to simulation, as discussed in \Cref{sec:bg_formal}, so a future goal is to have a full reference model compatible with formal verification.
 
-A reference model that is compatible with formal methods can also be compatible with simulation tools\cite{}, so if the reference model can be built to support both formal verification and simulation it would be a very powerful tool.
+A reference model that is synthesizable and compatible with formal verification can also be compatible with traditional simulation. It would be a very powerful tool if the reference model could be built to support formal verification and simulation.
 
-Sequential \acrfull{fev} is a formal method comparing two RTL models over time. This has the possibility of working with a reference model, but this imposes several design limitations that will be discussed below.
+Sequential \acrfull{fev} is a formal method comparing two RTL models over time. This has the possibility of working with a reference model, but it requires all the outputs of the core and reference model matches for every cycle \cite{seligmanFormalVerificationEssential2015}.
 
-A simpler approach without using \acrfull{fev} is to use assertions to compare the core and reference model. If the compare module used to compare the core and reference model during simulation use assertions, these can also be used for formal verification.
+A simpler approach without using \acrfull{fev} is to use \acrfull{sva} to compare the core and reference model. Because we only need to compare to core and reference model at instruction retirements, we do not need the two to be equal for every cycle. We can instead define a set of assertions that compare each RVFI output between the core and reference model when an instruction retires. By using assertions in the comparison module, these can be used both for formal verification and simulation-based verification \cite{seligmanFormalVerificationEssential2015}.
 
 \subsection{Synthesisable RTL}
 
-The currently available tools for Sequential \acrshort{fev} require that both the implementation and specification models should be synthesizable \acrshort{rtl} blocks \cite{seligmanFormalVerificationEssential2015}. This limitation poses the biggest difference when compared to traditional simulation testbenches since this means that it is not possible to use DPI functions \cite{} to integrate ISSs written in C/C++ into the model. This drastically limits the amount of available ISSs since most are written in C++ or other languages. 
+The currently available tools for Sequential \acrshort{fev} require that both the implementation and specification models should be synthesizable \acrshort{rtl} blocks \cite{seligmanFormalVerificationEssential2015}. This limitation poses the biggest difference when compared to traditional simulation testbenches since this means that it is not possible to use DPI functions to integrate ISSs written in \cpp into the model. This drastically limits the available ISSs since most are written in \cpp or other languages. 
 
 We set formal verification support as an optional requirement in \Cref{issReq:formal}.
 
-\subsubsection{Sail}
-
-Sail-riscv has the potential to be the model used for equivalence checking.
-To achieve this the sail model must be converted to RTL code compatible with formal methods.
-
-%Sail allows the sail model to be converted to a C emulator, and multiple theorem proving tools like Coq, Isabelle/HOL, and definitions for RMEM and isla-axiomatic concurrency tools, which both focus on evaluating the relaxed-memory behavior of the \acrshort{isa}. 
-
-Sail recently added support for compiling the model to SystemVerilog code. This could be used to model the reference model around, but at the time of writing, this feature is experimental and not mature enough to compile the sail-riscv model\footnote{\url{https://github.com/rems-project/sail/issues/420}}.
-
-From \footnote{\url{https://github.com/rems-project/sail/releases/tag/0.17}}
-
-\begin{quote}
-    
-Sail can now produce SystemVerilog output using the -sv flag. Note
-that this is not intended to be human readable or produce a
-synthesizable design, but is instead intended to be used with
-SystemVerilog verification tools like JasperGold.
-\end{quote}
-
-The sail-riscv model can not currently be converted to SystemVerilog, as the feature is under development and not mature enough to convert the sail-riscv model at the time of writing.\cite{}
-Although the sail-riscv model can not currently be converted to SystemVerilog, the rest of the reference model can still be built to support formal methods and allow us to replace the ISS with sail-riscv in the future.
-
-\subsection{Formal friendly approach with dummy ISS}
-
-One possibility is to build the rest of the reference model to support formal methods. By making the interface between the reference model and \acrshort{iss} generic, it could be possible to replace the \acrshort{iss} with SystemVerilog code generated from sail-riscv if this is possible in the future.
-
-
-To verify that the rest of the reference model is compatible with formal methods, the ISS can be replaced by a "dummy" ISS while verifying the reference model with formal methods. 
-
-
-We would then have two environments; a UVM simulation environment that verifies the correctness of the reference model using a C++ \acrshort{iss}, and a formal verification environment that does not test the functionality of the reference model, but checks that the reference model can run in a formal verification environment when using an RTL simulator.
-
-If both these tests pass, future work should be to replace the dummy ISS in the formal environment with sail-riscv when the SystemVerilog generator is fully supported and verify that this works. 
-
-
 
 \section{Testbench Architecture}
-\subsection{Integration into core-v-verif}
+\label{sec:testbench}
 
-\tmp{Use existing rvfi agents and scoreboard?}
-
-\tmp{No? Because we want to use assertions to compare to support formal verification}
-
-\section{Testbench and comparison module architecture}
 
 The current implementation of core-v-verif uses ImperasDV as a reference model. ImperasDV is a Verification IP, and also handles the comparison between the \acrshort{dut} and reference model \cite{imperassoftwareltdRISCVProcessorOVP2023}. In order to replace ImperasDV with the reference model, we must also implement a comparison module to compare the core with the reference model. This section will cover the integration of the reference model into the larger \gls{core-v-verif} testbench and the design of the comparison module used to compare the core and reference module.
 
-\subsection{Compare at retirement or clock}
+The spike version recently added to core-v-verif has a corresponding rvfi agent and scoreboard used to tie spike to the rest of core-v-verif, and compare the core to Spike. One solution could be to integrate the reference module with these components,  but these rely on non-synthesizable SystemVerilog functionality \cite{mehtaIntroductionSystemVerilog2021} like classes and UVM. In order to fulfill \Cref{rmReq:formal} and support formal verification, we can not use these constructs, and have to make our own comparison module and interface with the reference model that is compatible with formal verification.
+
+
+\subsection{Comparison module}
+\label{sec:des_comparison}
+
+\subsubsection{Compare at retirement or clock}
 \label{sec:des_retireOrClock}
 
 When comparing the reference model to the core, we have some choices about when to do so. One solution is to ensure that both are equal at every clock cycle, while the common approach for other step-and-compare methodologies is to compare the two only when an instruction retires.
 
 Generally, we want to keep the reference model's abstraction level as high as possible. 
 
-The most important aspect of verifying a processor is that it adheres to the RISC-V ISA specification\cite{}. The important thing here is that the order and correctness are correct, not necessarily the exact cycle this happens on. By comparing the reference model and the core only on instruction retirements, we also give the reference model some slack and the possibility of operating on a higher abstraction layer. This is useful to avoid implementing the same bugs in both the reference model and the core.
+When verifying that the processor adheres to the RISC-V ISA specification, the important thing is that the order and correctness of instructions are correct, not necessarily the exact cycle this happens on. By comparing the reference model and the core only on instruction retirements, we also give the reference model some slack and the possibility of operating on a higher abstraction layer. This is useful to avoid implementing the same bugs in both the reference model and the core.
 
 We choose to compare the reference model and core at every instruction retirement.
 
-\subsection{Assertions}
-
-\tmp{Explain the assertions needed in the compare module}
-Concurrent assertions use sampled values from the beginning of the simulation step \cite[Section~4.4.3]{cernySVAPowerAssertions2015}. 
-%From \Cref{fig:2clocktiming} we see that if we sampled at the rising edge of \sv{rvfi_rm.clk} shown in red, we would sample the old value of \sv{rvfi_rm.valid} and the signals would not be equal. To fix this we can sample at a point where both signals are equal at the beginning of the simulation step, which is the case for the falling edge of \sv{rvfi_rm.clk}, the falling edge of \sv{rvfi_core.clk} or the rising edge of \sv{rvfi_core.clk}. 
-
-If we choose the rising edge of \sv{rvfi_core.clk} we can check the correctness using a \acrshort{sva} shown in \Cref{lst:pc_assertion}. To only compare the core and \acrshort{rm} at instruction retirements, we check if \sv{rvfi_rm.valid} is high in the antecedent, before comparing the \sv{pc_rdata} signals in the consequent. This structure can then be applied to all the \acrshort{rvfi} signals.
-
-\begin{systemverilog}[caption={Assertion comparing the PC of the \acrshort{rm} and core.}, label={lst:pc_assertion}]
-rvfi_pc_a: assert property( @(posedge rvfi_core.clk)
-    rvfi_rm.valid |-> (rvfi_rm.pc_rdata == rvfi_core.pc_rdata));
-\end{systemverilog}
-
-\subsection{Timing differences between the core and reference model}
+\subsubsection{Timing differences between the core and reference model}
 
 If the reference model is driven by retirements from the core, this has some implications on the timing between them.
 
@@ -276,7 +226,7 @@ The reference module requires the \sv{rvfi_valid} signal from the core to determ
 
 %To verify the correctness between the core and the \acrshort{rm}, we have two options regarding the clock input. We can either pass the same clock signal into the core and the \acrshort{rm}, or use an offset clock for the \acrshort{rm}.
 
-If we pass the same clock into both, the valid signal out of the core will be one cycle delayed into the reference model as shown in \Cref{fig:1clocktiming}. When comparing the two, we have to delay the core RVFI signals so they arrive at the compare module simultaneously or use \sv{\$past()} to compare the RM with the previous cycle of the core. We choose to delay the RVFI output from the core one cycle, which allows us to use the assertions explained in \ref{}.
+If we pass the same clock into both, the valid signal out of the core will be one cycle delayed into the reference model as shown in \Cref{fig:1clocktiming}. When comparing the two, we have to delay the core RVFI signals, so they arrive at the compare module simultaneously or use \sv{\$past()} to compare the RM with the previous cycle of the core. We choose to delay the RVFI output from the core one cycle.
 
 \begin{figure}
     \centering
@@ -290,6 +240,33 @@ If we pass the same clock into both, the valid signal out of the core will be on
     \caption{Timing diagram showing the \sv{rvfi_valid} signals of the core and reference model when the reference model is dependent on retirements from the core.}
     \label{fig:1clocktiming}
 \end{figure}
+
+
+\subsubsection{Assertions}
+
+In order to support formal verification, we use \acrfull{sva} to compare the reference model and the core to achieve equivalence checking using \acrfull{abv}, explained in \Cref{sec:bg_eq_abv}. \acrshort{sva} can also be used for simulation and formal verification, making the same comparison module usable for simulation and formal verification \cite{cernySVAPowerAssertions2015}. 
+
+%From \Cref{fig:2clocktiming} we see that if we sampled at the rising edge of \sv{rvfi_rm.clk} shown in red, we would sample the old value of \sv{rvfi_rm.valid} and the signals would not be equal. To fix this we can sample at a point where both signals are equal at the beginning of the simulation step, which is the case for the falling edge of \sv{rvfi_rm.clk}, the falling edge of \sv{rvfi_core.clk} or the rising edge of \sv{rvfi_core.clk}. 
+
+Concurrent assertions use sampled values from the beginning of the simulation step \cite{cernySVAPowerAssertions2015}. 
+If we compare the two at the rising edge of \sv{rvfi_core.clk} we can check the correctness using a \acrshort{sva} shown in \Cref{lst:pc_assertion}. To only compare the core and \acrshort{rm} at instruction retirements, we check if \sv{rvfi_rm.valid} is high in the antecedent, before comparing the \sv{pc_rdata} signals in the consequent. This structure can be applied to all the \acrshort{rvfi} signals.
+
+\begin{systemverilog}[caption={Assertion comparing the PC of the \acrshort{rm} and core.}, label={lst:pc_assertion}]
+rvfi_pc_a: assert property( @(posedge rvfi_core.clk)
+    rvfi_rm.valid |-> (rvfi_rm.pc_rdata == rvfi_core.pc_rdata));
+\end{systemverilog}
+
+
+
+
+\subsection{Integration with core-v-verif}
+
+To include the reference model into core-v-verif, we make a wrapper module called \file{uvmt_cv32e40s_reference_model_wrap.sv}. The wrapper instanciates the reference module and comparison module and takes in the RVFI output from the core, interrupts from the interrupt agent, and debug requests from the debug agent. It passes the clock and reset, \rv{rvfi_valid}, \rv{irq}, and \rv{debug_req} into the reference model.
+
+It also passes the RVFI output of the core and reference model into the comparison module, which compares the two.
+
+
+
 %
 %Another solution is to use two separate clocks for the core and reference model. By having the clock of the reference model slightly offset behind the clock of the core, we get the timing diagram shown in \Cref{fig:2clocktiming} with the two clocks \sv{rvfi_core.clk} and \sv{rvfi_rm.clk} for the core and reference model, the two valid signals \sv{rvfi_core.valid} and \sv{rvfi_rm.valid}, and the rest of the rvfi signals. Here we see that the signals are equal for most of the time, and by comparing at the right clock edge, we can directly compare the equality of the signals. The lines in \Cref{fig:2clocktiming} show different clock edges we can use to compare the signals.
 %

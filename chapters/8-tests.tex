@@ -1,0 +1,257 @@
+
+\subsection{Directed Interrupt test}
+\tmp{TODO: Burde disse testene under resten av seksjonen flyttes til pipeline shell istedenfor?}
+
+To test if the pipeline shell works while implementing it, it is beneficial to have a standard directed test to use while developing the pipeline shell.
+This test should fail before implementing the pipeline, but pass when it is implemented.
+
+The core-v-verif tests use virtual peripheries to set interrupts. 
+The two registers \lstinline{TIMER_REG_ADDR} and \lstinline{TIMER_VAL_ADDR} are used to set the irq value and delay to set.  
+
+The virtual periphery reads these registers and stores the interrupt value to \lstinline{interrupt_value} or \lstinline{clic_value}, stores the timer delay, and starts the timer. This is done by calling\lstinline{interrupt_timer()} in \lstinline{uvma_obi_memory_vp_interrupt_timer_seq.sv}, which waits for the given delay, before calling \lstinline{set_interrupt()} which sets the \lstinline{irq} signal to the stored interrupt value. 
+
+This allows tests to be written that can trigger "external" interrupts from the test code to accurately time interrupts with the code.
+
+The first test that should pass is just passing in a simple interrupt. To do so, we first enable the MIE bit in mstatus, then enable the mie bit of the interrupt we want to set. To set the interrupt, we use \lstinline{mm_ram_assert_irq(0x1 << interrupt, 1}, which sets \lstinline{TIMER_REG_ADDR} to the mask of enabled interrupts, and \lstinline{TIMER_VAL_ADDR} to the cycle delay before asserting the interrupt.
+
+After setting the interrupt to be triggered in 10 cycles, we do some add instructions.
+
+
+
+
+\subsection{Implementation without pipeline shell}
+
+In the first implementation, the pipeline shell is not implemented and just calls the \lstinline{step()} dpi function when the core retires an instruction. This functions correctly with synchronous execution, but not when interrupts are introduced. 
+
+In this implementation, interrupts are inserted into the core with \lstinline{iss_intr(irq)}, which again calls \lstinline{spike_set_mip(irq)} to set the correct mip bits in spike. 
+Implementation 0 calls \lstinline{iss_intr} on the first clock posedge when the \lstinline{irq_drv} signal from the interrupt interface changes.
+
+\subsubsection{Results}
+
+When running the Directed interrupt test with this implementation, the interrupt is taken at different times in the core and the reference model. The core executes two more instructions compared to the reference model. 
+
+
+%\noindent
+\begin{minipage}{.45\textwidth}
+\vspace*{0pt}
+\begin{lstlisting}[caption=Core,frame=tlrb]{Name}
+ PC       | INSTRUCTION
+ 0000134c | c.lwsp x15,12(x2)
+ 0000134e | c.addi x15,1
+ 00001350 | c.swsp x15,12(x2)
+ 00001352 | c.lwsp x15,12(x2)
+ 00001354 | c.addi x15,1
+ 00001356 | c.swsp x15,12(x2)
+ 00001358 | c.lwsp x15,12(x2)
+ 0000000c | INTR 3
+\end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}{.45\textwidth}
+\vspace*{0pt}
+\begin{lstlisting}[caption=RM,frame=tlrb]{Name}
+ PC       | INSTRUCTION
+ 0000134c | c.lwsp x15,12(x2)
+ 0000134e | c.addi x15,1
+ 00001350 | c.swsp x15,12(x2)
+ 00001352 | c.lwsp x15,12(x2)
+ 00001354 | c.addi x15,1
+ 0000000c | INTR 3
+\end{lstlisting}
+\end{minipage}
+
+
+
+\subsection{Implementation with RVFI synced interrupt input}
+
+When an interrupt is flagged with RVFI, we use \lstinline{iss_intr(irq)} to take the interrupt in spike. When setting the mip csr with the interrupt and stepping, the instructions are delayed one instruction behind the core.
+
+When spike steps through an instruction in \lstinline{execute.cc} it first tries to take any pending interrupts with \lstinline{take_pending_interrupt()}. This will throw a \lstinline{trap_t} which will stop the execution of the current instruction and instead call \lstinline{take_trap()} which changes the PC to the trap handler and sets the state, but does not step into the first instruction of the trap handler. 
+
+In order for \lstinline{iss_intr(irq)} to set the mip, and execute the first instruction of the trap handler, the step function in spike needs to be called two times. One time to set the state and one time to step the instruction.
+
+By doing this the interrupt is correctly timed, but the mip is not cleared, so the interrupt is taken again.
+
+When clearing the mip, or when setting the mip will not lead to an interrupt being taken, we do not want to step spike. It is therefore necessary to check if the interrupt will be taken before doing the extra step in spike.
+
+\subsubsection{Results}
+
+Spike synced with rvfi passes the custom directed test with an enabled interrupt, but fails test 1 from \lstinline{interrupt_test} which applies interrupt signals when interrupts are disabled. When reading the \lstinline{mip} CSR after it should be set to \lstinline{0x00000008}, the RM reports \lstinline{0x00000000}. This is because this implementation only sets the \lstinline{mip} CSR when the core reports taking an interrupt. Therefore when interrupt signals are applied, but interrupts are disabled, the core will not report an interrupt and the CSRs will be different.
+
+
+\subsection{Async interrupts without pipeline shell }
+
+Instead of syncing interrupts with the core using RVFI, interrupts are now passed directly into spike and are immediately taken on the next retirement from the core. This implementation is intended to highlight the problem with passing interrupts directly into the ISS.
+
+\subsubsection{Result}
+
+When running the directed test with interrupts passed directly into spike, we can see the trace log in \cref{lst:async_int_1}. This shows that the Interrupt is applied between \lstinline{PC=0x00001352} and \lstinline{0x00001354}. The Refference model takes the interrupt immediately at the next retirement, but the core waits 3 more retirement before jumping to the trap handler. The number of instructions delayed can also is also different depending on what instructions are in the pipeline.
+
+\begin{lstlisting}[label={lst:async_int_1},caption={Trace output from asynchronous interrupts without pipeline shell}]
+
+PC CORE  (INSN)     | PC RM     (INSN)
+------------------------------------------
+0000134e (00000785) | 0000134e, (00000785) 
+00001350 (0000c63e) | 00001350, (0000c63e) 
+00001352 (000047b2) | 00001352, (000047b2) 
+Interrupt applied:00000008
+RM Intr taken
+00001354 (00000785) | 0000000c, (6b80006f) 
+00001356 (0000c63e) | 000006c4, (0000b84e) 
+00001358 (000047b2) | 000006c6, (fea12c23) 
+Interrupt applied:00000000
+Core Intr taken
+0000000c (6b80006f) | 000006ca, (0000450d) 
+000006c4 (0000b84e) | 000006cc, (0000c216) 
+000006c6 (fea12c23) | 000006ce, (0000c01a) 
+000006ca (0000450d) | 000006d0, (fe712e23) 
+000006cc (0000c216) | 000006d4, (feb12a23) 
+\end{lstlisting}
+
+
+\subsection{Test with multiple interrupts set}
+
+\ccode{interrupt_test - TEST 2} fails after returning from one interrupt with \rv{mret}, because the next interrupt automatically starts running in spike since the mip is already set.
+
+We can fix this by only setting the \rv{mip} when the core will take the interrupt, and let it be 0 when this is not the case.
+
+\textbf{New problem 1:} the fix above leads to problems when reading the CSR, since mip is not set in spike when the interrupt will not be taken.
+
+\tmp{TODO: Fix this}
+\textbf{Question:} Can we inject the \sv{interrupt_allowed} signal all the way into spike, to avoid using \ccode{mip} directly to specify if the interrupt can be taken or not?
+
+\textbf{New problem 2:}
+
+We do not need to flush or revert the state when one interrupt goes directly into another. 
+\tmp{TODO: Find a way to detirmine if flushing/revertion needs to happen}
+
+
+\textbf{Problem:} Since \sv{mret} is a few instructions ahead of the core because of the pipeline, the \rv{mstatus.mie} field goes high before and the interrupt can be taken incorrectly. By implementing the fix for the problem above, we avoid this example, but it might lead to other problems\tmp{??}
+
+
+\textbf{New requirement:}
+
+\begin{itemize}
+    \item new interrupt -> revert and flush
+    \item New interrupt directly after another -> no revert or flush, but take next interrupt immediately
+    \item Mip CSR should be equal to the core
+\end{itemize}
+
+Solution: Add an interrupt allowed variable to spike that is set from \ccode{spike_interrupt}.
+
+This way we do not have to use the mip to determine if the interrupt should be taken in spike or not.
+
+We can also use the previous mip to determine if it is a new interrupt, or a interrupt after another one.
+
+If the previous mip was 0, 
+
+\subsubsection{interrupt allowed in spike}
+
+Since the state is stored and reverted, we do not want to store \ccode{interrupt_allowed} inside the \ccode{state_t} struct, but instead store in it the \ccode{Processor} class. 
+
+To set it for every clock, we can add it to \ccode{interrupt}
+
+\subsection{interrupt ordering}
+\textbf{Issue: Fails in TEST 2- Trigger all irqs at once}
+
+In the example below, the state is reverted to \sv{0x0000152e}, when it should revert to \sv{0x0000152a}
+
+\begin{terminal}
+   87198.000 ns | IF 00001524  0| ID 00001520 1| EX 0000151c 0 | WB 0000151c 1 | RVFI 00000524 0|| ID 00001524  1| EX 00001520 1 | WB 0000151c 1 | RVFI 00000524 0| ia 1 / 1 | li 1 / 0 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   87201.000 ns | IF 00001524  1| ID 00001520 0| EX 00001520 1 | WB 0000151c 0 | RVFI 0000151c 1|| ID 00001528  1| EX 00001524 1 | WB 00001520 1 | RVFI 0000151c 1| ia 1 / 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 | RVFI | LUI      | 0000151c
+   87204.000 ns | IF 00001528  0| ID 00001524 1| EX 00001520 0 | WB 00001520 1 | RVFI 0000151c 0|| ID 00001528  1| EX 00001524 1 | WB 00001520 1 | RVFI 0000151c 0| ia 0 / 0 | li 0 / 0 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   87207.000 ns | IF 00001528  1| ID 00001524 0| EX 00001524 1 | WB 00001520 0 | RVFI 00001520 1|| ID 0000152a  1| EX 00001528 1 | WB 00001524 1 | RVFI 00001520 1| ia 0 / 0 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 1 | cf 0 | sl 0 | RVFI | SW       | 00001520
+   87210.000 ns | IF 0000152a  0| ID 00001528 1| EX 00001524 0 | WB 00001524 1 | RVFI 00001520 0|| ID 0000152a  1| EX 00001528 1 | WB 00001524 1 | RVFI 00001520 0| ia 0 / 0 | li 0 / 0 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+   87213.000 ns | IF 0000152a  1| ID 00001528 0| EX 00001528 1 | WB 00001524 0 | RVFI 00001524 1|| ID 0000152e  1| EX 0000152a 1 | WB 00001528 1 | RVFI 00001524 1| ia 0 / 0 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 1 | cf 0 | sl 0 | RVFI | SW       | 00001524
+   87216.000 ns | IF 0000152e  0| ID 0000152a 1| EX 00001528 0 | WB 00001528 1 | RVFI 00001524 0|| ID 0000152e  1| EX 0000152a 1 | WB 00001528 1 | RVFI 00001524 0| ia 0 / 0 | li 0 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+MIP set to: ffffffff
+   87219.000 ns | IF 0000152e  1| ID 0000152a 1| EX 00001528 0 | WB 00001528 1 | RVFI 00001524 0|| ID 0000152e  1| EX 0000152a 1 | WB 00001528 1 | RVFI 00001524 0| ia 0 / 0 | li 0 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 1 | cf 0 | sl 0 |
+   87222.000 ns | IF 00001532  0| ID 0000152e 0| EX 0000152a 1 | WB 00001528 0 | RVFI 00001528 1|| ID 00001532  1| EX 0000152e 1 | WB 0000152a 1 | RVFI 00001528 1| ia 0 / 0 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 1 | cf 0 | sl 0 | RVFI | C_SW     | 00001528
+   87225.000 ns | IF 00001532  0| ID 0000152e 0| EX 0000152a 0 | WB 0000152a 0 | RVFI 00001528 0|| ID 00001532  1| EX 0000152e 1 | WB 0000152a 1 | RVFI 00001528 0| ia 1 / 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+MIP set to: 7fffffff
+   87228.000 ns | IF 0000007c  0| ID 0000152e 0| EX 0000152a 0 | WB 0000152a 0 | RVFI 00001528 0|| ID 00001532  1| EX 00000000 0 | WB 00000000 0 | RVFI 00001528 0| ia 1 / 1 | li 1 / 1 | db 1 | f 0 | cp 0 | si 1 | ib 0 | cf 0 | sl 0 |
+\end{terminal}
+
+
+\tmp{TODO: Move the fail below to interrupt handling in spike}
+\textbf{Issue: Fails in TEST 2- Trigger all irqs at once}
+
+\begin{terminal}
+# UVM_INFO @ 16.800 ns : uvmt_cv32e40s_base_test.sv(294) uvm_test_top [BASE TEST] set load_instr_mem
+# UVM_INFO @ 17.300 ns : uvma_clknrst_if.sv(65) reporter [CLKNRST] Changing clock period to 1.500 ns
+# UVM_INFO @ 114.300 ns : uvmt_cv32e40s_firmware_test.sv(178) uvm_test_top [TEST] Started RUN
+# TEST 1 - TRIGGER ALL IRQS IN SEQUENCE:
+# TEST 2 - TRIGGER ALL IRQS AT ONCE:
+# UVM_ERROR @ 87252.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(77) reporter [RVFI_INSN] rvfi_rm.insn=170006f rvfi_core.insn=7b50006f
+# UVM_ERROR @ 87252.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=40 rvfi_core.pc_rdata=7c
+# UVM_ERROR @ 87252.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(101) reporter [RVFI_INTR] rvfi_rm.intr=85 rvfi_core.intr=fd
+# UVM_ERROR @ 87264.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=856 rvfi_core.pc_rdata=1030
+# UVM_ERROR @ 87270.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=858 rvfi_core.pc_rdata=1032
+# UVM_ERROR @ 87273.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(48) reporter [Step-and-Compare] rd1_wdata core=0x0000001f and rm=0x00000010 PC=0x00001036
+# UVM_ERROR @ 87273.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(77) reporter [RVFI_INSN] rvfi_rm.insn=4541 rvfi_core.insn=457d
+# UVM_ERROR @ 87273.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=85c rvfi_core.pc_rdata=1036
+# UVM_ERROR @ 87276.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=85e rvfi_core.pc_rdata=1038
+# UVM_ERROR @ 87282.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=860 rvfi_core.pc_rdata=103a
+# UVM_ERROR @ 87285.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=862 rvfi_core.pc_rdata=103c
+# UVM_ERROR @ 87291.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=866 rvfi_core.pc_rdata=1040
+# UVM_ERROR @ 87297.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=86a rvfi_core.pc_rdata=1044
+# UVM_ERROR @ 87303.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=86e rvfi_core.pc_rdata=1048
+# UVM_ERROR @ 87309.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=872 rvfi_core.pc_rdata=104c
+# UVM_ERROR @ 87318.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=876 rvfi_core.pc_rdata=1050
+# UVM_ERROR @ 87324.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=87a rvfi_core.pc_rdata=1054
+# UVM_ERROR @ 87333.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=87e rvfi_core.pc_rdata=1058
+# UVM_ERROR @ 87339.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=882 rvfi_core.pc_rdata=105c
+# UVM_ERROR @ 87345.300 ns : uvmt_cv32e40s_reference_model_wrap.sv(73) reporter [RVFI_PC] rvfi_rm.pc_rdata=886 rvfi_core.pc_rdata=1060
+
+\end{terminal}
+
+The RM jumps to \sv{PC: 0x40 (m_fast0_irq_handler)} while the core jumps to \sv{PC: 0x7c (m_fast15_irq_handler)}
+
+Converting the value in \sv{rvfi_intr}, we see that \sv{0x85 >> 3 => 0x10} \sv{0xfd >> 3 => 0x1f}. 
+We see that the core and the ISS takes different interrupts when all interrupts are enabled.
+
+
+\section{Taking interrrupts given \sv{interrupt_allowed}}
+
+\subsection{Directed interrupt test}
+
+
+\subsection{Random test}
+
+\sv{corev_rand_interrupt}
+
+Interrupt while \sv{interrupt_allowed = 0}
+-> Spike reverted state
+
+\begin{terminal}
+terminate called after throwing an instance of 'trap_load_address_misaligned'
+\end{terminal}
+
+
+\begin{terminal}
+core   0: 0x0000031e (0xf4188e83) lb      t4, -191(a7)
+core   0: 3 0x0000031e (0xf4188e83) x29 0x00000000 mem 0x00018c86
+core   0: 0x00000322 (0xfa4c4703) lbu     a4, -92(s8)
+core   0: 3 0x00000322 (0xfa4c4703) x14 0x00000000 mem 0x0001e397
+core   0: 0x00000326 (0xfe530f23) sb      t0, -2(t1)
+core   0: 3 0x00000326 (0xfe530f23) mem 0x000223ae 0xa4 pre mem 0x000223ae 0x00
+core   0: 0x0000032a (0x8f030e83) lb      t4, -1808(t1)
+core   0: 3 0x0000032a (0x8f030e83) x29 0x00000000 mem 0x00021ca0
+core   0: 0x0000032e (0x005c0a23) sb      t0, 20(s8)
+core   0: 3 0x0000032e (0x005c0a23) mem 0x0001e407 0xa4 pre mem 0x0001e407 0x00
+spike_interrupt
+pc: 32e | pc: 32a | pc: 326 | pc: 322 | 
+revert from PC: 332 to PC: 32a
+revert mem pc: 32e num: 1
+revert mem: addr: 1e407 val: 0 size: 1
+\end{terminal}
+
+\textbf{Two mistakes:}
+
+1. revertion while \sv{interrupt_allowed=0} 
+
+2. load address misaligned while state revertion
+
+
+the Second error should not happen, but was caused by mistake. We can still fix error 2 even though it should not have been caused because of error 1.
+
+

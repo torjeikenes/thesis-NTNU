@@ -1,29 +1,14 @@
 \chapter*{Abstract}
 
-%This project explores different methodologies for the development of an adaptable and cycle-accurate RISC-V reference model with pipeline awareness to enhance the accuracy of RISC-V processor verification, particularly in the context of asynchronous interrupt and debug events.
-%Asynchronous events pose a significant challenge in processor core verification, often leading to elusive bugs. While conventional Instruction Set Simulators (ISSs) may suffice for verification in typical execution scenarios, their instruction-level accurate abstraction level can lead to misalignments of asynchronous events to the start of instructions, resulting in incorrect interrupt timings compared to the DUT. We therefore need a Reference Model that accurately simulates the timing and correctness of asynchronous events. The reference model should have a higher abstraction level than the RTL code of the DUT, and run in sync with the DUT, serving as a golden model to verify the DUT against
+Asynchronous events like interrupts and debug requests pose a significant challenge in processor verification, often leading to elusive bugs. 
+\textit{Instruction Set Simulators (ISS)} are often used as a Reference Model to verify the correctness of a processor's execution and are often sufficient in normal execution. 
+However, due to their instruction-level abstraction level, ISSs can not accurately simulate the timing of asynchronous events and side effects compared to the processor core. Therefore, a more advanced Reference Model that accurately simulates the timing and correctness of asynchronous events is needed.
 
 
+This thesis explores and compares different approaches to implementing a reference model for open-source RISC-V processor cores that can accurately simulate asynchronous events at the cycle level. We propose a reference model architecture combining a "Pipeline Shell" and an existing ISS. The pipeline shell is responsible for modeling the timing of the pipeline and the behavior of asynchronous events, while the ISS is responsible for the functional execution of the instructions. The reference model is implemented in SystemVerilog and integrated into the OpenHW Group's verification environment for the CV32E40S core by Silicon Labs. We also focus on making the reference model compatible with formal verification.
 
-Asynchronous events pose a significant challenge in RISC-V processor verification, often leading to elusive bugs. While conventional \textit{Instruction Set Simulators (ISS)} may suffice for verification in typical execution scenarios, their instruction-level accurate abstraction level can lead to mistimed asynchronous events and side effects compared to the \textit{Device Under Test (DUT)} processor core.
+The results show that the reference model can correctly simulate asynchronous events in many different scenarios. It has a smaller verification gap compared to using a traditional ISS as a reference model and is likely to find bugs that other reference model solutions can not. The ISS used is not compatible with formal verification. Still, the rest of the design is believed to be compatible with formal verification if the ISS is replaced with a synthesizable ISS. However, the current implementation has some limitations. The reference model is currently dependent on the DUT core for some pipeline timing details, and the complexity of the pipeline shell has led to multiple unresolved bugs.
 
-%misalignments of asynchronous events to the start of instructions, resulting in incorrect interrupt timings compared to the DUT. 
-
-Therefore, a Reference Model that accurately simulates the timing and correctness of asynchronous events is needed. The reference model should run in sync with the DUT and have a higher abstraction level than the DUT's Register Transfer Level (RTL) code. 
-While existing reference models exist, they are either internal tools, expensive and proprietary, or lack comprehensive validation of asynchronous events. 
-
-To address these limitations, we explored and compared different approaches to implementing a reference model for open-source RISC-V processor cores that can accurately simulate asynchronous events at the cycle level. 
-
-\tmp{TODO: Skriv ferdig abstract}
-
-%We evaluated different design approaches, adopting a split design comprising a functional simulator using an existing ISS and a "pipeline shell" for simulating the pipeline timing. Multiple Instruction Set Simulators were compared, with Spike \cite{SpikeRISCVISA2023} emerging as the most suitable ISS, closely followed by the Sail-riscv model \cite{RISCVSailModel2023}. 
-%
-%The construction of the pipeline shell was explored by evaluating the necessary simulation components with a proposed method, and a stage-based pipeline simulation was compared with a time wheel simulation approach. Additionally, three different approaches were compared for connecting the pipeline shell to the ISS, where the best approach kept the ISS as intact as possible.
-%
-%Further research should involve the practical implementation of the reference model based on the insights presented in this report, followed by an evaluation of its accuracy by verifying a previously validated processor core.
-
-
-%this report explores and compares different approaches to implementing a reference model for open-source RISC-V processor cores that can accurately simulate asynchronous events at the cycle level. Furthermore, another key consideration is the ease of adapting the model to various processor cores, as overly customized models for different cores may introduce bugs. Therefore, the project aims to find an appropriate abstraction level for the reference model. Further, the project compares building the reference model on top of existing ISSs such as Spike or sail-riscv, explores how pipeline understanding can be modeled, and examines how asynchronous events are injected into the model.
 
 
 

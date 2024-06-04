@@ -1,99 +1,558 @@
-\chapter{Results}
-\tmp{TODO}
+\chapter{Results and Discussions}
+\label{ch:results}
+ 
 
 
-\section{Taking interrrupts given \sv{interrupt_allowed}}
+\section{Tests}
+\label{sec:res_tests}
 
-\subsection{Directed interrupt test}
-
-
-\subsection{Random test}
-
-\sv{corev_rand_interrupt}
-
-Interrupt while \sv{interrupt_allowed = 0}
--> Spike reverted state
-
-\begin{terminal}
-terminate called after throwing an instance of 'trap_load_address_misaligned'
-\end{terminal}
+Multiple directed and random tests were used to verify the correctness of the reference model. For the purposes of this implementation, we assume the CV32E40S core operates correctly and use this to verify the reference model against. The results of these tests are shown in \Cref{tab:results}, and the faults are explained below. 
+%The faults referred to in \Cref{tab:results} are listed below:
+\begin{enumerate}[label=Fault \arabic*]
+    \item An \rv{mret} instruction immediately following a \rv{dret} fails because the timing of \rv{prvl_lvl} is incorrect, causing a new interrupt to. \label{fault:mretdret}
+    \item Incorrect state reversion after a debug request causes the wrong PC to be stored to \sv{depc}, and the reference model starts running the wrong instruction after the debug handler.\label{fault:revert}
+    \item A write to \rv{mstatus} causes an interrupt not to be taken by the core but to be taken in the reference model. \label{fault:mstatus_write}
+    \item \rv{wfi} is used at the end of some tests to stop execution. The choice in \Cref{sec:wfi} causes Spike to ignore the \rv{wfi} and continue executing instructions after the end of the test program. \label{fault:wfi}
+    \item\label{fault:trap} Spike causes \textit{Load address misaligned} trap not caused in the core.
+    \item\label{fault:revert_csr} When storing the previous states in the ISS, the changes to the CSRs are not properly stored, causing changes to CSRs not to be properly reverted.
+\end{enumerate}
 
 
-\begin{terminal}
-core   0: 0x0000031e (0xf4188e83) lb      t4, -191(a7)
-core   0: 3 0x0000031e (0xf4188e83) x29 0x00000000 mem 0x00018c86
-core   0: 0x00000322 (0xfa4c4703) lbu     a4, -92(s8)
-core   0: 3 0x00000322 (0xfa4c4703) x14 0x00000000 mem 0x0001e397
-core   0: 0x00000326 (0xfe530f23) sb      t0, -2(t1)
-core   0: 3 0x00000326 (0xfe530f23) mem 0x000223ae 0xa4 pre mem 0x000223ae 0x00
-core   0: 0x0000032a (0x8f030e83) lb      t4, -1808(t1)
-core   0: 3 0x0000032a (0x8f030e83) x29 0x00000000 mem 0x00021ca0
-core   0: 0x0000032e (0x005c0a23) sb      t0, 20(s8)
-core   0: 3 0x0000032e (0x005c0a23) mem 0x0001e407 0xa4 pre mem 0x0001e407 0x00
-spike_interrupt
-pc: 32e | pc: 32a | pc: 326 | pc: 322 | 
-revert from PC: 332 to PC: 32a
-revert mem pc: 32e num: 1
-revert mem: addr: 1e407 val: 0 size: 1
-\end{terminal}
+\begin{table}[]
+\centering
+\caption{Table showing the results of multiple directed and random tests with the reference model.}
+\label{tab:results}
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Test Name}                  & \textbf{Result}             & \textbf{Fault} \\
+\hline
+corev\_rand\_arithmetic\_base\_test & \cellcolor{green!25}Passed  &  \\
+\hline
+corev\_rand\_debug                  & \cellcolor{red!25}Failed    &  \ref{fault:wfi} \\
+\hline
+corev\_rand\_debug                  & \cellcolor{red!25}Failed    &  \ref{fault:wfi}\\
+\hline
+corev\_rand\_instr\_test            & \cellcolor{green!25}Passed  & \\
+\hline
+corev\_rand\_interrupt              & \cellcolor{green!25}Passed  & \\
+\hline
+corev\_rand\_interrupt              & \cellcolor{green!25}Passed  & \\
+\hline
+corev\_rand\_interrupt\_debug       & \cellcolor{red!25}Failed    &  \ref{fault:revert}\\
+\hline
+corev\_rand\_interrupt\_debug       & \cellcolor{red!25}Failed    &  \ref{fault:mretdret}\\
+\hline
+corev\_rand\_interrupt\_exception   & \cellcolor{red!25}Failed    &  \ref{fault:trap} \\
+\hline
+corev\_rand\_interrupt\_nested      & \cellcolor{red!25}Failed    &  \ref{fault:mstatus_write}\\
+\hline
+corev\_rand\_interrupt\_wfi         & \cellcolor{green!25}Passed  & \\
+\hline
+corev\_rand\_jump\_stress\_test     & \cellcolor{green!25}Passed  & \\
+\hline
+corev\_rand\_jump\_stress\_test     & \cellcolor{green!25}Passed  & \\
+\hline
+csr\_instructions                   & \cellcolor{green!25}Passed  & \\
+\hline
+custom\_interrupt\_test             & \cellcolor{green!25}Passed  & \\
+\hline
+debug\_test2                        & \cellcolor{red!25}Failed    &  \ref{fault:trap}\\
+\hline
+hello-world                         & \cellcolor{green!25}Passed  & \\
+\hline
+illegal                             & \cellcolor{green!25}Passed  & \\
+\hline
+riscv\_arithmetic\_basic\_test\_0   & \cellcolor{green!25}Passed  & \\
+\hline
+\end{tabular}
+\end{table}
 
-\textbf{Two mistakes:}
-
-1. revertion while \sv{interrupt_allowed=0} 
-
-2. load address misaligned while state revertion
 
 
-the Second error should not happen, but was caused by mistake. We can still fix error 2 even though it should not have been caused because of error 1.
+Among other things, the tests cover the following complicated scenarios. 
+\begin{itemize}
+    \item Interrupt during different memory operations
+    \item Interrupt during multi-cycle instructions
+    \item Interrupt During CSR operations
+    \item Multiple simultaneous pending interrupts 
+    \item Nested interrupts
+    \item interrupt handler that goes straight to \rv{mret} (This is complicated because of the short time interrupts are disabled and re-enabled)
+    \item CSR write to \rv{mie} that enables an interrupt to be taken
+    \item New IRQ while the pipeline is flushing to take another interrupt
+\end{itemize}
 
+
+
+
+%This problem arises because spike runs ahead of the core and the way \rv{mstatus.mie} is output from spike to properly time interrupts. When the first interrupt handler returns with \rv{mret}, setting \rv{mstatus.mie} high. When this change leaves WB in the pipeline shell, it allows spike to take the next interrupt, flush the pipeline, and fill up the pipeline. Because the second \rv{mret} happens so fast, the \rv{mstatus.mie = 0} change does not have time to go through the pipeline, so when the second \rv{mret} is run in spike, \rv{mstatus.mie} is still high and spike will take the next interrupt. All of this happens between two retirements in the core, so the RM will report the second interrupt instead of the first over RVFI.
+
+
+\section{Speed and size}
+\label{sec:res_sizespeed}
+
+We use the \lstinline{simstats} command to find the memory usage and simulation runtime with and without the reference model, while a running the random interrupt test. The memory usage is shown in \Cref{fig:res_size}, and the runtime is shown in \Cref{fig:res_runtime}. The size difference does not account for the size of Spike, so the $7\%$ increase in memory usage is likely because of the pipeline shell and surrounding components. The simulation runtime does, however, take into account the time used by Spike, and we see a $33\%$ increase in runtime with the reference model.
+
+
+
+\begin{figure}
+\begin{subfigure}{.45\textwidth}
+    \centering
+    \resizebox{1\textwidth}{!}{%
+    \begin{tikzpicture}
+        \begin{axis}[
+            /pgf/number format/1000 sep={},
+            height=1.6in,   % Slightly increased height
+            width=1.4in,   % Slightly increased height
+            scale only axis,
+            clip=false,
+            separate axis lines,
+            axis on top,
+            xmin=0,
+            xmax=4,
+            xtick={1,3},
+            x tick style={draw=none},
+            xticklabels={},  % Removed default labels
+            ymin=0,
+            ymax=1000,
+            ylabel={Memory Usage (Mb)},
+            every axis plot/.append style={
+                ybar,
+                bar width=.6,
+                bar shift=0pt,
+                fill
+            }
+        ]
+        \addplot[fill=blue!50] coordinates {(1,688)} node[above] {\textbf{688 Mb}};  % Custom label
+        \addplot[fill=orange!50]  coordinates {(3,739)} node[above] {\textbf{739 Mb}};  % Custom label
+
+        % Adding x-axis labels manually for better positioning
+        \node[below, font=\footnotesize] at (axis cs: 1, -50) {Without RM}; 
+        \node[below, font=\footnotesize] at (axis cs: 3, -50) {With RM};    
+    \end{axis}
+\end{tikzpicture}
+}
+\caption{Comarison of the memory usage of the simulation with and without a reference model.}
+\label{fig:res_size}
+\end{subfigure}%
+\begin{subfigure}{.45\textwidth}
+    \centering
+    \resizebox{1\textwidth}{!}{%
+    \begin{tikzpicture}[x=1mm, y=1mm]
+        \begin{axis}[
+            /pgf/number format/1000 sep={},
+            height=1.6in,   % Slightly increased height
+            width=1.4in,   % Slightly increased height
+            scale only axis,
+            clip=false,
+            separate axis lines,
+            axis on top,
+            xmin=0,
+            xmax=4,
+            xtick={1,3},
+            x tick style={draw=none},
+            xticklabels={},  % Removed default labels
+            ymin=0,
+            ymax=2000,
+            ylabel={Runtime (s)},
+            every axis plot/.append style={
+                ybar,
+                bar width=.6,
+                bar shift=0pt,
+                fill
+            }
+        ]
+        \addplot[fill=blue!50] coordinates {(1,1150)} node[above] {\textbf{1150 s}};  % Custom label
+        \addplot[fill=orange!50]  coordinates {(3,1535)} node[above] {\textbf{1535 s}};  % Custom label
+
+        % Adding x-axis labels manually for better positioning
+        \node[below, font=\footnotesize] at (axis cs: 1, -50) {Without RM}; 
+        \node[below, font=\footnotesize] at (axis cs: 3, -50) {With RM};    
+    \end{axis}
+\end{tikzpicture}
+}
+\caption{Comparison of the runtime of the simulation with and without a reference model.}
+\label{fig:res_runtime}
+\end{subfigure}
+\label{fig:sizespeed_comp}
+\caption{Comparison of runtime and memory with and without a reference model.}
+\end{figure}
+
+
+
+%\subsection{Without reference model}
+%
+%\begin{terminal}
+%# Memory Statistics                         
+%#     mem: size after elab (VSZ)                 563.59 Mb
+%#     mem: size during sim (VSZ)                 687.95 Mb
+%# Elaboration Time                          
+%#    elab: wall time                               6.38 s
+%#    elab: cpu time                                5.37 s
+%# Simulation Time                           
+%#     sim: wall time                            1157.08 s
+%#     sim: cpu time                             1149.94 s
+%# Total Time                                
+%#   total: wall time                            1163.46 s
+%#   total: cpu time                             1155.31 s
+%\end{terminal}
+%
+%\subsection{With reference model}
+%
+%\begin{terminal}
+%# Memory Statistics                         
+%#     mem: size after elab (VSZ)                 639.82 Mb
+%#     mem: size during sim (VSZ)                 739.04 Mb
+%# Elaboration Time                          
+%#    elab: wall time                               6.79 s
+%#    elab: cpu time                                5.88 s
+%# Simulation Time                           
+%#     sim: wall time                            1539.02 s
+%#     sim: cpu time                             1535.19 s
+%# Total Time                                
+%#   total: wall time                            1545.81 s
+%#   total: cpu time                             1541.07 s
+%
+%\end{terminal}
+
+
+%Custom interrupt test
+%
+%\begin{terminal}
+%# Memory Statistics                         
+%#     mem: size after elab (VSZ)                 554.50 Mb
+%#     mem: size during sim (VSZ)                 694.91 Mb
+%# Elaboration Time                          
+%#    elab: wall time                               5.05 s
+%#    elab: cpu time                                4.32 s
+%# Simulation Time                           
+%#     sim: wall time                              43.73 s
+%#     sim: cpu time                               30.89 s
+%# Tcl Command Time                          
+%#     cmd: wall time                             281.78 s
+%#     cmd: cpu time                                2.73 s
+%# Total Time                                
+%#   total: wall time                             330.56 s
+%#   total: cpu time                               37.94 s
+%# 
+%
+%
+%
+%# Memory Statistics                         
+%#     mem: size after elab (VSZ)                 554.50 Mb
+%#     mem: size during sim (VSZ)                 693.93 Mb
+%# Elaboration Time                          
+%#    elab: wall time                               5.42 s
+%#    elab: cpu time                                4.61 s
+%# Simulation Time                           
+%#     sim: wall time                              40.28 s
+%#     sim: cpu time                               28.94 s
+%# Tcl Command Time                          
+%#     cmd: wall time                             659.66 s
+%#     cmd: cpu time                                1.55 s
+%# Total Time                                
+%#   total: wall time                             705.36 s
+%#   total: cpu time                               35.10 s
+%# 
+%
+%
+%
+%# Memory Statistics                         
+%#     mem: size after elab (VSZ)                 819.86 Mb
+%#     mem: size during sim (VSZ)                 832.24 Mb
+%# Elaboration Time                          
+%#    elab: wall time                               4.19 s
+%#    elab: cpu time                                4.19 s
+%# Simulation Time                           
+%#     sim: wall time                              40.86 s
+%#     sim: cpu time                               29.25 s
+%# Tcl Command Time                          
+%#     cmd: wall time                              44.66 s
+%#     cmd: cpu time                                1.31 s
+%# Total Time                                
+%#   total: wall time                              89.71 s
+%#   total: cpu time                               34.75 s
+%# 
+%
+%
+%
+%# Memory Statistics                         
+%#     mem: size after elab (VSZ)                 554.50 Mb
+%#     mem: size during sim (VSZ)                 693.93 Mb
+%# Elaboration Time                          
+%#    elab: wall time                               5.88 s
+%#    elab: cpu time                                5.09 s
+%# Simulation Time                           
+%#     sim: wall time                              40.87 s
+%#     sim: cpu time                               28.85 s
+%# Tcl Command Time                          
+%#     cmd: wall time                              40.85 s
+%#     cmd: cpu time                                1.55 s
+%# Total Time                                
+%#   total: wall time                              87.60 s
+%#   total: cpu time                               35.49 s
+%# 
+%
+%# Memory Statistics                         
+%#     mem: size after elab (VSZ)                 554.57 Mb
+%#     mem: size during sim (VSZ)                 693.93 Mb
+%# Elaboration Time                          
+%#    elab: wall time                               5.82 s
+%#    elab: cpu time                                5.06 s
+%# Simulation Time                           
+%#     sim: wall time                              45.40 s
+%#     sim: cpu time                               31.79 s
+%# Tcl Command Time                          
+%#     cmd: wall time                              35.17 s
+%#     cmd: cpu time                                1.63 s
+%# Total Time                                
+%#   total: wall time                              86.39 s
+%#   total: cpu time                               38.48 s
+%# 
+%
+%\end{terminal}
+%
+%\subsection{With reference model}
+%
+%\begin{terminal}
+%# Memory Statistics                         
+%#     mem: size after elab (VSZ)                 629.95 Mb
+%#     mem: size during sim (VSZ)                 745.04 Mb
+%# Elaboration Time                          
+%#    elab: wall time                               6.65 s
+%#    elab: cpu time                                6.01 s
+%# Simulation Time                           
+%#     sim: wall time                              50.99 s
+%#     sim: cpu time                               36.22 s
+%# Tcl Command Time                          
+%#     cmd: wall time                              19.10 s
+%#     cmd: cpu time                                2.48 s
+%# Total Time                                
+%#   total: wall time                              76.74 s
+%#   total: cpu time                               44.71 s
+%# 
+%
+%
+%# Memory Statistics                         
+%#     mem: size after elab (VSZ)                 629.93 Mb
+%#     mem: size during sim (VSZ)                 745.04 Mb
+%# Elaboration Time                          
+%#    elab: wall time                               6.75 s
+%#    elab: cpu time                                6.00 s
+%# Simulation Time                           
+%#     sim: wall time                              51.38 s
+%#     sim: cpu time                               39.05 s
+%# Tcl Command Time                          
+%#     cmd: wall time                              72.82 s
+%#     cmd: cpu time                                2.24 s
+%# Total Time                                
+%#   total: wall time                             130.95 s
+%#   total: cpu time                               47.29 s
+%# 
+%
+%
+%# Memory Statistics                         
+%#     mem: size after elab (VSZ)                 629.94 Mb
+%#     mem: size during sim (VSZ)                 745.04 Mb
+%# Elaboration Time                          
+%#    elab: wall time                               6.21 s
+%#    elab: cpu time                                5.49 s
+%# Simulation Time                           
+%#     sim: wall time                              49.74 s
+%#     sim: cpu time                               38.17 s
+%# Tcl Command Time                          
+%#     cmd: wall time                              32.89 s
+%#     cmd: cpu time                                1.51 s
+%# Total Time                                
+%#   total: wall time                              88.84 s
+%#   total: cpu time                               45.17 s
+%# 
+%
+%# Memory Statistics                         
+%#     mem: size after elab (VSZ)                 629.92 Mb
+%#     mem: size during sim (VSZ)                 745.12 Mb
+%# Elaboration Time                          
+%#    elab: wall time                               6.12 s
+%#    elab: cpu time                                5.38 s
+%# Simulation Time                           
+%#     sim: wall time                              50.00 s
+%#     sim: cpu time                               38.44 s
+%# Tcl Command Time                          
+%#     cmd: wall time                             131.77 s
+%#     cmd: cpu time                                2.35 s
+%# Total Time                                
+%#   total: wall time                             187.89 s
+%#   total: cpu time                               46.17 s
+%# 
+%
+%
+%# Memory Statistics                         
+%#     mem: size after elab (VSZ)                 629.96 Mb
+%#     mem: size during sim (VSZ)                 745.12 Mb
+%# Elaboration Time                          
+%#    elab: wall time                               6.15 s
+%#    elab: cpu time                                5.45 s
+%# Simulation Time                           
+%#     sim: wall time                              50.50 s
+%#     sim: cpu time                               37.90 s
+%# Tcl Command Time                          
+%#     cmd: wall time                              22.00 s
+%#     cmd: cpu time                                2.34 s
+%# Total Time                                
+%#   total: wall time                              78.65 s
+%#   total: cpu time                               45.69 s
+%# 
+%
+%
+%\end{terminal}
 
 
 \section{Comparison to Previous Solutions}
+\label{sec:res_comparison}
 
 An important result of this report is how this implementation compares to other available solutions. The implementation will therefore be compared to using a traditional ISS, to the ImperasDV Verification IP, and the previous two-layered cycle-accurate approaches from \Cref{sec:bg_cycle-accurate}. 
 
+\subsection{Illustrative examples}
+
+To better understand the differences between the proposed reference model and previous solutions, we will consider three illustrative examples:
+
+\begin{enumerate}[label=\textbf{Example \arabic*}]
+    \item An interrupt is asserted when there is an outstanding memory request and the pipeline can not be flushed. This is shown in \Cref{fig:lw_sw_pipeline}.
+    \item The same scenario as Example 1, but the core has a bug where \sv{interrupt_allowed} allows an interrupt to be taken despite outstanding memory requests.
+    \item The core has a bug where interrupts are prioritized over asynchronous debug requests. A situation occurs when both an asynchronous debug request and an interrupt are applied at the same time. 
+\end{enumerate}
+
+\tmp{Bør jeg ha med test resultater fra min løsning her? Hvordan kan det evt. gjøres ryddig når output er masse terminallinjer og PASSED eller FAIL på slutten, med evt MISMATCH}
+
 \subsection{Traditional ISS}
 
-The problems with using a traditional \acrshort{iss} are introduced in \Cref{sec:back_issProblem}.
+\textcite{taylorAdvancedRISCVVerification2023} describe two ISS implementations, where asynchronous events are applied directly into the ISS and where asynchronous events are applied using RVFI. The problems with these implementations are introduced in \Cref{sec:back_issProblem}.
 Because of their instruction accurate timing model, they have problems with asynchronous events. 
 
-Using the Spike implementation used with the CVA6 core as an example, this uses \sv{write_rvfi_instruction()}, which takes in the rvfi output from the core and passes it to spike. 
+\tmp{Jeg har ikke faktisk kjørt disse testene for en tradisjonell ISS, men bare forklart hva som (sansynligvis) hadde skjedd. Bør jeg prioritere å modifisere spike så jeg faktisk kan kjøre disse testene, eller holder det med forklaringen jeg har av testene her? }
 
-Using the step-and-compare 2.0 approach discussed in \cite{taylorAdvancedRISCVVerification2023} as an example, one approach to support asynchronous events is to only connect asynchronous events to the core and not the ISS. When the core reports that an interrupt or debug request is taken over \acrshort{rvfi}, this is passed to the ISS, which then also takes the specified interrupt or debug request. The problem with this approach is that it is not able to correctly verify which asynchronous event should be taken and if this is taken at the correct instruction. 
+\tmp{For de andre løsningene har jeg jo ikke tilgang på de, så får uansett ikke kjørt tester.}
 
-The implementation discussed in this report attempts to solve this problem. Our reference model takes asynchronous interrutps and debug requests as inputs to the model and uses these independently of the core to determine how the processor should respond to the various inputs. 
+\subsubsection{Example 1}
 
-Our current implementation does rely on the \sv{interrupt_allowed} signal from the core to determine if an interrupt is allowed to be taken. Although it does depend on the core, the reference model still independently decides which interrupt or debug request should be taken, minimizing the verification hole with a traditional ISS.
+The outcome of Example 1 when applying asynchronous events directly into an ISS is shown in \Cref{fig:lw_example}. This shows that the interrupt is taken immediately in the ISS, while the core retires 4 move instructions before taking the interrupt.
+
+For an ISS controlled by RVFI, this problem would appear to be solved because it follows the interrupt execution from the core. This works for Example 1, but the problem will be highlighted with Example 2 and 3.
+
+\subsubsection{Example 2}
+In example 2, the same test is run, but the core has a bug where the interrupts are taken regardless of outstanding memory requests. Here\ref{}, we see the problem with interrupts following the RVFI from the core. When the core mistakenly takes the interrupt at PC \tmp{TODO}, this is reported over RVFI, and the ISS also takes the interrupt at the same instruction. This leaves the bug undetected.
+
+For our current implementation that depends on \sv{interrupt_allowed} from the core, we would have the same problem. Since the bug is with the \sv{interrupt_allowed} signal, injecting the buggy signal from the core, would lead to the same bug in our reference model. This is one of the largest disadvantages of this implementation. 
+
+If we instead look at our "ideal" solution where we model the \sv{interrupt_allowed} signal according to the state of the pipeline shell, this would give a better result. Assuming that the \sv{interrupt_allowed} signal in the reference model is properly recreated from a correct specification, the reference model would not allow an interrupt to be taken with outstanding memory requests, leading to a mismatch between the reference model and the core.
+
+
+\subsubsection{Example 3}
+
+In example 3, both a debug request and an interrupt are injected, and the core has a bug where the prioritization between these is wrong. 
+
+Considering the ISS that follows RVFI, this bug would not be found. Since the core reports taking an interrupt, instead of correctly taking the debug request, the ISS will follow the RVFI output and also take the interrupt. As with example 2, this bug would also go unnoticed. 
+
+With our implementation with direct injection of \sv{interrupt_allowed}, this
+
+Since the bug in the core is not related to \sv{interrupt_allowed} or \sv{async_debug_allowed}, but instead, with the actual prioritization, our implementation will find this bug. Compared to the ISS solution, our implementation only uses \sv{interrupt_allowed} to determine if the interrupt is allowed, but it does not use it to decide between interrupts or debug requests.
+
+%Using the Spike implementation used with the CVA6 core as an example, this uses \sv{write_rvfi_instruction()}, which takes in the rvfi output from the core and passes it to spike. 
+
+%Using the step-and-compare 2.0 approach discussed in \cite{taylorAdvancedRISCVVerification2023} as an example, one approach to support asynchronous events is to only connect asynchronous events to the core and not the ISS. When the core reports that an interrupt or debug request is taken over \acrshort{rvfi}, this is passed to the ISS, which then also takes the specified interrupt or debug request. The problem with this approach is that it is not able to correctly verify which asynchronous event should be taken and if this is taken at the correct instruction. 
+%
+%The implementation discussed in this report attempts to solve this problem. Our reference model takes asynchronous interrutps and debug requests as inputs to the model and uses these independently of the core to determine how the processor should respond to the various inputs. 
+%
+%Our current implementation does rely on the \sv{interrupt_allowed} signal from the core to determine if an interrupt is allowed to be taken. Although it does depend on the core, the reference model still independently decides which interrupt or debug request should be taken, minimizing the verification hole present in a traditional ISS.
+
+
+Our current implementation has a smaller verification gap than a traditional ISS, even when directly injecting \sv{interrupt_allowed} from the core. If this signal is generated completely from the pipeline shell, we would have a smaller verification gap.
+
 
 \subsection{ImperasDV}
 
-ImperasDV introduced in \Cref{sec:imperasdv}, is a proprietary \acrfull{vip} from Imperas. This solves handling of asynchronous events by forking the execution to explore different possible state changes. ImperasDV is used with \acrshort{rvvi}, where CSRs and memory regions modified asynchronously are marked as volatile. Asyncronous inputs to the core like \sv{irq} and \sv{haltreq} are passed to ImperasDV as net changes. ImperasDV analyzes the possible next states considering the next instruction and incoming net changes. It will then go down each fork to see if this ends up at the same state as the DUT. 
+\tmp{Kan jeg si dette?:}
+Since ImperasDV is proprietary, we can not exactly understand how it works. The following discussion and comparison are based on assumptions about its functionality, but we can not be certain about its operation.
 
-The problem (and advantage) of this is that it does not contain the core specific pipeline details. If the core for example took an interrupt, which should not be taken because of pipeline details, this could possibly not be detected. \tmp{TODO: Verify this}
+ImperasDV, introduced in \Cref{sec:imperasdv}, is a proprietary \acrfull{vip} from Imperas. We assume it handles asynchronous events by forking the execution to explore different possible state changes. 
+ImperasDV analyzes the possible next states considering the next instruction and incoming net changes. It will then go down each fork to see if this ends up at the same state as the DUT.
 
-\tmp{TODO: Our implementation bla bla bla}
+%ImperasDV is used with \acrshort{rvvi}, where CSRs and memory regions modified asynchronously are marked as volatile. Asyncronous inputs to the core like \sv{irq} and \sv{haltreq} are passed to ImperasDV as net changes. 
 
-\tmp{ImperasDV resembles a formal approach by analyzing all possible states. Since it does not model the pipeline, it may allow a superset of the actual allowed states.}
+
+The problem (and advantage) of this is that it does not contain core specific pipeline details, but executes every possible next state. If the core for example took an interrupt, which should not be taken because of pipeline details, this could possibly not be detected. 
+
+\subsubsection{Example 1}
+
+
+Using the example from \Cref{fig:lw_sw_pipeline}, where an interrupt is asserted when interrupts are not allowed, we assume the following functionality in ImperasDV.
+\tmp{PGK: Er det greit å referere til en figur så langt tilbake i testen som her? Eller bør jeg inkludere figuren på nytt?}
+
+ImperasDV would have a fork with two possible states for each instruction after the interrupt is asserted. It could either retire the next instruction or take the interrupt. For each retirement, it would attempt both and check if any of the results match the results from the core. In our example, it would see that retiring \rv{147a},\rv{147c}, and \rv{147e} match with the core. When deciding between retiring \rv{1480} and taking the interrupt, it decides that taking the interrupt matches the execution of the core.
+
+This way, it determines that the interrupt is one of the legal states, but without proper pipeline information, it can not verify if taking the interrupt at that point was legal.
+
+\subsubsection{Example 2}
+
+Evaluating example 2, with a bug in \sv{interrupt_allowed}, we can imagine the following behavior. 
+
+We assume ImperasDV uses a similar fork from example 1, where for every retirement, it attempts both taking the interrupt or retiring the next instruction, and evaluating what matches. 
+
+The bug could make the core take the interrupt after retiring \rv{147c}.  Since this was one of the possible states in ImperasDV, it would not mark this as a mistake, and continue execution.
+
+We see that ImperasDV can allow a superset of the actual allowed states, which can leave bugs undetected.
+
+This is similar to the behavior of our current solution that relies on \sv{interrupt_allowed} from the core, which does not detect this bug either. Considering our ideal solution, it could detect the bug, outperforming ImperasDV in this example.
+
+%Looking at our solution, we will differentiate between our actual implemented solution which relies on the \sv{interrupt_allowed} signal from the core, and our proposed solution, where \sv{interrupt_allowed} is generated by the pipeline shell.
+
+%In our implemented solution, bugs in the core that influences the \sv{interrupt_allowed} signal also influences the execution of the core. Looking at the same example as ImperasDV in \Cref{fig:lw_sw_pipeline}, since the bug would change the \sv{interrupt_allowed} signal, our solution would also function the same way as the core, taking the interrupt at the incorrect time.
+
+%However, if the \sv{interrupt_allowed} signal is recreated based on information in the pipeline shell, the interrupt would be taken at different times in the core and reference model, and the bug would be found.
+
+\subsubsection{Example 3}
+
+We imagine a scenario where both an asynchronous debug request and an interrupt is applied at the same time, and the core has a bug where interrupts have a higher priority than asynchronous debug requests.
+
+Evaluating example 3, where an interrupt and debug request are inserted at the same time with a prioritization bug in the core, we can expect the following behavior.
+
+When the interrupt and debug request are asserted, ImperasDV forks its execution and attempts: retiring the next instruction, taking the debug request, and taking the interrupt. It discovers that taking the interrupt matches the execution of the core. Here, the bug is not detected, since both taking the interrupt and debug was possible state changes in ImperasDV. 
+
+In our current implementation, which relies on \sv{interrupt_allowed}, the core only decides if interrupts are allowed. Our implementation can independently decide if an interrupt or debug should be taken, even though it relies on \sv{interrupt_allowed}. In this situation, our current solution would find a bug where we imagine that ImperasDV would not. 
+
 
 \subsection{Previous two-layered approaches}
 
 Our implementation has many similarities to the two-layered approaches from \textcite{leeFaCSimFastCycleAccurate2008} and \textcite{chiangEfficientTwolayeredCycleaccurate2009} introduced in \Cref{sec:bg_cycle-accurate}. As with our implementation, they feature one functional, untimed kernel, and one timing shell, which is responsible for correct cycle-accurate timing the user-visible values. 
 
-The major difference is in the design of the timing shell. \textcite{chiangEfficientTwolayeredCycleaccurate2009} solution uses a scheduler that distributes the state changes into different cycle slots, as shown in \Cref{fig:timeshell}. Instead of moving these cycle slots every cycle, we use pipeline slots, where a controller module decides at which cycles the instructions should step through the pipeline. This more closely relates to an actual pipeline implementation, making the functionality easier to grasp for the developer.
+The major difference is in the design of the timing shell. \textcite{chiangEfficientTwolayeredCycleaccurate2009} solution uses a scheduler that distributes the state changes into different cycle slots, as shown in \Cref{fig:timeshell}. Instead of moving these cycle slots every cycle, we use pipeline slots, where a controller module decides at which cycles the instructions should step through the pipeline. This more closely relates to an actual pipeline implementation, making the functionality easier for the developer to grasp.
 
-Neither of these implementations is available or implemented for RISC-V, so a direct comparison of functionality is not possible. We will therefore compare these to our implementation by using an example and deducing how these solutions would handle this. 
+Neither of these implementations is publicly available or implemented for RISC-V, and none of the solutions specify how they would work in lock-step execution.
+FaCSim is meant to be used for performance evaluation and architectural exploration \cite{leeFaCSimFastCycleAccurate2008}. It claims to have an error margin of $6.79 \%$, when compared to the $100 \%$ cycle-accurate simulator, ARMulator \cite{leeFaCSimFastCycleAccurate2008}.
 
+For a cycle-accurate simulator to be used for verification, we would ideally have 0 errors. A randomly generated corev-dv test usually contains 5000 to 50000 instructions \cite{openhwgroupCv32e40s2024}. With an error margin of $7 \%$, the implementation would lead to many mismatches if used directly as a cycle-accurate simulator, running cycle by cycle parallel to the core. 
 
 
 One difference is that Chiang and Huangs timing shell is implemented in SystemC, while our pipeline shell is implemented in SystemVerilog. This allows for the ISS to be replaced with a SystemVerilog compiled ISS in the future, in order to support formal verification.  
 
-Aditionally, none of the solutions specify how they would work in lock-step execution.
-FaCSim is meant to be used for performance evaluation and architectural exploration \cite{leeFaCSimFastCycleAccurate2008}. It claims to have an error margin of $6.79 \%$, when compared to the $100 \%$ cycle-accurate simulator, ARMulator \cite{leeFaCSimFastCycleAccurate2008}.
-
-For a cycle-accurate simulator to be used for verification, we would ideally have 0 errors. A single randomly generated corev-dv test usually contains between 5000 to 50000 instructions \cite{OpenhwgroupCv32e40s2024}. With an error margin of $7 \%$, the implementation would lead to many mismatches if used directly as a cycle-accurate simulator, running cycle by cycle parallel to the core. 
 
 Although a fully cycle-accurate comparison between the core and reference model is hard to achieve with this implementation, the important aspect is that instructions are ordered correctly at the instruction level. This does not necessarily require full cycle-accuracy if lock-step execution is implemented with this solution. By waiting until both the core and reference model has retired, before comparing the two, we might mitigate some of these errors. Although, the fact that some inaccuracies exist, means that we can not trust the results of the comparison $100\%$.
 
+Since both these implementations are also reliant on core-specific functionality, we can assume that they would perform similarly to the implementation proposed in this thesis for the examples above, but we will not go into specifics since the exact implementations are unknown.
+
+The two-layered approaches would likely perform similarly to the proposed reference model because they also rely on core-specific functionality to accurately model pipeline behavior. We assume that they would depend on pipeline information similar to the reference model and be susceptible to the same potential bugs and inaccuracies as the reference model. However, as described in \Cref{sec:pw_pipelineShellDesign}, we believe the cycle-based approach could be more complex to model compared to our reference model design.
+
+
+%Since a direct comparison of functionality is not possible, and the functionality is very . We will compare these to our implementation using the previous examples and assume how they would operate.
 
 
 
+\section{Formal verification}
+\label{sec:res_formal}
+
+We test formal verification at two points during the development of the reference model, with two different purposes.
+
+The first was during phase 4 of the development \ref{}, where we passed interrupts in sync with RVFI from the core into the ISS. At this point, the design resembled a traditional ISS implementation without a pipeline shell. During this phase, we implemented the initial formal verification support and assertions. Because the pipeline shell was not yet implemented, using a dummy ISS as explained in \Cref{sec:formal_dummy}, we could test that all the assertions in the comparison module worked correctly and that the design loaded correctly into Onespin. 
+
+The second verification is at the end of the development, with an implemented pipeline shell. Using a simple dummy ISS, we can not verify the correctness of the pipeline shell but verify that the pipeline shell is synthesizable. The correctness of the pipeline shell is verified by simulation-based testing.
+
+Using both these tests, we can assume that the pipeline shell will work with formal verification in Onespin, given that we use a synthesizable ISS compatible with the interface described in this thesis.

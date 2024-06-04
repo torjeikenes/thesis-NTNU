@@ -1,0 +1,66 @@
+\subsection{problems implementing scriptware}
+
+\begin{enumerate}
+
+
+\item \textbf{Issue:} \lstinline{vlog -sv -f fv.flist} fails with comments
+  \begin{description}
+    \item[Cause:] The vlog command does not detect comments properly
+    \item[Resolution:] Remove comments from \file{fv.flist}
+  \end{description}
+
+\item \textbf{Issue:} \lstinline{vlog -sv -f fv.flist} has no way (known by author) of specifying the sv2012 version, leading to errors from sv2012 specific functionality.
+  \begin{description}
+    \item[Cause:] 
+    \item[Resolution:] Manually add all files and includes from fv.flist with \lstinline{add_read_hdl_option -verilog_include_path <path>} and \lstinline{read_verilog -version sv2012 <file.sv>}:
+  \end{description}
+
+\item \textbf{Issue:}  \lstinline{uvm_error} not defined although it is defined in \file{uvm_pgk.sv}
+  \begin{description}
+    \item[Cause:] The \lstinline{vlog} command uses \lstinline{set_read_hdl_option} instead of  \lstinline{add_read_hdl_option}, which overrides previous options. The include path is therefore overwritten by \lstinline{set_read_hdl_option -verilog_compilation_unit one}.
+    \item[Resolution:] Dont use \lstinline{vlog}, but manually add files.
+  \end{description}
+  
+ \item \textbf{Issue:} Error: \lstinline{-E- UnsuppVerilog - /home/torjene/core-v-verif/core-v-cores/cv32e40s/bhv/cv32e40s_wrapper.sv:218: bind construct with instances are not supported.}
+  \begin{description}
+    \item[Cause:] from onespin reference manual: Binding to individual instances (\lstinline{bind_target_instance} and hierarchical instance names) is supported only when used with the \lstinline{read_sva} command, i.e. not in \lstinline{read_verilog}.
+    \item[Resolution:] remove individual instances or find a way to add the assertions with \lstinline{read_sva}
+  \end{description}
+  
+\item \textbf{Issue:} 
+  \begin{description}
+    \item[Cause:] 
+    \item[Resolution:] 
+  \end{description}
+  
+\item \textbf{Issue:}  \lstinline{-E- NoModule - cv32e40s_wrapper.sv:934 no module 'cv32e40s_core' for instance 'core_i' found.}
+  \begin{description}
+    \item[Situation:] Only loading \lstinline{cv32e40s_wrapper.sv} with necessary files.
+    \item[Cause:] 
+    \item[Resolution:] 
+  \end{description}
+ 
+ 
+
+\item \textbf{Issue:} \lstinline{Unsupported clocking "posedge clk_i or negedge rst_ni" for smapled value function.} This happens when  or \lstinline{$past} or \lstinline{$changed} is in an \lstinline{always_ff} outside of assertions.
+  \begin{description}
+    \item[Situation:] when adding all files again to \lstinline{read_sva}
+    \item[Cause:] ??
+    \item[Resolution:] comment out 
+  \end{description}
+  
+\item \textbf{Issue:} \lstinline{-E- AlreadyDecl - /home/torjene/core-v-verif/core-v-cores/cv32e40s/bhv/cv32e40s_wrapper.sv:490: identifier 'mpu_if_sva' already declared at /home/torjene/core-v-verif/core-v-cores/cv32e40s/bhv/cv32e40s_wrapper.sv:490:.}
+  \begin{description}
+    \item[Situation:] after commenting out "unsupported clocking" errors above
+    \item[Cause:] ??
+    \item[Resolution:] 
+  \end{description}
+
+  
+\end{enumerate}
+
+bind error solutions??
+
+only use \lstinline{read_sva} on \lstinline{cv32e40s_wrapper} -> \lstinline{-E- NoModule - cv32e40s_wrapper.sv:934 no module 'cv32e40s_core' for instance 'core_i' found.}
+
+Add all files again with \lstinline{read_sva}

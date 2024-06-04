@@ -1,20 +1,71 @@
-\chapter{Discussion}
-\tmp{TODO}
-
-\tmp{What makes this different from other solutions? (and where to discuss this?)}
-
-\tmp{What works?}
-
-\tmp{What doesn't work?}
-
-\section{limitations}
-
-\begin{itemize}
-    \item When a branch happens, the pipeline will not have the same pipeline elements in IF and ID before the branch is taken. Because the ISS takes the branch before loading the rvfi into IF, the RM pipeline will always have the correct instruction in the pipeline stages, compared to the core which might have incorrect instruction in IF and ID before a branch is taken. \tmp{This might not be an issue}
-\end{itemize}
+%\chapter{Discussion}
+%\tmp{TODO}
+%
 
 
-\chapter{Future Work}
-\tmp{TODO}
+\section{Advantages}
 
-ImperasDV type implementation using spike state reversion to test all legal combinations of states.
+The reference model meets all the requirements in \Cref{sec:rm_req}, except for supporting formal verification \Cref{rmReq:formal}.
+
+The reference model can time interrupts and debug requests correctly in many different situations, as shown in \Cref{sec:res_tests}.
+
+It has a lower verification gap compared to a traditional ISS approach, and based on our assumptions in \Cref{sec:res_comparison}, it can potentially find bugs where ImperasDV can not.
+
+From the tests of performance and size with and without a reference model, we see a  $33\%$ longer runtime and as $7\%$ increase in memory utilization(not considering Spike). Since these simulations often run on large and powerful servers, we see these as an acceptable reduction to the performance, considering what is gained.
+
+
+\section{Limitations}
+\label{sec:discuss_limitations}
+
+The current reference model implementation has some limitations that will be explained below.
+
+%\begin{itemize}
+%    \item When a branch happens, the pipeline will not have the same pipeline elements in IF and ID before the branch is taken. Because the ISS takes the branch before loading the rvfi into IF, the RM pipeline will always have the correct instruction in the pipeline stages, compared to the core which might have incorrect instruction in IF and ID before a branch is taken. \tmp{This might not be an issue. THIS IS DISCUSSED}
+%    \item Pipeline is not used
+%    \item Interrupt allowed directly injected
+%\end{itemize}
+
+
+
+\subsection{interrupt allowed}
+
+The current implementation directly injects the \sv{interrupt_allowed} directly from the core. Since the pipeline stages in the pipeline shell are intended for independently modeling the \sv{interrupt_allowed} signal, the contents of each stage are not currently used. This means that a design where the \sv{interrupt_allowed} signal is directly injected into the model could be built less complex than our current solution, without multiple pipeline stages. This could possibly avoid some of the complexity described in \Cref{ch:PipelineShell} like state reversion and delayed CSRs. By injecting the \sv{interrupt_allowed} signal into the core, we do however get a verification gap, where bugs influencing the implementation of the \sv{interrupt_allowed} signal can go undetected.
+
+Because of this, the \sv{interrupt_allowed} signal should instead be modeled independently of the core from the contents of the pipeline shell. If implemented correctly, this would lower the verification gap, but increase the complexity of the reference model. We do however need to be careful not to implement it the exact same way as the core does it, in order to avoid the same bugs.
+
+\subsection{core-dependent approach}
+
+The current implementation uses a core-dependent approach, where the reference model is driven by retirements from the core. This has some potential problems if the \sv{interrupt_allowed} signal is modeled after the contents of the pipeline shell. We now step the entire pipeline shell at once when the core retires an instruction. This is a simplified approach and may not always correctly represent the contents of the pipeline, which can be even more complicated. If the movement of instructions through the pipeline is not accurate, we can not expect the \sv{interrupt_allowed} signal to be accurate. Further work should go into implementing the reference model with the core-independent solution from \Cref{sec:ps_dependency}, where the movement of the pipeline is decided independently of instruction retirements. This does however increase the complexity of the reference model drastically. If the core-independent approach is implemented, it could also be valuable to explore using the pipeline stages and external CSRs to do the state revertion, instead of storing the previous states inside the ISS. Since the movement of the pipeline stages would become less regular than now, we expect that the number of states to revert would no longer we fixed as is it now, making it easier to revert the state based on the actual pipeline content instead of reverting a fixed number of instructions. 
+
+\subsection{Missing documentation}
+
+\tmp{Riktig sted å diskutere?}
+
+A problem with multiple open-source processors like the CV32E40S is the often incomplete public information. This is likely because companies developing these processors have internal documentation that is not released to the public. For example, the public documentation for CV32E40S \cite{openhwgroupIntroductionCOREVCV32E40S2023} does not describe the requirements behind the \sv{interrupt_allowed} signal used in \Cref{sec:interrupt_allowed}, which is probably only available in an internal specification.
+
+This lack of information necessitates relying on the RTL code to understand and model its functionality instead of the processor's specifications and requirements.
+
+Relying on the RTL code instead of a specification can lead to several issues. Firstly, RTL code describes the hardware implementation, but not the intended behaviors of the processor. Secondly, it becomes difficult to differentiate between deliberate and general design choices, and implementation-specific details or potential bugs. Lastly, the probability of modeling the same bugs in the reference model and core increases, since bugs can exist in the RTL code used for the implementation of the reference model.
+
+
+
+A problem with multiple open-source processors like the CV32E40S, is that the publicly available information can be lacking. This makes developing a reference model for the core difficult. Companies can have some information publicly available, while other information is internal to the company. For example, the documentation for CV32E40S \cite{openhwgroupIntroductionCOREVCV32E40S2023} does not describe the requirements behind the \sv{interrupt_allowed} signal, which is probably only available in an internal specification.
+
+This lack of information necessitates relying on the RTL code to understand and model its functionality, instead of relying on the specification and requirements of the processor.
+
+Relying on the RTL code instead of a specification can lead to several issues. Firstly, RTL code describes the hardware implementation, but not the intended behaviors of the processor. Secondly, it becomes difficult to differentiate between deliberate and general design choices, and implementation-specific details or potential bugs. Lastly, the probability of modeling the same bugs in the reference model and core increases, since bugs can exist in the RTL code used for the implementation of the reference model.
+
+
+\subsection{Complexity of the solution}
+
+%One advantage of ImperasDV over our current implementation comes from the fact that ImperasDV is more general than our solution. The pipeline shell contains many core-specific details. One problem that can occur is that we implement the same bug in the pipeline shell as is in the core. Since the pipeline shell is modeled like a traditional pipeline, it can be tempting to implement a feature the same way as the core, leaving the bug to not be found. 
+
+The complexity of the pipeline shell can be a source for many bugs. As shown in \Cref{tab:results} the reference model still has many bugs that can be partially attributed to the complexity of the solution. If this approach is to be used for a new core, the pipeline shell would have to be modified to support it. Since this new core may not be implemented yet, the pipeline shell would be developed "blindly". Since we do not have a correct core to check against, this could be a source of bugs.
+
+\subsection{ISS and pipeline shell partitioning of asynchronous events}
+
+The current implementation partitions the handling of asynchronous events so the ISS is responsible for deciding when and what event to take. In hindsight, it became apparent that the ISS would need a lot of information from the pipeline shell to take this decision properly, making this partitioning more complex. This is likely the cause of multiple of the bugs in \Cref{tab:results}. Since we also export multiple CSRs to an external CSR in the pipeline shell (\Cref{sec:ps_side-effects}), the pipeline shell actually has access to most of the necessary information to fully decide how to handle asynchronous events. By moving this decision from the ISS to the pipeline shell, the decision-making process would become simpler. We could also avoid having separate functions for injecting interrupts and debug requests into the ISS, and instead use the single \sv{iss_step()} function to inform the ISS of the decision, making the interaction with the ISS simpler.
+
+\subsection{State revertion in the ISS}
+
+The choice of storing the previous states inside the ISS (\Cref{sec:ps_revertion}) may not necessarily be the best solution. \ref{fault:revert_csr} from \Cref{sec:res_tests} highlights a bug where the CSRs in the ISS are not properly stored as previous states, and \ref{fault:mretdret},  \ref{fault:revert}, and \ref{fault:mstatus_write} are all caused by incorrect timing of state changes or incorrect reversion of the state. Since many state changes are already output from the ISS via RVFI, storing and updating the states in an external CSR and state module in the pipeline shell could be a cleaner solution. This way, the pipeline shell has access to all state variables to correctly time asynchronous events, and state reversion could be done by using the external state to overwrite the internal ISS state. 

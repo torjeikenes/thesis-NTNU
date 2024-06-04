@@ -1,2 +1,33 @@
-\chapter{Conclusion}
+\chapter{Conclusions and Future Work}
+\label{ch:conclusion}
+
+\tmp{Er fortsatt litt WIP}
+
+
+This thesis focused on designing and implementing a reference model for RISC-V processor cores that can accurately simulate asynchronous events. We explored the challenges of verifying asynchronous events and the limitations of using an \acrfull{iss} as a reference model. To address these limitations, we proposed a reference model architecture that combines a pipeline shell on top of an existing ISS. 
+The pipeline shell is responsible for modeling the timing and behaviour of the pipeline, while the ISS is responsible for the functional execution of the instructions.
+
+
+
+\tmp{TODO: mer konkludering}
+
+\section{Future Work}
 \tmp{TODO}
+
+\subsection{Implement the \sv{interrupt_allowed} signal}
+
+As the \sv{interrupt_allowed} signal is a vital part of the proposed design, it is important to further evaluate if it is possible to model the signal based on the information in the pipeline shell.
+
+
+\subsection{Using state revertion to implement a state exploration approach}
+
+The state revertion implementatio explained in \Cref{sec:ps_revertion} and \Cref{sec:iss_revert} has the potential to be used to implement state exploration approach similar to ImperasDV. Given a "fork" of different operations, it could attempt one possible state, compare with the core, and revert the state if there is a mismatch. It can then attempt the next possible state change, and revert if this also has a mismatch. If all state changes cause a mismatch, this can be flagged as an error.
+
+
+\subsection{Replace the ISS with sail-riscv}
+
+Work is currently being done to implement SystemVerilog compilation of the sail-riscv model\footnote{https://github.com/riscv/sail-riscv/issues/424}. When this is completed, it would be interesting to replace Spike with sail-riscv, and evaluate wether this approach could work with formal verification. 
+
+\subsection{Improvements based on limitations}
+
+\tmp{Diskuterer litt løsninger i Limitations i diskusjonen. Bør jeg flytte de hit, eller bare nevne at de er i diskusjonen?}
