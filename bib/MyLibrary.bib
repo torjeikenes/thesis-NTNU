@@ -80,12 +80,12 @@
   file = {/home/torje/Zotero/storage/4MX7A5KU/Armstrong et al. - The Sail instruction-set semantics specification l.pdf}
 }
 
-@inproceedings{asanovicInstructionSetsShould2014,
+@report{asanovicInstructionSetsShould2014,
   title = {Instruction {{Sets Should Be Free}}: {{The Case For RISC-V}}},
   author = {Asanovic, Krste and Patterson, David A.},
   date = {2014-08-06},
-  url = {http://www2.eecs.berkeley.edu/Pubs/TechRpts/2014/EECS-2014-146.html},
-  urldate = {2024-05-07},
+  number = {UCB/EECS-2014-146},
+  institution = {EECS Department, University of California, Berkeley},
   keywords = {notion},
   file = {/home/torje/Zotero/storage/84FNHXPK/EECS-2014-146.pdf}
 }
@@ -217,7 +217,7 @@
   publisher = {Springer International Publishing},
   location = {Cham},
   doi = {10.1007/978-3-319-07139-8},
-  isbn = {978-3-319-07138-1 978-3-319-07139-8},
+  isbn = {978-3-319-07139-8},
   langid = {english},
   keywords = {notion},
   file = {/home/torje/Zotero/storage/IQYY9BCT/Cerny et al. - 2015 - SVA The Power of Assertions in SystemVerilog.pdf}
@@ -472,6 +472,19 @@
   langid = {english},
   keywords = {notion},
   file = {/home/torje/Zotero/storage/VTEHHG6A/Funck et al. - 2023 - Identification of ISA-Level Mutation-Classes for Q.pdf}
+}
+
+@book{gajskiSpecificationDesignEmbedded1994,
+  title = {Specification and Design of Embedded Systems},
+  editor = {Gajski, Daniel D.},
+  date = {1994},
+  publisher = {PTR Prentice Hall},
+  location = {Englewood Cliffs, NJ},
+  isbn = {978-0-13-150731-9},
+  langid = {english},
+  pagetotal = {450},
+  keywords = {notion},
+  file = {/home/torje/Zotero/storage/W22TDE6W/Gajski - 1994 - Specification and design of embedded systems.pdf}
 }
 
 @article{gaoEndtoEndFormalVerification2021,
@@ -822,7 +835,7 @@
   author = {Lee, Jaejin and Kim, Junghyun and Jang, Choonki and Kim, Seungkyun and Egger, Bernhard and Kim, Kwangsub and Han, SangYong},
   date = {2008-07},
   journaltitle = {Association for Computing Machinery},
-  url = {https://dl.acm.org/doi/pdf/10.1145/1379023.1375670},
+  doi = {10.1145/1379023.1375670},
   abstract = {There have been strong demands for a fast and cycle-accurate virtual platforms in the embedded systems area where developers can do meaningful software development including performance debugging in the context of the entire platform. In this paper, we describe the design and implementation of a fast and cycle-accurate architecture simulator called FaCSim as a first step towards such a virtual platform. FacSim accurately models the ARM9E-S processor core and ARM926EJ-S processor’s memory subsystem. It accurately simulates exceptions and interrupts to enable whole-system simulation including the OS. Since it is implemented in a modular manner in C++, it can be easily extended with other system components by subclassing or adding new classes. FaCSim is based on an interpretive simulation technique to provide flexibility, yet achieving high speed. It enables fast cycle-accurate architecture simulation by means of three mechanisms. First, it computes elapsed cycles in each pipeline stage as a chunk and incrementally adds it up to advance the core clock instead of performing cycle-by-cycle simulation. Second, it uses a basic-block cache that caches decoded instructions at the basic-block level. Finally, it is parallelized to exploit multicore systems that are available everywhere these days. Using 21 applications from the EEMBC benchmark suite, FaCSim’s accuracy is validated against the ARM926EJ-S development board from ARM, and is accurate in a ±7\% error margin. Due to basic-block level caching and parallelization, FaCSim is, on average, more than three times faster than ARMulator and more than six times faster than SimpleScalar.},
   langid = {english},
   keywords = {notion},
@@ -934,7 +947,7 @@
   publisher = {Springer International Publishing},
   location = {Cham},
   doi = {10.1007/978-3-030-71319-5},
-  isbn = {978-3-030-71318-8 978-3-030-71319-5},
+  isbn = {978-3-030-71319-5},
   langid = {english},
   keywords = {notion},
   file = {/home/torje/Zotero/storage/IIGUJ46R/Mehta - 2021 - Introduction to SystemVerilog.pdf}
@@ -948,7 +961,7 @@
   publisher = {Springer International Publishing},
   location = {Cham},
   doi = {10.1007/978-3-030-24737-9},
-  isbn = {978-3-030-24736-2 978-3-030-24737-9},
+  isbn = {978-3-030-24737-9},
   langid = {english},
   keywords = {notion},
   file = {/home/torje/Zotero/storage/AVWEFALY/Mehta - 2020 - System Verilog Assertions and Functional Coverage.pdf}
@@ -989,7 +1002,7 @@
   publisher = {Springer International Publishing},
   location = {Cham},
   doi = {10.1007/978-3-319-22035-2},
-  isbn = {978-3-319-22034-5 978-3-319-22035-2},
+  isbn = {978-3-319-22035-2},
   langid = {english},
   keywords = {notion},
   file = {/home/torje/Zotero/storage/GGUSJQXV/Mohamed - 2016 - IP Cores Design from Specifications to Production.pdf}
@@ -1540,7 +1553,7 @@
   publisher = {Springer US},
   location = {Boston, MA},
   doi = {10.1007/978-1-4614-0715-7},
-  isbn = {978-1-4614-0714-0 978-1-4614-0715-7},
+  isbn = {978-1-4614-0714-0},
   langid = {english},
   keywords = {notion},
   file = {/home/torje/Zotero/storage/8PDU7Z9N/Spear and Tumbush - 2012 - SystemVerilog for Verification A Guide to Learnin.pdf}
@@ -1630,12 +1643,11 @@
   file = {/home/torje/Zotero/storage/I3NXML2I/Ta et al. - 2018 - Simulating Multi-Core RISC-V Systems in gem5.pdf}
 }
 
-@article{taylorAdvancedRISCVVerification2023,
-  title = {Advanced {{RISC-V Verification Methodology}}},
+@inproceedings{taylorAdvancedRISCVVerification2023,
+  title = {Advanced {{RISC-V Verification Methodology Projects}}},
   author = {Taylor, Jon and Sutton, Aimee and Thompson, Mike},
   date = {2023-04-28},
-  journaltitle = {Embedded World 2023 Conference Paper},
-  url = {https://www.imperas.com/sites/default/files/documents/EW23_Imperas_RISC-V_Verification_Methodology_Paper.pdf},
+  eventtitle = {Embedded {{World}} 2023},
   langid = {english},
   keywords = {notion},
   file = {/home/torje/Zotero/storage/QUKBE5VT/Taylor et al. - Advanced RISC-V Verification Methodology.pdf}
@@ -1834,4 +1846,8 @@
   url = {https://cplusplus.com/reference/deque/deque/},
   urldate = {2024-04-14},
   file = {/home/torje/Zotero/storage/VI2938VW/deque.html}
+}
+
+@book{zotero-990,
+  type = {book}
 }

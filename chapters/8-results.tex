@@ -18,7 +18,7 @@ Multiple directed and random tests were used to verify the correctness of the re
 \end{enumerate}
 
 
-\begin{table}[]
+\begin{table}
 \centering
 \caption{Table showing the results of multiple directed and random tests with the reference model.}
 \label{tab:results}
@@ -551,8 +551,8 @@ The two-layered approaches would likely perform similarly to the proposed refere
 
 We test formal verification at two points during the development of the reference model, with two different purposes.
 
-The first was during phase 4 of the development \ref{}, where we passed interrupts in sync with RVFI from the core into the ISS. At this point, the design resembled a traditional ISS implementation without a pipeline shell. During this phase, we implemented the initial formal verification support and assertions. Because the pipeline shell was not yet implemented, using a dummy ISS as explained in \Cref{sec:formal_dummy}, we could test that all the assertions in the comparison module worked correctly and that the design loaded correctly into Onespin. 
+The first was during \Cref{phase:rvfi_interrupt} of the implementation strategy from \Cref{sec:strategy}, where we passed interrupts in sync with RVFI from the core into the ISS. At this point, the design resembled a traditional ISS implementation without a pipeline shell. During this phase, we implemented the initial formal verification support and assertions. Because the pipeline shell was not yet implemented, using a dummy ISS as explained in \Cref{sec:formal_dummy}, we could test that all the assertions in the comparison module worked correctly and that the design loaded correctly into Onespin. 
 
-The second verification is at the end of the development, with an implemented pipeline shell. Using a simple dummy ISS, we can not verify the correctness of the pipeline shell but verify that the pipeline shell is synthesizable. The correctness of the pipeline shell is verified by simulation-based testing.
+The second formal verification attempt is at the end of the development, with an implemented pipeline shell in \Cref{phase:pipeline_shell}.  Using a simple dummy ISS, we can not verify the correctness of the pipeline shell, but verify that the pipeline shell is synthesizable. The correctness of the pipeline shell is verified by simulation-based testing.
 
-Using both these tests, we can assume that the pipeline shell will work with formal verification in Onespin, given that we use a synthesizable ISS compatible with the interface described in this thesis.
+Using both these tests, in conjunction with the functional tests using simulation, we can assume that the pipeline shell will work with formal verification in Onespin, given that we use a synthesizable ISS compatible with the interface described in this thesis.

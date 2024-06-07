@@ -1,12 +1,23 @@
-\chapter{Instruction Set Simulator}
+\chapter{Instruction Set Simulator (ISS)}
 \label{ch:ISS}
 
-\tmp{Burde jeg delt opp kapittelet tydeligere i: 1. Adding CV32E40S support to spike, og 2. Modifications to support pipeline shell??}
+%\tmp{Burde jeg delt opp kapittelet tydeligere i: 1. Adding CV32E40S support to spike, og 2. Modifications to support pipeline shell??}
+
+The \acrfull{iss} is a critical component in our reference model, responsible for the functional execution of each instruction While the pipeline shell handles the timing and core-specific pipeline behaviour, the ISS ensures the correct interpretation and execution of the instructions according to the RISC-V ISA specification \cite{watermanRISCVInstructionSet2019, watermanRISCVInstructionSet2021}.
+
+This chapter will discuss the selection and modification of the iSS to meet the requirements of our reference model. cover the necessary modifications to the ISS to integrate it with the rest of the design. The key contributions in this chapter can be categorized into two main areas:
+
+\begin{enumerate}
+    \item Modifying the ISS to support the CV32E40S processor core.
+    \item Modifying the ISS to ensure proper interaction with pipeline shell.
+\end{enumerate}
+
+\section{ISS Requirements}
+
+To achieve these goals, we define the following requirements for the ISS. These requirements are collected from the previous chapters and referred to as \textbf{ISS Requirement X}.
 
 
-\section{Requirements}
-
-The following functional requirements for the ISS were collected from the previous chapters and are required for the ISS to be used as a part of the reference model. These requirements will be used throughout this chapter to discuss the choice of ISS and its necessary modifications. 
+and are required for the ISS to be used as a part of the reference model. This chapter will use these requirements to discuss the choice of ISS and its necessary modifications. 
 
 \begin{enumerate}
 
@@ -20,7 +31,7 @@ The following functional requirements for the ISS were collected from the previo
 
 \item \textbf{The ISS should be core-independent} \label[issReq]{issReq:coreIndependent}
 
-\item[] To make the reference model modifyable to different cores, the ISS should not contain any core dependent functionality.
+\item[] The ISS should contain as little core-dependent functionality as possible to make the reference model easily modifiable to different cores.
 
 \item \textbf{Modify ISS to match the core.} \label[issReq]{issReq:csr}
 
@@ -81,7 +92,7 @@ The following functional requirements for the ISS were collected from the previo
 
 \par We should be able to apply the effects of the \rv{mie} and \rv{mstatus} CSRs from outside of the ISS, to ensure interrupts are timed correctly.
 
-\item \textbf{If possible, the ISS should compatible with formal verification} \label[issReq]{issReq:formal}
+\item \textbf{[optional] The ISS should compatible with formal verification} \label[issReq]{issReq:formal}
 
 \par The ISS should be compatible with formal verification by being able to compile into synthesizable RTL code.
 %\item \textbf{Load the same instructions as the DUT} \label[issReq]{issReq:DUTins}
@@ -210,7 +221,7 @@ We choose to go with CVA6 spike implementation, but this also requires some modi
 
 
 
-\section{Making the ISS replaceable : \Cref{issReq:replacable} }
+\section{Making the ISS replaceable : ISS Requirement \ref{issReq:replacable} }
 
 \subsubsection{ISS interface}
 
@@ -220,7 +231,7 @@ To easily interface with the ISS the communication is done in \file{iss_wrap_pkg
 
 \tmp{More on the interface}
 
-\section{Matching the ISS to the core: \Cref{issReq:csr} \& \ref{issReq:binaries}}
+\section{Matching the ISS to the core: ISS Requirement \ref{issReq:csr} \& \ref{issReq:binaries}}
 
 \subsection{Parameters}
 
@@ -247,7 +258,7 @@ There are some differences in the implementation of the CSRs from the core and S
 %required to represent either 00 or 11 in MPP.
 
 
-\subsection{Memory mapping}
+\subsection{Memory Mapping}
 
 In order to run the same binaries as the core and fulfill \Cref{issReq:binaries}, Spike must be modified with the same memory mapping as the core.
 
@@ -282,7 +293,7 @@ These modifications allow an elf file generated with core-v-verif to run success
 %
 %\tmp{ImperasDV and RVVI supports volatile CSRs and memory regions. This could avoid fine tuning all CSRs to fit the core, but increases reliance on the core and gives verification gaps.}
 
-\section{Step through individual instructions: \Cref{issReq:step} \& \ref{issReq:state}}
+\section{Step through individual instructions: ISS Requirement \ref{issReq:step} \& \ref{issReq:state}}
 
 
 Normally, Spike runs from the main function in \file{spike.cc}, and runs sequentially from start to finish using the \ccode{sim_t::run()} function.
@@ -314,7 +325,7 @@ CV32E40S has expanded RVFI to support multiple memory operations per instruction
 
 For logging, spike stores all register and memory commits during an instruction. This can be used to generate the \rv{rd} and memory RVFI signals. Register commits are stored in the unordered map \ccode{log_reg_write} with register number and data, while memory read and write commits are stored in the vectors \ccode{log_mem_read} and \ccode{log_mem_write} containing tuples address, value, and size.
 
-We use the values stored in this \textit{commit logs} to generate the RVFI outputs. The details can be found in \ref{}
+We use the values stored in these \textit{commit logs} to generate the RVFI outputs. The details can be found in \ref{}
 
 \subsection{RVFI interrupts and traps}
 
@@ -337,7 +348,7 @@ Similarly to interrupts, a delay must also be added to debug mode caused by \rv{
 
 To support \Cref{issReq:CSR_out}, we also want to output CSR changes over RVFI. This is currently also implemented in the core-v-verif Spike version.
 
-\section{Interrupt injection: \Cref{issReq:interrupt}, \ref{issReq:set_CSR}, and \ref{issReq:interruptEnabled}}
+\section{Interrupt injection: ISS Requirement \ref{issReq:interrupt}, \ref{issReq:set_CSR}, and \ref{issReq:interruptEnabled}}
 \label{sec:iss_interruptInjection}
 
 We add a new DPI function called \ccode{iss_intr()} to inject interrupts. This calls the \ccode{Processor:interrupt(...)} method via \ccode{Simulator::interrupt(...)}, and is shown in \Cref{lst:interrupt}. This function is called every clock cycle to determine if something has changed, and an interrupt can be taken. We set the \rv{mip} CSR even though the interrupt is not enabled to avoid a mismatch with the core if the \rv{mip} CSR is read.
@@ -370,7 +381,7 @@ bool Processor::interrupt(reg_t mip, reg_t mie, uint32_t revert_steps, bool inte
 } 
 \end{clisting}
 
-\section{Modifications to interrupt taking: \Cref{issReq:interruptEnabled} \& \ref{issReq:interruptOrdering}}
+\section{Modifications to interrupt taking: ISS Requirement \ref{issReq:interruptEnabled} \& \ref{issReq:interruptOrdering}}
 \label{sec:iss_interruptModifications}
 
 \subsection{Interrupt allowed}
@@ -388,7 +399,7 @@ The RISC-V specification specifies the priority order of the standard interrupt 
 
 To make the interrupt priorities the same in the core and Spike can modify the functionality of the \ccode{processor_t::take_interrupt()} method to correctly order the external interrupts. This approach assumes that the interrupt ordering for the external interrupts will be the same for all cores. This might not necessarily be the case since the ordering is not defined in the specification \cite{watermanRISCVInstructionSet2021}. Future work should, therefore, make the ordering of external interrupts configurable or move the interrupt-taking functionality of Spike to a separate, core-specific module.
 
-\section{Revert state: \Cref{issReq:revertState}}
+\section{Revert state: ISS Requirement \ref{issReq:revertState}}
 \label{sec:iss_revert}
 
 \Cref{issReq:revertState} specifies that we must be able to revert Spike to a previous state to discard instructions that are flushed from the pipeline shell, as discussed in \Cref{sec:ps_revertion}. THis involves restoring register file values, \acrshort{csr}s, memory contents, \acrshort{pc}, and other relevant state information. 

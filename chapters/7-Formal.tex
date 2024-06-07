@@ -14,6 +14,8 @@ To test different instructions, we can inject values into the obi interface by c
 
 
 \section{Formal verification testbench}
+\label{sec:formal_testbench}
+\label{sec:formal_dummy}
 
 Since Spike is written in \cpp, it is incompatible with formal verification. To support formal verification in the future by switching to a formal-friendly ISS, we want the rest of the reference model to be compatible with formal verification. In addition to the simulation-based testbench, we want to verify the design using formal methods. To do this, we replace \lstinline{iss_wrap_pkg.sv} that communicates with Spike, with a "dummy ISS " in \lstinline{iss_wrap_formal_pkg.sv} that is mostly empty but can be used to verify that the rest of the reference model works with formal methods.
 

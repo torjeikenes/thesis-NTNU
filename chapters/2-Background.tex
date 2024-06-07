@@ -21,7 +21,7 @@
 \label{sec:bg_pipeline}
 
 Almost all of today's processor cores use pipelining to some extent to increase the throughput and reduce the cycle times of the processor. RISC-V has also been specifically designed for pipelined execution \cite{pattersonComputerOrganizationDesign2021}. 
-Typically, a RISC-V pipeline has five steps \cite{pattersonComputerOrganizationDesign2021}:
+Typically, an in-order RISC-V pipeline has five steps \cite{pattersonComputerOrganizationDesign2021}:
 
 \begin{itemize}
     \item \textbf{IF} - Fetch instructions from memory
@@ -58,7 +58,7 @@ In the ID stage, the instruction is decoded, and the required registers are read
 
 The operation of an instruction is performed in the EX stage, such as ALU, multiplication, and division operations. Multi-cycle instructions, requiring multiple cycles to complete, cause the stage to be stalled until the operation is complete.
 
-If the instruction contains a memory operation, the first phase of a memory read or write is initiated here. This involves generating the address to load or store to/from with with the corresponding control signals, and passing it to the \acrlong{lsu} which handles reading and writing to memory.
+If the instruction contains a memory operation, the first phase of a memory read or write is initiated here. This involves generating the address to load or store to/from with the corresponding control signals and passing it to the \acrlong{lsu}, which handles reading and writing to memory.
 
 Branches are also taken from the EX stage if their conditions are met \cite{openhwgroupPipelineDetailsCOREV2023}.
 
@@ -75,7 +75,7 @@ Because multiple instructions are in the pipeline simultaneously, \textit{Hazard
 
 \textit{Forwarding} attempts to solve this problem by allowing data to be forwarded to the stage that needs the data, avoiding stalls by not requiring the data to flow through the register file to a subsequent instruction.
 
-\textit{Memory stalls} are also a common scenario where the pipeline must \textit{halt} to wait for data to be fetched from memory. In the CV32E40S core, the \acrshort{lsu} is divided between the EX and WB stages, so memory stalls can happen in the WB stage when waiting for the LSU to return a value from memory.
+\textit{Memory stalls} are also a typical scenario where the pipeline must \textit{halt} to wait for data to be fetched from memory. In the CV32E40S core, the \acrshort{lsu} is divided between the EX and WB stages, so memory stalls can happen in the WB stage when waiting for the LSU to return a value from memory.
 
 
 \subsection{Side effects}
@@ -89,10 +89,11 @@ However, some instructions also have \textit{side effects}, meaning they update 
 %One example of a side effect is the \lstinline{ecall} instruction, which triggers a software interrupt and transfers control to the operating system. The return value of the \lstinline{ecall} instruction is not relevant, but its side effect of transferring control to the OS is crucial.
 
 \subsection{Flushing}
+\label{sec:bg_flushing}
 
 \glsdisp{flush}{Flushing} is when one or more pipeline stages must be discarded. This typically happens during exceptions, interrupts, branching, jumping, etc., where the fetched instructions differ from the instruction that should run next \cite{pattersonComputerOrganizationDesign2021}.
 
-\Cref{fig:branch_flush} shows an example of the pipeline contents when a branch is taken. The figure shows that when the branch instruction (3 B) arrives in the EX stage in cycle 5, only the IF and ID stages are flushed, as they do not contain the correct instruction for the branch. This allows the first branch instruction (B1) to be fetched in cycle 6 while the branch instruction (3 B) is in the WB stage. Because of this, there is a 2-cycle delay where no instruction is committed in WB before the first instruction from the branch is committed.
+\Cref{fig:branch_flush} shows an example of the pipeline contents when a branch is taken. The figure shows that when the branch instruction (3 B) arrives in the EX stage in cycle 5, only the IF and ID stages are flushed, as they do not contain the correct instruction for the branch. This allows the first branch instruction (B1) to be fetched in cycle six while the branch instruction (3 B) is in the WB stage. Because of this, there is a 2-cycle delay where no instruction is committed in WB before the first instruction from the branch is committed.
 
 \Cref{fig:jump_flush} shows a similar example with a jump instruction (3 J) instead of a branch instruction. Because branches are taken in the ID stage in the CV32E40S core, only the IF stage needs to be flushed, and there is only one cycle delay before the first instruction after the jump.
 
@@ -164,9 +165,9 @@ However, some instructions also have \textit{side effects}, meaning they update 
 \section{Interrupts}
 \label{sec:bg_interrupts}
 
-In the RISC-V specification \cite{watermanRISCVInstructionSet2021}, there is a distinction between interrupts and exceptions. An \textit{interrupt} is an external event that occurs asynchronously to the execution, whereas an \textit{exception} is an unusual condition associated with an instruction at run time, happening synchronously to the execution. In RISC-V, a \textit{trap} can be triggered by both an interrupt and exception, leading to the transfer of control to a \textit{trap handler}. A trap handler is a set of specialized instructions to manage the exception or interrupt appropriately \cite{watermanRISCVInstructionSet2021}. 
+In the RISC-V specification \cite{watermanRISCVInstructionSet2021}, there is a distinction between interrupts and exceptions. An \textit{interrupt} is an external event that occurs asynchronously to the execution. In contrast, an \textit{exception} is an unusual condition associated with an instruction at run time, happening synchronously to the execution. In RISC-V, a \textit{trap} can be triggered by both an interrupt and exception, leading to the transfer of control to a \textit{trap handler}. A trap handler is a set of specialized instructions to manage the exception or interrupt appropriately \cite{watermanRISCVInstructionSet2021}. 
 
-An \textit{asynchronous event} can either be an external interrupt or a debug request. This event happens independently of the normal program flow and clock cycle. In the report, we will mostly focus on interrupts as examples of asynchronous events, but many of the same timing problems presented will also apply to debug requests.
+An \textit{asynchronous event} can be an external interrupt or a debug request. This event happens independently of the normal program flow and clock cycle. In the report, we will primarily focus on interrupts as examples of asynchronous events, but many of the same timing problems presented will also apply to debug requests.
 
 
 The CV32E40S supports two different interrupt architectures, the simpler, non-preemptable \acrfull{clint} and the more sophisticated \acrfull{clic}, which supports nested interrupts with interrupt prioritization, and a larger number of interrupts \cite{openhwgroupExceptionsInterruptsCOREV2023}. 
@@ -184,17 +185,17 @@ When an interrupt is enabled, the processor can \textit{take} the interrupt, cau
 
 The current PC is captured into the \lstinline{mepc} CSR to continue the interrupted program after the interrupt execution. 
 The interrupt cause is saved into the \lstinline{mcause} register, which the trap handler uses to determine the correct handling.
-Since CLINT is non-preemptive, the core disables interrupts while in the trap handler by clearing the \lstinline{mstatus.mie} register, after saving the previous state to \lstinline{mstatus.mpie} to be able to revert it afterwards. 
+Since CLINT is non-preemptive, the core disables interrupts while in the trap handler by clearing the \lstinline{mstatus.mie} register after saving the previous state to \lstinline{mstatus.mpie} to be able to revert it afterward. 
 The interrupts handler is looked up in the vector table \lstinline{mtvec}, and this base address is jumped to if non-vectored mode is enabled, or if vectored mode is enabled, the core jumps to the base address plus an offset address of 4 times the interrupt ID. This requires \textit{flushing} the pipeline, discarding the unfinished instructions.
 
 
-The interrupt handler ends with the \lstinline{mret} instruction, which reverts the program counter to the PC saved in \lstinline{mepc}, and reverts \lstinline{mstatus.mie} from \lstinline{mstatus.mpie}.
+The interrupt handler ends with the \lstinline{mret} instruction, which reverts the program counter to the PC saved in \lstinline{mepc} and reverts \lstinline{mstatus.mie} from \lstinline{mstatus.mpie}.
 
 \subsection{Consequence of interrupts in the pipeline}
 
-The pipeline state can affect the timing of interrupts. When an interrupt occurs, the processor must halt normal execution at the current instruction and switch to the interrupt handler.  When the core takes the interrupt and jumps to the interrupt handler, the pipeline stages must be flushed, discarding the unfinished instructions currently in the pipeline. 
+The pipeline state can affect the timing of interrupts. When an interrupt occurs, the processor must halt normal execution at the current instruction and switch to the interrupt handler. When the core takes the interrupt and jumps to the interrupt handler, the pipeline stages must be flushed, discarding the unfinished instructions currently in the pipeline. 
 
-\Cref{fig:interrupt_flush} shows an example of the pipeline when an interrupt occurs. The figure shows the instructions contained in each pipeline stage for each clock cycle. In cycle 5, an interrupt occurs. In the next cycle, all the pipeline stages are flushed, ensuring that instruction 2 was the last to commit before taking the interrupt. In cycle 7, the pipeline starts to be filled up again, starting with the first instruction of the interrupt handler (IH1). We see a 4-cycle delay between instruction 2 in cycle 5 and IH1 committing in cycle 10.
+\Cref{fig:interrupt_flush} shows an example of the pipeline when an interrupt occurs. The figure shows the instructions contained in each pipeline stage for each clock cycle. In cycle 5, an interrupt occurs. In the next cycle, all the pipeline stages are flushed, ensuring that instruction 2 was the last to commit before taking the interrupt. In cycle 7, the pipeline starts to be filled up again, beginning with the first instruction of the interrupt handler (IH1). We see a 4-cycle delay between instruction 2 in cycle five and IH1 committing in cycle 10.
 
 However, the pipeline may not always be in a state where it can be safely flushed. This can occur in multiple scenarios, such as if the processor is mid-execution of a multi-cycle instruction or has an outstanding memory operation. This requires the core to wait for the pipeline to be \textit{interruptible} before taking the interrupt \cite{taylorAdvancedRISCVVerification2023}.
 
@@ -212,13 +213,13 @@ However, the pipeline may not always be in a state where it can be safely flushe
 \subsection{Interrupt timing in CV32E40S}
 
 \Cref{fig:interrupt_timing} shows a simplified diagram of what affects the timing of an interrupt in the CV32E40S core, divided into clock cycles. We see that the interrupt is applied in cycle 0. In the next cycle, the interrupt is clocked into \sv{irq_q}, and the controller decides if the interrupt will be taken. \sv{pending_interrupt} checks if the incoming interrupt in \sv{irq_q} is enabled in \rv{mie}, and wether all interrupts are allowed with \rv{mstatus.mie}. \sv{interrupt_allowed} depends on the state of the pipeline and determines if the pipeline can safely be flushed and if an interrupt is allowed to be taken. 
-If both these signals are high, the interrupt is taken. When an interrupt is taken in cycle 2, the interrupt handler is fetched, the pipeline is flushed, and the CSR updates \rv{mstatus}, \rv{mepc}, \rv{priv_lvl}, and \rv{mcause}. The next instruction is fetched as normal if the interrupt is not taken.
+If both these signals are high, the interrupt is taken. When an interrupt is taken in cycle 2, the interrupt handler is fetched, the pipeline is flushed, and the CSR updates \rv{mstatus}, \rv{mepc}, \rv{priv_lvl}, and \rv{mcause}. The next instruction is fetched as usual if the interrupt is not taken.
 
 
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{figures/interrupt_handeling_timing.pdf}
-    \caption{Diagram showing the components that effect the timing of taking an interrupt. The diagram is created by analyzing the RTL code of the CV32E40S \cite{openhwgroupCv32e40s2024}.}
+    \caption{Diagram showing the components that affect the timing of taking an interrupt. The diagram is created by analyzing the RTL code of the CV32E40S \cite{openhwgroupCv32e40s2024}.}
     \label{fig:interrupt_timing}
 \end{figure}
 
@@ -230,20 +231,20 @@ If both these signals are high, the interrupt is taken. When an interrupt is tak
 \subsection{Non-Maskable interrupts - NMI}
 
 Non-maskable Interrupts are used only for hardware errors. They can not be disabled and perform a jump to the NMI vector to be handled \cite{watermanRISCVInstructionSet2021}. They update \lstinline{mepc}, \lstinline{mcause}, and \lstinline{mstatus} like normal interrupts, but NMIs are handled in an imprecise manner, allowing the instruction causing the NMI to retire before taking the NMI. At most, two instructions will retire before NMI is taken. 
-Additionally, NMIs have a higher priority than other interrupts and will be taken before other pending interrupts \cite{openhwgroupExceptionsInterruptsCOREV2023}.
+Also, NMIs are prioritized over other interrupts and will be taken before other pending interrupts \cite{openhwgroupExceptionsInterruptsCOREV2023}.
 
 \subsection{CLIC}
 
-The \textit{Core Local Interrupt Controller (CLIC)} is a more advanced interrupt controller, supporting priority levels of interrupt, nestable interrupts, and up to 4096 interrupts (1024 in CV32E40S) \cite{openhwgroupExceptionsInterruptsCOREV2023}. CLIC's functionality is somewhat different to CLINT's explained above, but the differences are not essential to understanding the complexity of verifying interrupts and will not be discussed further. 
+The \textit{Core Local Interrupt Controller (CLIC)} is a more advanced interrupt controller, supporting priority levels of interrupt, nestable interrupts, and up to 4096 interrupts (1024 in CV32E40S) \cite{openhwgroupExceptionsInterruptsCOREV2023}. CLIC's functionality is somewhat different from CLINT's explained above, but the differences are not essential to understanding the complexity of verifying interrupts and will not be discussed further. 
 
 
 
 \section{Debug requests}
 \label{sec:bg_debug}
 
-Debug support is an essential part of a processor to allow developers to gain visibility and control of the processor, especially when implemented physically in hardware. CV32E40S supports the RISC-V Debug Specification \cite{pauldonahueRISCVDebugSupport2023} to support low level debugging access to the processor. The specification defines a common interface used by a \acrfull{dm} on the RISC-V platform but external to the core. This \acrshort{dm} is further controlled by a Debugger on a Debug Host (eg. gdb on a laptop), through Debug Transport Hardware (eg. JTAG), and through different transport modules and interfaces. 
+Debug support is an essential part of a processor to allow developers to gain visibility and control of the processor, especially when implemented physically in hardware. CV32E40S supports the RISC-V Debug Specification \cite{pauldonahueRISCVDebugSupport2023} to support low-level debugging access to the processor. The specification defines a standard interface used by a \acrfull{dm} on the RISC-V platform but external to the core. This \acrshort{dm} is further controlled by a Debugger on a Debug Host (e.g. gdb on a laptop), through Debug Transport Hardware (e.g. JTAG), and different transport modules and interfaces. 
 
-The Debug Mode of the core can be entered synchronously through \rv{ebreak} instructions, or asynchronously through the \rv{debug_req_i} input signal to the core~\cite{openhwgroupDebugTriggerCOREV2023}.
+The Debug Mode of the core can be entered synchronously through \rv{ebreak} instructions or asynchronously through the \rv{debug_req_i} input signal to the core~\cite{openhwgroupDebugTriggerCOREV2023}.
 
 When the core enters the debug mode, the current PC is saved to the \rv{dpc} CSR, the cause of the debug is saved in the \rv{dcsr} CSR, and the privilege is set in \rv{prv}. The PC is then redirected to a location given in the \rv{dm_haltaddr_i} port, where the processor starts executing the debug control code from ~\cite{openhwgroupDebugTriggerCOREV2023}.
 
@@ -263,7 +264,7 @@ The \textit{step-and-compare} methodology is popular since the state is continuo
 
 For the step-and-compare methodology to be optimal, the reference model should ideally be as independent of the core as possible so that bugs from the core are not also implemented in the reference model.
 
-\subsection{\acrfull{rvfi}}
+\subsection{RISC-V Formal Interface (RVFI)}
 \label{sec:rvfi}
 
 The RVFI specification is an interface of output signals from the core used to compare execution with the reference model. 
@@ -278,12 +279,13 @@ This ensures the timing of interrupts stays in sync in the DUT and reference mod
 
 
 
-\subsection{\acrfull{rvvi}}
+\subsection{RISC-V Verification Interface (RVVI)}
 \label{sec:rvvi}
 
-RVVI \cite{riscv-verificationRISCVVerificationInterface2023} is an open verification interface that connects the \acrfull{dut} and reference model during verification. It provides a standardized way to exchange information about the processor state, executed instructions, and other details. The RVVI-Trace extends RVFI and contains the core output, while the RVVI-API adds functions to interface with the reference model. RVVI is intended to be used with a \acrshort{vip}, which contains a reference model and comparison functionality. Therefore, the RVVI-API can insert the processor state instead of comparing the reference model and \acrshort{dut} core externally.
+RVVI \cite{riscv-verificationRISCVVerificationInterface2023} is an open verification interface that connects the \acrfull{dut} and reference model during verification. It provides a standardized way to exchange information about the processor state, executed instructions, and other details. It is divided into the RVVI-Trace and the RVVI-API. The RVVI-Trace extends RVFI and contains the core output, while the RVVI-API adds functions to interface with the reference model. RVVI is intended to be used with a \acrshort{vip}, which contains a reference model as well as comparison functionality. Therefore, the RVVI-API can insert the processor state instead of externally comparing the reference model and \acrshort{dut} core.
 
-\subsection{\acrfull{dpi}}
+\subsection{Direct Programming Interface (DPI)}
+\label{sec:bg_dpi}
 
 \acrfull{dpi} functions in SystemVerilog provide a way to connect SystemVerilog to other languages like C and \cpp \cite{spearSystemVerilogVerificationGuide2012}. They come in two types: \textit{imported functions} where C/\cpp functions are called from  SystemVerilog, and \textit{exported functions} where SystemVerilog functions can be called from C/\cpp. Using DPI, an ISS written in another language can be used with SystemVerilog. 
 
@@ -328,16 +330,16 @@ There are many available Instruction Set Simulators for RISC-V, some of which ar
 \subsection{Spike}
 \label{sec:spike}
 
-\textit{Spike} \cite{SpikeRISCVISA2023} is an open-source functional instruction-accurate ISS written for RISC-V. It is written in \cpp and is relatively simple to use and extend. It is widely used in both academia for research and teaching, and in industry as a golden functional reference to multiple RISC-V cores. As the official RISC-V ISS, Spike has been developed alongside the RISC-V specification and is well-tested and maintained. It supports a wide range of RISC-V extensions and allows for the inclusion of custom extensions.
+\textit{Spike} \cite{SpikeRISCVISA2023} is an open-source functional instruction-accurate ISS written for RISC-V. It is written in \cpp and is relatively simple to use and extend. It is widely used in academia for research and teaching, and in industry as a golden functional reference to multiple RISC-V cores. As the official RISC-V ISS, Spike has been developed alongside the RISC-V specification and is well-tested and maintained. It supports a wide range of RISC-V extensions and allows for the inclusion of custom extensions.
 
 Spike loads ELF binary files containing the instructions to be run. It can be executed sequentially from start to finish or, with some modifications, run in a step-by-step mode, one instruction at a time. The step-by-step mode is crucial for integrating into the reference model proposed in this thesis.
 
 
 
-%Spike revolves around a \lstinline{step()} function in the \lstinline{execute.cc} file that fetches, decodes, and executes an instruction. This is divided into one function \lstinline{_mmu->access_icache(pc)} that fetches an already decoded instruction (with \lstinline{decode()}) with the type \lstinline{insn_fetch_t}, and either run \lstinline{execute_insn_fast()} or \lstinline{execute_insn_logged()} to execute the instruction quickly or slowly with logging. In Spike, the execute functions also write the results to the simulated register file \cite{SpikeRISCVISA2023}.
+% Spike revolves around a \lstinline{step()} function in the \lstinline{execute.cc} file that fetches, decodes, and executes an instruction. This is divided into one function \lstinline{_mmu->access_icache(pc)} that fetches an already decoded instruction (with \lstinline{decode()}) with the type \lstinline{insn_fetch_t}, and either run \lstinline{execute_insn_fast()} or \lstinline{execute_insn_logged()} to execute the instruction quickly or slowly with logging. In Spike, the execute functions also write the results to the simulated register file \cite{SpikeRISCVISA2023}.
 
 
-%Pure spike runs from \lstinline{spike.cc} in the main function. The main execution is done by instantiating a \lstinline{sim_t} that gets configured with the processor and memory. The construction in \lstinline{sim_t} instantiates a configurable amount of \lstinline{prcessor_t} processor types. The original implementation from main fully runs spike until completion using the \lstinline{sim_t::run()} function.
+%Pure spike runs from \lstinline{spike.cc} in the main function. The main execution is done by instantiating a \lstinline{sim_t} that gets configured with the processor and memory. The construction in \lstinline{sim_t} instantiates a configurable amount of \lstinline{prcessor_t} processor types. The original implementation from main fully runs Spike until completion using the \lstinline{sim_t::run()} function.
 
 %\lstinline{sim_t} has a method called \lstinline{step()} that steps through a given number of instructions in each of the configured processors. 
 
@@ -402,7 +404,7 @@ The C-emulator generated from the sail-riscv model makes it possible to use the 
 %%    \item Modularity in choosing RISC-V extensions
 %%\end{itemize}
 %
-%%Gem5 is more complex than spike and sail, but might be harder to modify without altering side effects
+%%Gem5 is more complex than Spike and Sail, but might be harder to modify without altering side effects
 %%
 %%Gem5 might lead to more work to modify and/or might be more messy.
 %%
@@ -444,7 +446,7 @@ Reference models can have varying complexity, from simple  \acrshort{iss}s to mo
 \subsection{ISS as a reference model}
 \label{sec:bg_iss_refmod}
 
-An ISS is often used directly as a reference model. This requires some modifications to how asynchronous events are handled in the testbench, as shown in \Cref{fig:iss_testbench}. To avoid the timing problems of asynchronous events shown in \Cref{fig:lw_example}, interrupts and debug requests are only passed into the DUT core, not the ISS. The ISS is instead informed of asynchronous events through the RVFI output of the core and takes the same asynchronous events that the core reports. Since the interrupts follow the core, this does, however, leave a large "verification hole" where we can not verify if the correct asynchronous event was taken or if it was taken at the correct time \cite{taylorAdvancedRISCVVerification2023}, as will be discussed later. 
+An ISS is often used directly as a reference model. This requires modifications to how asynchronous events are handled in the testbench, as shown in \Cref{fig:iss_testbench}. To avoid the timing problems of asynchronous events shown in \Cref{fig:lw_example}, interrupts and debug requests are only passed into the DUT core, not the ISS. The ISS is instead informed of asynchronous events through the RVFI output of the core and takes the same asynchronous events that the core reports. Since the interrupts follow the core, this does, however, leave a large "verification hole" where we can not verify if the correct asynchronous event was taken or if it was taken at the correct time \cite{taylorAdvancedRISCVVerification2023}, as will be discussed later. 
 
 \begin{figure}
     \centering
@@ -471,63 +473,6 @@ Interrupts are reported from the DUT through the RVFI interface as described in 
 
 Certain sections in the RISC-V ISA specification use terms like "may" or "can". This ambiguity has led to discrepancies between the Spike Reference Model and the CVA6 core due to differences in the interpretation of the specification. There is ongoing work to find these discrepancies \footnote{\url{https://github.com/openhwgroup/cva6/issues/1346}} and patch Spike to operate the same way as the CVA6 core. 
 
-%\begin{itemize}
-%    \item CVA6 is another core from openHW. It also uses the verification environment from core-v-verif 
-%    \item Currently in development
-%    \item Another core-v core from openHWgroup
-%    \item Uses spike as a reference model
-%    \item Added some patches to spike
-%    \item Added the classes \lstinline{Processor} and \lstinline{Simulation}
-%    \item Expands the \lstinline{step()} function to build an rvfi item after running a step. This is output from spike and compared with the core in \lstinline{run_phase()} in \lstinline{uvmc_rvfi_scoreboard.sv}
-%    \item uses dpi to integrate the \lstinline{spike_step()} function into the uvm environmen
-%    \item Interrupts follow the DUT \textbf{Virker det som} \url{https://github.com/MarioOpenHWGroup/core-v-verif/blob/doc/SpikeAPI/cva6/docs/SpikeAPI/API.md}
-%    \item One challenge is that spike allows more behaviour than CVA6 and must be constrained \url{https://github.com/openhwgroup/cva6/issues/1403}
-%\end{itemize}
-%
-%
-%From commit message: 
-%\url{https://github.com/openhwgroup/core-v-verif/commit/73cf832a1f5ffa453112b2f6ffc30a340ef623e7}
-%
-%\url{https://github.com/openhwgroup/core-v-verif/compare/master...MarioOpenHWGroup:core-v-verif:feature/spike-tandem}
-%
-%\begin{lstlisting}
-%    
-%[TANDEM] Added to the RVFI agent the tandem functionality
-%* vendor/patches/riscv/riscv-isa-sim/0005-install-shared-disasm-lib.patch:
-%  New.
-%* vendor/riscv/riscv-isa-sim/disasm/disasm.mk.in
-%  (disasm_install_shared_lib): Ditto.
-%* vendor/riscv/riscv-isa-sim/riscv/execute.cc (processor_t::step): Save the
-%  bit pattern of most recently fetched instruction in processor state.
-%* vendor/riscv/riscv-isa-sim/riscv/processor.h (struct state_t): Add the
-% bit pattern of the most recently fetched instruction to processor state.
-%* One monitor to execute the RM instructions when the instructions are
-% commited by the core.
-%* One scoreboard to get the transactions from core and RM
-%* Unified monitor to RVFI with several threads to look to each one of
-% the commit ports
-%* Functionality st_rvfi2seq and seq2rvfi has been added to convert
-% structs into transactions and the other way around
-%* Added RM and Spike classes to implement the RM functionality
-%
-%riscv-isa-sim:
-%* Add extended classes for Processor and Simulation
-%  * These clases implement the extended functionality that we want to
-% modify to spike to minimize the modifications to the base code
-%* Add a params system to control the behaviour of the core from the
-% SV code.
-%* The API described for Spike has to be implemented in order to compare
-% more things.
-%* Add context_t mechanism to be able to step the simulation with ease
-%* Reimplemented max_steps mechanism
-%* Add bootrom file in order to add our custom bootrom.
-%* Add params to control the generation of dram and bootrom
-%* Add mechanism to be able to run the modified spike as an standalone
-% binary without having issues
-%* Add dpi functions to load binary to get sections and symbols
-%
-%\end{lstlisting}
-
 
 \subsubsection{Spike cosim in Ibex RISC-V core}
 \label{back:Ibex}
@@ -536,9 +481,9 @@ Ibex is another open-source RISC-V core from lowRISC. It currently uses Spike fo
 Ibex also extends RVFI with the \lstinline{rvfi_ext_irq_valid} signal to report an interrupt not associated with an instruction, not setting \lstinline{rvfi_valid}. This keeps the order of the interrupts correct in comparison to the retired instructions instead of passing interrupts independent of RVFI. This also allows multiple interrupts to happen between two instruction retirements \cite{ethzurichanduniversityofbolognaCosimulationSystem2023}. 
 
 %\begin{itemize}
-%    \item Uses spike as an ISS for cosimulation
+%    \item Uses Spike as an ISS for cosimulation
 %    \item Does not extend to 
-%    \item When the DUT receives an interrupts and sends this in the rvfi item, this is sent to spike using \lstinline{set_nmi()}, \lstinline{set_mip}, \lstinline{set_debug_req} etc. in \lstinline{ibex_cosim_scoreboard.sv}
+%    \item When the DUT receives an interrupts and sends this in the rvfi item, this is sent to Spike using \lstinline{set_nmi()}, \lstinline{set_mip}, \lstinline{set_debug_req} etc. in \lstinline{ibex_cosim_scoreboard.sv}
 %    \item Extends rvfi with \lstinline{rvfi_ext_irq_valid} to signal an interrupt not associated with an instruction, not setting \lstinline{rvfi_valid}. This keeps the order of the interrupts correct in comparison to the retired instructions, instead of passing interrupts independent of RVFI. This also allows multiple interrupts to happen between two instruction retirements.
 %    \item Interrupts follows the DUT, leaving a verification hole
 %    
@@ -555,77 +500,10 @@ While the internal workings of ImperasDV are proprietary, we can use the surroun
 ImperasDV uses the RVVI-API to pass retired instructions from the DUT to the VIP. When an interrupt or other asynchronous event occurs to the DUT, the \textit{net changes} (signals that have changed) are pushed to ImperasDV with the \lstinline{rvvi.net_push()} function. ImperasDV then analyzes all the legal sets of actions to determine if any of them converge to the provided DUT state. 
 It explores different orderings of applying legal net changes and executes until an instruction retires. It then compares the state changes with the state changes of the DUT. If no state changes match the DUT, an error is thrown, indicating that the DUT made an illegal state change.
 
-\Cref{fig:imperasFork} shows an example of how we imagine different states are explored and is generated by analyzing the error log in \cite{ISSMismatchPending2023}. The figure shows how ImperasDV applies net changes in different combinations of orders and runs until retirement. The example shows the two net changes, setting \rv{haltreq => 0} and \rv{nmi_cause => 0x401}, as well as an exception. 
+\Cref{fig:imperasFork} shows an example of how we imagine different states are explored and is generated by analyzing the error log in \cite{ISSMismatchPending2023}. The figure shows how ImperasDV applies net changes in various combinations of orders and runs until retirement. The example shows the two net changes, setting \rv{haltreq => 0} and \rv{nmi_cause => 0x401}, as well as an exception. 
 
 This is an improvement from the method described in \Cref{sec:bg_iss_refmod}, as interrupts no longer follow the DUT, taking the same interrupts that the DUT reports it has taken. Instead, ImperasDV verifies that the state transition of the DUT is legal. Although this is an improvement, it still leaves some holes in the verification coverage.
 ImperasDV still has no pipeline awareness and can only verify that the DUTs state transition is legal, but not whether it was the correct legal state change considering the pipeline content \cite{taylorAdvancedRISCVVerification2023}.
-
-%\tmp{https://github.com/openhwgroup/core-v-verif/issues/2082}
-
-%Since ImperasDV is a closed verification IP, we do not know how ImperasDV works internally. More work is needed to build this functionality to implement a similar approach.  
-
-
-%\Cref{lst:imperasDV-a} shows an example of the output log from ImperasDV when the core DUT has made an illegal state change in the special case when an NMI occurs in debug mode. The listing shows the current and pending net changes, as well as the new DUT state.
-%
-%\begin{lstlisting}[caption=Error log from ImperasDV from \url{https://github.com/openhwgroup/core-v-verif/issues/2082} ,label={lst:imperasDV-a}]
-%Info (IDV) Currently applied nets:
-%Info (IDV)  - nmi => 1
-%Info (IDV)  - irq_id_i => 17
-%Info (IDV)  - irq_lev_i => be
-%Info (IDV)  - irq_sec_i => 3
-%Info (IDV)  - haltreq => 1
-%Info (IDV) Pending net changes:
-%Info (IDV)  - Group 3:
-%Info (IDV)  -          nmi_cause => 1025,  age = 0 cycles, 0 retires
-%Info (IDV)  - Group 4:
-%Info (IDV)  -            haltreq => 0,  age = 10 cycles, 0 retires
-%Info (IDV) DUT state change (hartId: 0):
-%Info (IDV)  - dut.pc               - 0x1a110800 debug_rom+0
-%Info (IDV)  - dut.mstatus          - 0x00001880 SD:0 TW:0 MPRV:0 XS:0(Off) FS:0(Off) MPP:3 VS:0(Off) MPIE:1 UBE:0 MIE:0
-%Info (IDV)  - dut.mepc             - 0x0001c072
-%Info (IDV)  - dut.mcause           - 0xb8000401 Interrupt:1 minhv:0 mpp:3 mpie:1 mpil:0 Code:1025
-%Info (IDV)  - dut.dcsr             - 0x400004d3 debugver:4 ebreakm:0 ebreaku:0 stepie:0 stopcount:1 stoptime:0 cause:3(haltreq) mprven:1 nmip:0 prv:3(M-mode)
-%Info (IDV)  - dut.dpc              - 0x00000000
-%\end{lstlisting}
-%
-%
-%\Cref{lst:imperasDVb} shows a shortened version of the log, showing how ImperasDV explores the different state changes. 
-%
-%
-%
-%\begin{lstlisting}[caption=Shortened error log from ImperasDV from \url{https://github.com/openhwgroup/core-v-verif/issues/2082} ,label={lst:imperasDVb}]
-%Reference state change evaluation tree (HartId: 0):
-%Net haltreq => 0x0 { when:2980 }
-%+  Net nmi_cause => 0x401 { when:2990 }
-%   +  Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0xb8000401, mstatus:0x1880 }
-%      +  Retire { pc:0x0(__jvt_base+0) }
-%
-%Net haltreq => 0x0 { when:2980 }
-%+  Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0xb8000fff, mstatus:0x1880 }
-%   +  Net nmi_cause => 0x401 { when:2990 }
-%      +  Retire { pc:0x0(__jvt_base+0) }
-%        
-%Net haltreq => 0x0 { when:2980 }
-%+  Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0xb8000fff, mstatus:0x1880 }
-%   +  Retire { pc:0x0(__jvt_base+0) }
-%     
-%Net nmi_cause => 0x401 { when:2990 }
-%+  Net haltreq => 0x0 { when:2980 }
-%   +  Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0xb8000401, mstatus:0x1880 }
-%      +  Retire { pc:0x0(__jvt_base+0) }
-%        
-%Net nmi_cause => 0x401 { when:2990 }
-%+  Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0x88000011, mstatus:0x88 }
-%   +  Retire { pc:0x1a110800(debug_rom+0) }
-%     
-%Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0x88000011, mstatus:0x88 }
-%+  Net nmi_cause => 0x401 { when:2990 }
-%   +  Retire { pc:0x1a110800(debug_rom+0) }
-%     
-%Exception { pc:0x1c072(sub_3_6_0_t+4), mcause:0x88000011, mstatus:0x88 }
-%+  Retire { pc:0x1a110800(debug_rom+0) }
-%
-%\end{lstlisting}
 
 \begin{figure}
     \centering
@@ -655,7 +533,7 @@ ImperasDV still has no pipeline awareness and can only verify that the DUTs stat
 
 \textit{core-v-verif} \cite{openhwgroupOpenhwgroupCorevverif2023} is the verification environment used by the CV32E40S core, aswell as other OpenHW cores. This allows many similar verification components to be reused by different cores, which avoids all core developers having to do the same work.
 
-Currently, core-v-verif uses ImperasDV as its main reference model, implementing the Continuous Compare Lock-Step Co-Simulation approach\cite{duncangrahamRISCVVerificationImplications2023}, and is shown in \cref{fig:cv32e40s-overview}. In this approach, the interrupt and debug generators are only connected to the DUT, and the reference model is informed of interrupts through the RVFI and RVVI interface. 
+Currently, core-v-verif uses ImperasDV as its primary reference model, implementing the Continuous Compare Lock-Step Co-Simulation approach\cite{duncangrahamRISCVVerificationImplications2023}, and is shown in \cref{fig:cv32e40s-overview}. In this approach, the interrupt and debug generators are only connected to the DUT, and the reference model is informed of interrupts through the RVFI and RVVI interface. 
 The testbench either runs custom-written directed tests or uses randomly generated test programs using the \textit{corev-dv} Random Instruction Generator
 \cite{openhwgroupOpenhwgroupCorevverif2023}.
 
@@ -686,72 +564,6 @@ The DUT uses an \textit{RVFI (Risc-V Formal Interface)} tracer interface to repo
 
 
 
-
-%There are lots of conditions for interrupts that must be taken into consideration. Here are some example conditions from \lstinline{ev32e40x_controller_fsm.sv} from the cv32e40x core:
-%\begin{itemize}
-%    \item When an interrupt is pending, and can not be taken immediately, the ID stage is halted
-%    \item Interrupts can only be taken if there is no data request in WB, and no trans\_valid has been clocked from EX to environment.
-%    \item Interrupts can not happen if multi-cycle operations are in WB
-%    \item If a clic pointer is in EX or WB, we must block interrupts
-%\end{itemize}
-
-% \url{https://www.youtube.com/watch?v=iQR_6f5Jdns}
-%Exceptions can happen in any pipeline stage, e.g. memory faults in IF and MEM stages, Illegal instructions in ID, Arithmetic exceptions in ALU, etc. 
-%
-%When exceptions happen, the instructions following the instruction causing the exception need to be discarded. Since register values are only updated in the WB stage, annulling can be done by replacing the instruction with NOP.
-%Exceptions can be thought of as implicit branches, that branch to the exception handler.
-%
-%Interrupts are also implicit branches. External interrupts can be handled as exceptions that affect the IF stage. The instruction in IF when the interrupt happens is replaced with BNE and the next instruction is the address of the interrupt handler.
-
-
-
-
-%from \lstinline{cv32e40x}: 
-%
-%\begin{lstlisting}
-%    // In addition the ID stage may be halted to enable interrupts or debug to be taken.
-%    //   - If an interrupt (including NMI) is present it is not guaranteed that the pipeline
-%    //     can take the interrupt immediately. A \acrshort{lsu} instruction could for instance be outstanding, causing the interrupt not to be taken.
-%    //     The controller uses (pending_interrupt && interrupt_allowed) to check for these conditions.
-%    //     When an interrupt (or NMI) is pending, the ID stage is halted to guarantee that an interruptible bubble eventually will
-%    //     occur in the WB stage.
-%    //   -- The ID stage is only halted iff debug_interruptible==1, indicating that we are not in debug mode or single step mode with interrupts disabled.
-%    //   --- If halting for interrupts while in debug mode (debug_interruptible == 0), the core would deadlock waiting for interrupt_allowed, but the core
-%    //       would never exit debug mode because the dret instruction could be blocked by the halted ID stage.
-%    //   -- The ID stage is only halted iff also the ID stage is haltable (meaning ID stage is not currently in the middle of a sequence or waiting for a CLIC pointer)
-%    //
-%    //   - The ID stage is halted when any async or sync debug is pending for the same reasons as for interrupts.
-%    //
-%    //   - If not checking for id_stage_haltable for interrupts and debug, the core could end up in a situation where it tries to create a bubble
-%    //     by halting ID, but the condition disallowing interrupt or debug will not disappear until the sequence currently handled by the ID stage
-%    //     is done. This would create an unrecoverable deadlock.
-%\end{lstlisting}
-%
-%\begin{lstlisting}
-%  // Allow interrupts to be taken only if there is no data request in WB,
-%  // and no trans_valid has been clocked from EX to environment.
-%  // Not allowing interrupts when the core cannot take interrupts due to debug conditions.
-%  // Offloaded instructions in WB also block, as they cannot be killed after commit_kill=0 (EX stage)
-%  // \acrshort{lsu} instructions which were suppressed due to previous exceptions or trigger match
-%  // will be interruptable as they were converted to NOP in ID stage.
-%  // When a fencei is present in WB and the \acrshort{lsu} has completed all tranfers, the fencei handshake will be initiated. This must complete and the fencei instruction must retire before allowing interrupts.
-%  // Any multi operation instruction (table jumps, push/pop and double moves) may not be interrupted once the first operation has completed its operation in WB.
-%  //   - This is guarded with using the sequence_interruptible, which tracks sequence progress through the WB stage.
-%  // When a CLIC pointer is in the pipeline stages EX or WB, we must block interrupts.
-%  //   - Interrupt would otherwise kill the pointer and use the address of the pointer for mepc. A following mret would then return to the mtvt table, losing program progress. 
-%\end{lstlisting}
-
-
-%\subsection{Virtual Registers}
-%
-%\tmp{Describe the core-v-verif virtual registers}
-%
-
-
-
-
-
-
 \section{The problem with using an ISS as a reference model}
 \label{sec:back_issProblem}
 
@@ -759,14 +571,14 @@ The DUT uses an \textit{RVFI (Risc-V Formal Interface)} tracer interface to repo
 
 All the implementations from \cref{sec:bg_existingReference} except ImperasDV use an ISS as a reference model. \textcite{taylorAdvancedRISCVVerification2023}  discuss multiple problems when using an ISS as a reference model. The first problem is the difference in abstraction level between the DUT and the ISS. On one hand, the DUT is typically simulated at a clock-cycle accurate Register Transfer Level. On the other hand, ISSs are simulated with time modeled at the instruction level, with the cycle timing of memory interfaces and pipeline operation abstracted away. This leads to an inconsistency between the two. For instance, the RTL model might take multiple clock cycles to complete an instruction while the ISS executes it in one cycle.
 
-When there are no asynchronous events, the ISS can accurately predict the execution of instructions. The problem arises with asynchronous events. In an instruction-accurate simulator, interrupts and debug requests are seen as happening at the beginning of a new instruction, while in the DUT, they could happen in the middle of a multi-cycle instruction. In addition, the ISS does not know the state of the pipeline. In some cases, as explained in \cref{sec:bg_pipeline}, the pipeline has states where interrupts can not immediately be taken, causing a mismatch where the ISS takes the interrupt before the DUT.
+When there are no asynchronous events, the ISS can accurately predict the execution of instructions. The problem arises with asynchronous events. In an instruction-accurate simulator, interrupts and debug requests are seen as happening at the beginning of a new instruction. In contrast, they could occur in the middle of a multi-cycle instruction. In addition, the ISS does not know the state of the pipeline. In some cases, as explained in \cref{sec:bg_pipeline}, the pipeline has states where interrupts can not immediately be taken, causing a mismatch where the ISS takes the interrupt before the DUT.
 
-This is highlighted in \Cref{fig:lw_sw_pipeline} which shows the same example as \Cref{fig:lw_example}, but shows the pipeline content of the CV32E40S core while executing the instructions. It shows the PC and instruction for the IF, ID, EX, and WB stages, and shows blank spaces where the instructions are not valid. Additionally the IA (Interrupt Allowed) column shows if an interrupt is allowed to be taken or not, given the current pipeline state. In CV32E40S, an interrupt can not be taken if there is an outgoing memory request to the \acrshort{lsu}~\cite{openhwgroupExceptionsInterruptsCOREV2023}. In this example, this is the case when a load or store instruction is in the EX or WB stages. These cases are highlighted in red, showing that the interrupt can not be taken. An external interrupt is applied when interrupts are not allowed, and we see that the interrupt is only taken after the interrupt allowed signal goes high. Since the ISS in \Cref{fig:lw_example} does not know the content of the pipeline, it takes the interrupt immediately after the interrupt is applied.
+This is highlighted in \Cref{fig:lw_sw_pipeline} which shows the same example as \Cref{fig:lw_example}, but shows the pipeline content of the CV32E40S core while executing the instructions. It shows the PC and instructions for the IF, ID, EX, and WB stages and blank spaces where the instructions are invalid. The IA (Interrupt Allowed) column also shows whether an interrupt can be taken, given the current pipeline state. In CV32E40S, an interrupt can not be taken if there is an outgoing memory request to the \acrshort{lsu}~\cite{openhwgroupExceptionsInterruptsCOREV2023}. In this example, this is the case when a load or store instruction is in the EX or WB stages. These cases are highlighted in red, showing that the interrupt can not be taken. An external interrupt is applied when interrupts are not allowed, and we see that the interrupt is only taken after the \sv{interrupt_allowed} signal goes high. Since the ISS in \Cref{fig:lw_example} does not know the content of the pipeline, it takes the interrupt immediately after the interrupt is applied.
 
 \begin{figure}
     \centering
     \includegraphics[width=1.00\linewidth]{figures/lw_sw_pipeline_example.pdf}
-    \caption{Example showing how load and store instructions in the pipeline prohibits an interrupt from being taken.}
+    \caption{Example showing how load and store instructions in the pipeline prohibit an interrupt from being taken.}
     \label{fig:lw_sw_pipeline}
 \end{figure}
 
@@ -790,17 +602,17 @@ Multiple approaches for cycle-accurate modeling have previously been attempted f
 
 \textcite{chiangEfficientTwolayeredCycleaccurate2009} proposed a two-layered cycle-accurate modeling technique that partitions the simulator into an untimed functional kernel and an outer timing shell. The inner functional kernel is essentially an untimed ISS responsible for executing the instruction and calculating the correct register values, outputs, and memory data.
 
-The timing shell is shown in \cref{fig:timeshell}, sits on top of the functional kernel, interacts with the rest of the system, and updates the changes calculated in the functional kernel at the correct time. The timing shell consists of a commander that takes in external inputs, checks the internal processor state, and determines whether there should be a stall. If the processor should not stall, the commander either sends a \textit{step} or \textit{interrupt} command to the functional unit according to the inputs and receives a result packet when the functional unit has completed. The result goes into the scheduler, which correctly times the updates from the result packet to the right clock cycle in the time wheel described below. To place updates correctly into the time wheel, the scheduler needs to know all the implementation details of the processor. This includes what happens in each pipeline stage, dependencies between instructions, instruction cycle timing, hazard detection, and stall/forwarding functionality. 
+The timing shell is shown in \cref{fig:timeshell}, sits on top of the functional kernel, interacts with the rest of the system, and updates the changes calculated in the functional kernel at the correct time. The timing shell consists of a commander that takes in external inputs, checks the internal processor state, and determines whether there should be a stall. If the processor should not stall, the commander either sends a \textit{step} or \textit{interrupt} command to the functional unit according to the inputs and receives a result packet when the functional unit has completed. The result goes into the scheduler, which correctly times the updates from the result packet to the correct clock cycle in the time wheel described below. To place updates correctly into the time wheel, the scheduler needs to know all the implementation details of the processor. This includes what happens in each pipeline stage, dependencies between instructions, instruction cycle timing, hazard detection, and stall/forwarding functionality. 
 
 The time wheel consists of multiple time slots corresponding to specific clock cycles and holds all the data to update the outputs and registers at the correct clock cycle. Because of the processor pipeline, one instruction might need to update multiple time slots if the instruction has side effects in different stages. It also has a field indicating if the cycle should stall or not, in which case no command packet is sent to the functional kernel. The time wheel advances each clock cycle, and the most recent time slot is executed.
 
-Another cycle-accurate is the FaCSim, a fast and cycle-accurate architecture simulator by \textcite{leeFaCSimFastCycleAccurate2008} that follows a strategy similar to Chiang and Huang's. FaCSim also consists of a functional simulator and a Cycle-Accurate Trace simulator with a slightly different approach. The functional simulator is responsible for fetching instructions from the ELF executable, decoding, and executing it. It generates an execution trace that is stored in a circular queue connecting the functional simulator and cycle-accurate simulator. 
+Another cycle-accurate is the FaCSim, a fast and cycle-accurate architecture simulator by \textcite{leeFaCSimFastCycleAccurate2008} that follows a strategy similar to Chiang and Huang's. FaCSim also consists of a functional simulator and a Cycle-Accurate Trace simulator with a slightly different approach. The functional simulator is responsible for fetching instructions from the ELF executable, decoding, and executing it. It generates an execution trace stored in a circular queue connecting the functional and cycle-accurate simulators. 
 
 The execution trace consists of the fetched instruction, the EX stage execution latency, memory traces, etc. The functional simulator also keeps track of pipeline interlocks and simulates stalls by inserting empty bubble instruction trances to simulate stalls from hazards and branches.
 
-Instead of performing cycle-by-cycle instructions simulation, the simulator computes the elapsed cycle in each stage of the pipeline and adds them up to advance the clock. 
+Instead of performing cycle-by-cycle instructions simulation, the simulator computes the elapsed cycles in each pipeline stage and adds them up to advance the clock. 
 
-The cycle-accurate simulator loads instruction traces from the circular queue and makes it go through the pipeline. Each pipeline stage has a corresponding function that calculates the delay for each stage. After the delay has been calculated for all stages, the core clock is updated after the writeback stage. 
+The cycle-accurate simulator loads instruction traces from the circular queue and passes them through the pipeline. Each pipeline stage has a corresponding function that calculates the delay for each stage. After calculating the delay for all stages, the core clock is updated after the writeback stage. 
 
 \begin{figure}[htb]
     \centering
@@ -808,108 +620,23 @@ The cycle-accurate simulator loads instruction traces from the circular queue an
     \caption{Architecture of the timing shell from \cite{chiangEfficientTwolayeredCycleaccurate2009}.}
     \label{fig:timeshell}
 \end{figure}
-%\section{Pipeline simulation approaches}
-%
-%Poroshin, P.A., and A.N. Meshkov. propose several approaches to pipeline simulation for turning an ISS into a cycle-accurate simulator in \cite{poroshin_exploration_2019}. They are making a simulator for the "Elbrus" VLIW ISA, but some of the principles are still relevant for a RISC-V reference model.  One difference is that their cycle-accurate simulator is focused on debugging performance problems and not verification, so some principles might not be applicable. They describe the following pipeline models:
-%
-%\subsection{Naive "Direct Correspondence" Pipeline Model }
-%
-%In the Naive each pipeline phase is split into different functions which determine which instruction is at this stage and execute the functions depending on the instructions. 
-%
-%This approach is the most similar to the actual hardware but has some disadvantages. It requires modifying the original ISS by splitting it up into pieces and gluing them back together. This makes it harder to keep the ISS up to date. Keeping track of all pipeline stages also adds complexity and overhead.
-%
-%This is the only approach that handles the special case where timing behaviour influences the algorithmic behaviour. 
-%\subsection{Smart "Direct Correspondence" Pipeline Model }
-%
-%The smart "Direct Correspondence" Pipeline Model is a modification of the Naive model, where the functional actions and timing actions are split. Here all the functional logic is moved to the beginning of the instruction processing and only the timing is simulated in the following pipeline stages.
-%
-%A similar approach is used in \cite{bohm_cycle-accurate_2010} to make a cycle-accurate performance model in a JIT DBT simulator. This is a fast cycle-accurate ISS for the ARCompact RISC (not RISCV) ISA. This also works by reconstructing the pipeline state after executing an instruction.
-%
-%\subsection{"Fully Speculative" Pipeline model}
-%
-%Simulates the entire instruction in one go before considering the next instructions. 
-%
-%Will be complicated to do in lock-step execution.
-%
-%
-%\subsection{Hybrid Pipeline model}
-%
-%A combination of smart "direct correspondence" and fully speculative
-
-
-%\section{OBI}
-%
-%
-%
-%\section{ABI \& ELF}
-%
-%\url{https://www.youtube.com/watch?v=F2uIiOw8CfI}
-%ABI Application Binary Interface
-%
-%interface between application program and operating system
-%a set of conventions
-%
-%RISCV ilp32
-%
-%\begin{table}
-%    \centering
-%    \begin{tabular}{ccc}
-%        Register & ABI name & Description\\
-%        x0 & zero & Hard-wired zero\\
-%        x1 & ra & Return address\\
-%        x2 & sp & stack pointer\\
-%        ... & ... & ...\\
-%    \end{tabular}
-%    \caption{Caption}
-%    \label{tab:my_label}
-%\end{table}
-
-%\subsection{ELF Executable and linkable format}
-%
-%\begin{itemize}
-%    \item Agnostic to a processor, instruction set, hardware and OS
-%    \item Consists of ELF header and file data
-%\end{itemize}
-%
-%
-%\textbf{Header} can contain start address and other info 
-%
-%\textbf{Sections} hold information required for linking the object files
-%
-%only required during link time and not run time
-%
-%\textbf{Program headers or segments}
-%
-%break down elf binary into suitable chunks to prepare the executable to be loaded into memory
-%
-%OS would parse the information in the header and determine where to load each section
-%
-%\textbf{Loader loads elf into memory}
-%
-%bare metal uses static linking
-%
-%bare metal vs os
-%
-%os does memory management etc. printf etc.
-%
-%bare metal: must have a minimal implementation of printf in the program
 
 \section{Formal Verification}
 \label{sec:bg_formal}
 
-\acrfull{fv} is a powerful technique in verification that uses mathematical tools to analyze the full space of possible behaviors of a design instead of simulating particular values \cite{seligmanFormalVerificationEssential2015}. Instead of running many simulations to cover all corner cases, formal verification can mathematically prove whether the properties of a design hold for all possible states.
+\acrfull{fv} is a powerful technique in verification that uses mathematical tools to analyze the entire space of possible behaviors of a design instead of simulating particular values \cite{seligmanFormalVerificationEssential2015}. Instead of running many simulations to cover all corner cases, formal verification can mathematically prove whether the properties of a design hold for all possible states.
 
-FV has many advantages over simulation-based verification. Since it can mathematically prove whether a property holds or not, we can know for a fact that the property will always hold. In simulation-based verification, we can only guess, based on many tests, that a property will hold. FV can also find corner cases never thought of by the designer and can evaluate infinite behavior to guarantee whether a state is ever reachable.
+FV has many advantages over simulation-based verification. Since it can mathematically prove whether a property holds or not, we can know for a fact that the property will always hold. In simulation-based verification, we can only guess, based on many tests, that a property will hold. FV can also find corner cases the designer never thought of and evaluate infinite behavior to guarantee whether a state is ever reachable.
 Additionally, FV can generate minimal examples highlighting where a property fails, simplifying debugging compared to simulation-based verification, where the cause of a failure may have to be identified within a simulation of thousands of random instructions \cite{seligmanFormalVerificationEssential2015}.
 
 Validating a design with \acrshort{fv} requires a \textit{specification} and an \textit{implementation}. The specification is often a more abstract description of the design requirements in the form of properties like \acrfull{sva}, an \acrshort{rtl} model, or a high-level model, while the implementation is usually \acrshort{rtl} code \cite{seligmanFormalVerificationEssential2015}. 
 
 
-\subsection{\acrfull{abv}}
+\subsection{Assertion-Based Verification (ABV)}
 
 \acrfull{abv} is a technique where \acrfull{sva} are used to describe properties of the \acrshort{rtl} code \cite{seligmanFormalVerificationEssential2015}. In \acrshort{abv}, properties expressed with \acrshort{sva} can sometimes fully describe the specification of a design. \acrshort{abv} can be implemented in formal verification and simulation.
 
-\subsection{\acrfull{sva}}
+\subsection{SystemVerilog Assertions (SVA)}
 
 An assertion is an expression or property expected to be always true in a design \cite{mehtaSystemVerilogAssertions2020}. If it is false, we expect to see an error. 
 \acrfull{sva} is a \textit{Formal Specification Language} part of the SystemVerilog language used to define design properties precisely. It can be used both in formal verification with \acrfull{abv} and with simulation-based verification \cite{cernySVAPowerAssertions2015}.
@@ -920,7 +647,7 @@ An assertion is an expression or property expected to be always true in a design
 
 \textit{Sequential equivalence verification} verifies if two models will generate the same result after the same time with equal inputs. The internal state elements do not have to be identical, only the outputs \cite{seligmanFormalVerificationEssential2015}.
 
-If sequential \acrshort{fev} tools are available \textcite{seligmanFormalVerificationEssential2015} recommends using these tools instead of writing properties if the reference model is complete enough. However, available tools for sequential \acrshort{fev} are still limited, especially for comparison to higher-level models.
+If sequential \acrshort{fev} tools are available \textcite{seligmanFormalVerificationEssential2015} recommends using these tools instead of writing properties if the reference model is complete enough. However, tools for sequential \acrshort{fev} are still limited, especially for comparison with higher-level models.
 
 \subsection{Equivalence checking using Assertion-Based Verification}
 \label{sec:bg_eq_abv}
@@ -931,51 +658,4 @@ Although \acrshort{abv} is most commonly used where the properties expressed wit
 \subsection{Onespin 360}
 
 Onespin 360 \cite{onespinsolutionsgmbhUserManualOneSpin} is one of the available proprietary formal verification tools and will be used for the formal verification part of this thesis. Among other things, Onespin has a \textit{Module verification} mode, which uses \acrshort{abv} to do property checking on the design, using \acrfull{sva}.
-
-
-%Possible approaches:
-%\begin{itemize}
-%    \item High-level Model Equivalence Verification \cite{seligmanFormalVerificationEssential2015}. "Modeling in a language more abstract than RTL, such as SystemC has been used at intel, but lack good commercial EDA support"
-%    \item Express specifications as properties \cite{piskacEndtoEndFormalVerification2021}
-%\end{itemize}
-
-
-%
-%\section{Tools}
-%
-%\subsection{Jasper Gold}
-%The Jasper Sequential Equivalence Checking (SEC) App \footnote{\url{https://www.cadence.com/en_US/home/tools/system-design-and-verification/formal-and-static-verification/jasper-gold-verification-platform/jaspergold-sequential-equivalence-checking-app.html}}
-%is a formal verification tool that allows sequential equivalence checking of two \acrshort{rtl} models.
-%
-%Can verify the sequential equivalence of two RTL models.
-%
-%Mostly used to verify:
-%\begin{itemize}
-%    \item Small changes
-%    \item Two different implementations
-%    \item Optimizations
-%    \item Proove backwards compatibility
-%    \item Comparing two different implementations
-%\end{itemize}
-%
-%\subsection{Onespin}
-%
-%\tmp{TODO: Explain onespin}
-%
-%360 EC-RTL \footnote{\url{https://www.onespin.com/products/360-ec-rtl}}
-%
-%360 EC-FPGA also has sequential equivalence checking
-%
-%\begin{itemize}
-%    \item Comparison of two RTL blocks.
-%    \item Hard to find open documentation
-%\end{itemize}
-%
-%
-%\subsection{Limitations}
-%
-%\begin{itemize}
-%    \item Can these tools handle the large scale of a full core, or are they meant to handle smaller modules?
-%    \item Do they work with SystemVerilog generated from the sail-riscv model?
-%\end{itemize}
 
