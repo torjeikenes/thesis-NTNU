@@ -1,5 +1,5 @@
 
-\chapter{Introduction and motivation}
+\chapter{Introduction and Motivation}
 \label{Introduction} 
 
 %1. Establishing your research territory
@@ -35,7 +35,7 @@
 \section{Motivation}
 
 
-With the end of Dennard scaling and the recent slowdown of Moore's Law, achieving performance and energy efficiency improvements from scaling down the transistors is becoming exponentially harder \cite{hennessyComputerArchitectureQuantitative2019}. This has led to a shift from general-purpose processor cores to \acrfull{dsa}. Companies need to specialize their processors to achieve higher performance and lower energy instead of using an available general-purpose processor \cite{mezgerSurveyRISCVArchitecture2022}. 
+With the end of Dennard scaling and the recent slowdown of Moore's Law, achieving performance and energy efficiency improvements from scaling down the transistors is becoming exponentially harder \cite{hennessyComputerArchitectureQuantitative2019}. This has led to a shift from general-purpose processor cores to \textit{\acrfull{dsa}}. Companies need to specialize their processors to achieve higher performance and lower energy instead of using an available general-purpose processor \cite{mezgerSurveyRISCVArchitecture2022}. 
 
 
 The growing demand for specialized processors has also led to a demand for an open and modular \textit{Instruction Set Architecture (ISA)}. The RISC-V ISA \cite{watermanRISCVInstructionSet2019,watermanRISCVInstructionSet2021}, originally developed at UC Berkeley in 2010 \cite{pattersonComputerOrganizationDesign2021}, has recently gained popularity in academia and industry because of its open-source nature, proven RISC-style, and modularity \cite{theshdgroupRISCVMarketReport2024, asanovicInstructionSetsShould2014}.
@@ -44,7 +44,7 @@ The 2024 RISC-V Market Report by \textcite{theshdgroupRISCVMarketReport2024} rep
 
 The RISC-V ISA consists of a base architecture with the possibility to add functionality through various extensions \cite{watermanRISCVInstructionSet2019}. This flexibility is particularly useful for \acrshort{dsa}s. It allows designers to start with a minimal processor, extend it with only the required extensions, and possibly add custom implementation-specific instructions. Custom extensions enable compute-intensive tasks to be implemented in hardware and accessed through custom instructions. 
 
-Being an open-source ISA, anyone can use and modify RISC-V without a licensing fee. This allows a low barrier to entry and collaboration between developers and researchers. The open nature of RISC-V open-source ISA has also led to an increasingly large ecosystem of open-source processors. One such example is the CV32E40S \cite{openhwgroupCv32e40s2024}, a processor core from the CORE-V family of processor cores from the OpenHW Group, a global organization of many companies working together to make open-source cores, tools, and software \cite{taylorAdvancedRISCVVerification2023}. The CV32E40S is a relatively small and efficient processor with a 4-stage pipeline. The core can be configured to support different RISC-V extensions and also adds the custom Xsecure extension, adding multiple security features \cite{openhwgroupIntroductionCOREVCV32E40S2023}. This processor will be used as an example throughout the thesis.
+Being an open-source ISA, anyone can use and modify RISC-V without a licensing fee. This allows a low barrier to entry and collaboration between developers and researchers. The open nature of RISC-V open-source ISA has also led to an increasingly large ecosystem of open-source processors. One such example is the CV32E40S \cite{openhwgroupCv32e40s2024}, a processor core from the CORE-V family of processor cores from the OpenHW Group, a global organization of many companies working together to make open-source cores, tools, and software \cite{taylorAdvancedRISCVVerification2023}. Mainly developed by Silicon Labs, the CV32E40S is a relatively small and efficient processor with a 4-stage pipeline. The core can be configured to support different RISC-V extensions and also adds the custom Xsecure extension, adding multiple security features \cite{openhwgroupIntroductionCOREVCV32E40S2023}. This processor will be used as an example throughout the thesis.
 
 
 
@@ -59,17 +59,6 @@ Therefore, a versatile and open verification environment is essential to RISC-V'
 
 Conventional manual testing with predetermined outcomes can be time\--consuming and inadequate to thoroughly validate a processor's complex behavior. Instead, constrained random testing is often used to generate a wide range of test stimuli, covering many test cases. Variations of the "step-and-compare" methodology are widely utilized for processor verification \cite{taylorAdvancedRISCVVerification2023}. The diagram in \Cref{fig:testbench_block_diagram} shows an example of this, where the \acrfull{dut} processor core, written in \acrfull{rtl} code, runs in parallel with a golden \textit{\gls{rm}} written in a higher level language, all in a \acrfull{uvm} testbench environment. 
 
-Throughout this thesis, we will define a \textit{Reference Model} as a high-level model of a processor used to verify the processor's implementation. An instruction\--accurate \acrfull{iss} can be used as a reference model, but a reference model can also be a more advanced, cycle-accurate model. 
-
-The \acrshort{dut} core and reference model run in lock-step, executing the same test program, one instruction at a time. 
-The processor state of the core and reference model is usually compared after each instruction has been \textit{retired}, which is when the execution of the instruction has been completed, and all the state changes to registers and memory associated with the instructions have been updated \cite{taylorAdvancedRISCVVerification2023}. 
-
-At the retirement of each instruction, the core and reference model outputs its state changes over \acrfull{rvfi}, which are compared by a comparison module. If a mismatch between the two is detected, this can be instantly flagged instead of running through the entire test program and comparing the results afterward. 
-
-Asynchronous events, such as interrupts and debug requests, are injected into the core and reference module through \acrshort{uvm} agents, independently of the test program.
-
-In RISC-V, the state of the processor is stored in multiple types of registers. The 32 \acrfull{gpr} are visible to the programmer, used for regular program execution, and are read from and written to by the instructions~\cite{watermanRISCVInstructionSet2019}. Additionally, the \acrfull{pc} is the register that holds the address of the current instruction \cite{watermanRISCVInstructionSet2019}. There is also a set of registers used to control and monitor the operation of the processor, called the \acrfull{csr}. 
-
 \begin{figure}
     \centering
     \includegraphics[width=1.00\linewidth]{figures/ISS_Testbench.pdf}
@@ -78,9 +67,23 @@ In RISC-V, the state of the processor is stored in multiple types of registers. 
 \end{figure}
 
 
+Throughout this thesis, we will define a \textit{Reference Model} as a high-level model of a processor used to verify the processor's implementation. An instruction\--accurate \textit{\acrfull{iss}} can be used as a reference model, but a reference model can also be a more advanced, cycle-accurate model. 
+
+The \acrshort{dut} core and reference model run in lock-step, executing the same test program, one instruction at a time. 
+The processor state of the core and reference model is usually compared after each instruction has been \textit{retired}, which is when the execution of the instruction has been completed, and all the state changes to registers and memory associated with the instructions have been updated \cite{taylorAdvancedRISCVVerification2023}. 
+
+At the retirement of each instruction, the core and reference model outputs its state changes over the \textit{\acrfull{rvfi}}, which are compared by a comparison module. If a mismatch between the two is detected, this can be instantly flagged instead of running through the entire test program and comparing the results afterward. 
+
+Asynchronous events, such as interrupts and debug requests, are injected into the core and reference module through \acrshort{uvm} agents, independently of the test program.
+
+In RISC-V, the state of the processor is stored in multiple types of registers. The 32 \acrfull{gpr} are visible to the programmer, used for regular program execution, and are read from and written to by the instructions~\cite{watermanRISCVInstructionSet2019}. Additionally, the \acrfull{pc} is the register that holds the address of the current instruction \cite{watermanRISCVInstructionSet2019}. There is also a set of registers used to control and monitor the operation of the processor, called the \acrfull{csr}. 
+
+
+
 \subsection{The challenge of verifying asynchronous events}
 
-For verification of normal instruction execution, using an \acrfull{iss}, simulating the processor at the instruction level granularity is often sufficient. However, the ISS becomes inadequate when Asynchronous events interrupting the normal program flow are introduced \cite{taylorAdvancedRISCVVerification2023}. They pose a challenge because of the differing abstraction levels of the ISS and the RTL code of the DUT, which can lead to improper timing of interrupts and \textit{side effects}. Asynchronous events in an ISS are synced to the beginning of an instruction, unlike in the RTL implementation, where asynchronous events can arrive at any cycle, and the timing can be affected by the state of the pipeline \cite{taylorAdvancedRISCVVerification2023}.
+For verification of normal instruction execution, using an \acrfull{iss}, simulating the processor at the instruction level granularity is often sufficient. However, the ISS becomes inadequate when \textit{Asynchronous events}, interrupting the normal program flow, are introduced \cite{taylorAdvancedRISCVVerification2023}. They pose a challenge because of the differing abstraction levels of the ISS and the RTL code of the DUT, which can lead to improper timing of interrupts and \textit{side effects}. Asynchronous events in an ISS are synced to the beginning of an instruction, unlike in the RTL implementation, where asynchronous events can arrive at any cycle, and the timing can be affected by the state of the pipeline \cite{taylorAdvancedRISCVVerification2023}.
+
 
 As a motivating example that we will come back to later, consider the two instruction traces in \Cref{fig:lw_example}. This shows the PC and instructions that the core and ISS run in a setup like \Cref{fig:testbench_block_diagram}, where we use an instruction-accurate ISS as the reference model. The figure shows that they will both correctly run the same instructions when they execute normal sequential code. The problem arises when an interrupt is injected into the core and ISS between PC \rv{1476} and \rv{1478}. Since the ISS fully completes its execution of an instruction before moving on to the next, the interrupt handler (in orange), starting at \rv{PC = 40}, is executed as the next instruction after the interrupt. In comparison, the core is modeled with a \textit{pipeline} that instructions move through over multiple clock cycles. The state of the pipeline can give a delay where the interrupt cannot be taken immediately, causing more instructions to be retired in the core before the interrupt is taken. 
 
@@ -90,6 +93,8 @@ As a motivating example that we will come back to later, consider the two instru
     \caption{Simple example showing interrupt injection into an ISS and a core.}
     \label{fig:lw_example}
 \end{figure}
+
+
 
 Correctly predicting the delay between the interrupt injection and when the interrupt is taken is one of the major problems with this verification strategy. The delay is highly dependent on core-specific functionality and cycle-accurate timing, making this delay hard to predict \cite{taylorAdvancedRISCVVerification2023}. 
 
@@ -139,11 +144,10 @@ The problem above becomes even more complicated when multiple different asynchro
 
 
 
-In this thesis, we aim to design and implement a reference model for RISC-V processors that can accurately simulate asynchronous events such as interrupts and debug requests. It builds upon the conclusions from the specialization project \cite{torjenygaardeikenesDesigningRISCVReference2023} that explored different approaches for designing a cycle-accurate reference model. 
-
+In this thesis, we aim to design and implement a reference model for RISC-V processors that can accurately simulate asynchronous events such as interrupts and debug requests. It builds upon the conclusions from the author's previous specialization project \cite{torjenygaardeikenesDesigningRISCVReference2023} that explored different approaches for designing a cycle-accurate reference model. 
 The project concluded that a two-layered reference model with a \textit{pipeline shell} on top of an existing ISS could be a promising solution. 
 
-We will further explore this two-layered approach, designing, implementing, and verifying it. The goal is to determine if the approach can improve the verification of RISC-V processors, particularly in handling asynchronous events. 
+We will further explore this two-layered approach by designing, implementing, and verifying it. The goal is to determine whether the approach can improve the verification of RISC-V processors, particularly in handling asynchronous events. 
 
 We also want to determine if this approach can work with formal verification and how the design can be useful for different processor cores.
 
@@ -152,7 +156,7 @@ We also want to determine if this approach can work with formal verification and
 
 We will explore an architecture where the "untimed" ISS is responsible for the functional execution of instructions while the pipeline shell is responsible for correctly timing these instructions and controlling the timing of asynchronous events. We will also focus on how the reference model can easily be modified to different processor cores and if it can be compatible with formal verification.  
 To achieve this, we will cover the following points:
-
+\begin{raggedright}
 \begin{enumerate}
     \item Highlight the complexities of verifying asynchronous events. 
     \item Discuss the shortcomings of existing solutions.
@@ -162,6 +166,7 @@ To achieve this, we will cover the following points:
     \item Evaluate whether the reference model is compatible with formal verification.
     \item Discuss the viability of the proposed solution.
 \end{enumerate}
+\end{raggedright}
 
 %To achieve this, we will first implement a simple reference model resembling a traditional ISS before adding the asynchronous events and the pipeline shell. To verify its correctness, we will compare the execution of the reference model to the CV32E40S core, using this core as a golden model. We will also compare the solution to previous solutions and evaluate whether the reference model is compatible with formal verification.
 
@@ -174,9 +179,9 @@ To achieve this, we will cover the following points:
 The most important contributions of this thesis are:
 
 \begin{enumerate}
+    \item Implementing a reference model with a pipeline shell around Spike.
     \item Expanding the Spike ISS to support traditional simulation of the CV32E40S core.
     \item Modifying the Spike ISS to work with the proposed reference model solution, enhancing RVFI support, injecting interrupts and debugging requests, and state reversion.
-    \item Implementing a reference model with a pipeline shell around Spike.
     \item Adding Onespin support to the core-v-verif environment to enable formal verification of the CV32E40S core.
 \end{enumerate}
 

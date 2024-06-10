@@ -1,5 +1,5 @@
 \PassOptionsToPackage{unicode}{hyperref}
-\documentclass[british,titlepage]{ntnuthesis}
+\documentclass[british]{ntnuthesis}
 
 %\usepackage{todonotes}
 \usepackage{tabularx}
@@ -129,7 +129,7 @@
 \newcommand{\file}[1]{\lstinline{#1}}
 \newcommand{\dir}[1]{\lstinline{#1}}
 
-\newcommand{\tmp}[1]{\textcolor{red}{#1}}
+%\newcommand{\tmp}[1]{\textcolor{red}{#1}}
 
 \newenvironment{svblock}[1][]
     {\begin{lstlisting}[#1]}
@@ -181,10 +181,10 @@
 
 \tableofcontents
 \listoffigures
-\listoftables
-\lstlistoflistings
+%\listoftables
+%\lstlistoflistings
 
-\printglossary[type=\acronymtype] % Print acronyms
+\printglossary[type=\acronymtype,nonumberlist] % Print acronyms
 \printglossary                    % Print glossary
 %\tmp{Trenger jeg glossary?}
 
@@ -219,14 +219,18 @@
 
 
 \chapter*{\bibname}
-\tmp{TODO: Gå over alle kilder}
 \printbibliography[heading=none]
 
 %\input{chapters/papers.tex}
 
 \appendix
-\input{appendices/a_onespin}
+\chapter{Selected Source Code Listings}
+Some relevant source code is listed here. The rest of the source code is available at \url{https://github.com/openhwgroup/core-v-verif}.
+
+
+\input{appendices/controller}
 \input{appendices/spike_step}
+\input{appendices/a_onespin}
 %\input{appendices/spike-implementation}
 
 %\input{template/2-usage}

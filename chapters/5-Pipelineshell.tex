@@ -221,7 +221,7 @@ Instead, we choose to create separate pipeline stage modules for each stage. Thi
 
 \section{Controller Module Design}
 
-The controller is the heart of the pipeline shell and is responsible for controlling the movement of instructions and the timing of asynchronous events. From \Cref{fig:pipeline_shell}, we see that it takes in the \sv{clk}, \sv{rvfi_valid} signal from the core, and asynchronous events like \sv{irq}, and \sv{debug_req} (\Cref{psReq:async_input}). It also takes in the \sv{RVFI} signals from each pipeline stage. It controls each pipeline stage with \sv{step} and \sv{flush} signals and injects asynchronous events into the ISS.
+The controller is the heart of the pipeline shell and is responsible for controlling the movement of instructions and the timing of asynchronous events. From \Cref{fig:pipeline_shell}, we see that it takes in the \sv{clk}, \sv{rvfi_valid} signal from the core, and asynchronous events like \sv{irq}, and \sv{debug_req} (\Cref{psReq:async_input}). It also takes in the \sv{RVFI} signals from each pipeline stage. It controls each pipeline stage with \sv{step} and \sv{flush} signals and injects asynchronous events into the ISS. Since the controller module contains much of the implementation discussed in this thesis, it is included in full in \Cref{app:controller}.
 
 The primary functionality of the controller module includes:
 \begin{enumerate}

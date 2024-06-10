@@ -100,7 +100,7 @@ To achieve these goals, we define the following requirements for the ISS. These 
 
 %\par The ISS should be able to load the same instructions as the DUT.
 
-%\par As discussed in \cref{sec:shell_iss_interaction}, to be able to model the reference model around an ISS, it is helpful to be able to separate the register file from the rest of the ISS, or be able to have a copy of the register file, and update the register file inside the ISS when necessary.
+%\par As discussed in \Cref{sec:shell_iss_interaction}, to be able to model the reference model around an ISS, it is helpful to be able to separate the register file from the rest of the ISS, or be able to have a copy of the register file, and update the register file inside the ISS when necessary.
 
 \end{enumerate}
 
@@ -173,7 +173,7 @@ To run the same binaries as the core (\Cref{issReq:binaries}), Spike must be mod
 The binaries used in core-v-verif are built using a linker script from the \acrfull{bsp} provided with core-v-verif. This linker script defines the memory layout of the program.
 
 
-The core-v-verif linker script \cite{openhwgroupCorevverifCv32e40sBsp} has two sections, \lstinline{ram} and \lstinline{dbg}. The ram starts at address \lstinline{0x0} and has a size of \lstinline{0x400000}. The debug section starts at \lstinline{0x1A110800} and has a size of \lstinline{0x1000}. Additionally, the core has memory regions for virtual periphery registers  \lstinline{0x00800000}.
+The core-v-verif linker script \cite{openhwgroupBoardSupportPackage} has two sections, \lstinline{ram} and \lstinline{dbg}. The ram starts at address \lstinline{0x0} and has a size of \lstinline{0x400000}. The debug section starts at \lstinline{0x1A110800} and has a size of \lstinline{0x1000}. Additionally, the core has memory regions for virtual periphery registers  \lstinline{0x00800000}.
 
 
 Spike's default configuration includes a boot ROM and a debug module that conflicts with the memory regions of the core \cite{evancoxAddDocumentationLowlevel2017}. To resolve this, we disable this boot loader and debug module and add support for configuring this with parameters. We also add parameters to enable and configure the location and size of the memory regions above.
@@ -470,7 +470,9 @@ To get the order of operations right, the \ccode{revert_step()} method is called
 \section{Debug Requests}
 
 
-To insert asynchronous interrupts into Spike, we define a new DPI function \ccode{iss_set_debug(...)} that calls the method \ccode{Processor::set_debug(bool debug_req, uint32_t revert_steps, bool debug_allowed}. It takes in the debug request, the number of revert steps, and the \ccode{debug_allowed} as parameters, similarly to \ccode{iss_intr(...)}. 
+\begin{sloppy}
+To insert asynchronous interrupts into Spike, we define a new DPI function\\ \ccode{iss_set_debug(...)} that calls the method \ccode{Processor::set_debug(bool debug_req, uint32_t revert_steps, bool debug_allowed}. It takes in the debug request, the number of revert steps, and the \ccode{debug_allowed} as parameters, similarly to \ccode{iss_intr(...)}. 
+\end{sloppy}
 
 If Spike is not in debug mode, a new debug request is made, and if debug is allowed, we set the \ccode{processor_t::halt_request} variable to \ccode{HR_REGULAR}. At the next step, Spike will enter debug mode, store the cause and privilege to \rv{dcsr}, store the PC to \rv{dpc}, and change the PC to the debug handler.
 
