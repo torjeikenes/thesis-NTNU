@@ -17,11 +17,20 @@
 
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
-\usepackage{subcaption}
+%\usepackage{subcaption}
 
 \usepackage{colortbl}
 \usepackage{xcolor}
 
+\lstset{
+    basicstyle   =\ttfamily\footnotesize,
+    numbers=left,
+    stepnumber=1,
+    showstringspaces=false,
+    tabsize=1,
+    breaklines=true,
+    breakatwhitespace=false,
+}
 
 %\definecolor{vgreen}{RGB}{104,180,104}
 %\definecolor{vblue}{RGB}{49,49,255}
@@ -175,8 +184,8 @@
 \listoftables
 \lstlistoflistings
 
-%\printglossary[type=\acronymtype] % Print acronyms
-%\printglossary                    % Print glossary
+\printglossary[type=\acronymtype] % Print acronyms
+\printglossary                    % Print glossary
 %\tmp{Trenger jeg glossary?}
 
 \input{chapters/1-introduction}
@@ -217,7 +226,8 @@
 
 \appendix
 \input{appendices/a_onespin}
-\input{appendices/spike-implementation}
+\input{appendices/spike_step}
+%\input{appendices/spike-implementation}
 
 %\input{template/2-usage}
 %\input{template/3-structure}

@@ -1,37 +1,52 @@
 \chapter{Conclusions and Future Work}
 \label{ch:conclusion}
 
-\tmp{Er fortsatt litt WIP}
+This thesis explored the design and implementation of a reference model for RISC-V processor cores, focusing on accurate simulation of asynchronous events like interrupts and debug requests. We identified the limitations of traditional Instruction Set Simulators (ISSs) as reference models and proposed a two-layered reference model architecture combining a pipeline shell with an existing ISS. The pipeline shell models the timing of the pipeline and asynchronous events, and the untimed ISS handles the functional execution of the instructions. 
 
+The pipeline shell was implemented using a stage-based design resembling a typical pipeline, where the IF stage interacts with the ISS. The pipeline shell also features an external CSR used to time side effects that affect asynchronous events. Additionally, a state reversion mechanism was implemented to revert the state of the ISS to handle pipeline flushes by interrupts or debug requests properly.
+The reference model was implemented after the CV32E40S core in SystemVerilog and integrated into the core-v-verif verification environment. We also focused on making the reference model compatible with formal verification.
 
-This thesis focused on designing and implementing a reference model for RISC-V processor cores that can accurately simulate asynchronous events. We explored the challenges of verifying asynchronous events and the limitations of using an \acrfull{iss} as a reference model. To address these limitations, we proposed a reference model architecture that combines a pipeline shell on top of an existing ISS. 
-The pipeline shell is responsible for modeling the timing and behaviour of the pipeline, while the ISS is responsible for the functional execution of the instructions.
+The results show that the reference model can correctly simulate asynchronous events in many different scenarios. It has a smaller verification gap compared to using a traditional ISS as a reference model and is likely to find bugs that other reference model solutions like ImperasDV can not. The Spike ISS used is not compatible with formal verification, but the rest of the design is believed to be compatible with formal verification if the ISS is replaced with a synthesizable ISS in the future. 
 
+The current implementation also has multiple limitations. The reference model is currently dependent on the \sv{interrupt_allowed} signal from the DUT core to correctly time asynchronous events. This is problematic because bugs with this signal in the core can not be detected by the reference model, leaving a verification gap. The pipeline shell is also modeled with core-specific functionality and has a complex design, which has led to multiple unresolved bugs in specific cases. The current partitioning between the ISS and pipeline shell also adds complexity to the solution.%, which could possibly be reduced by handling more in the pipeline shell.
 
+The proposed reference model lowers the verification gap compared to other available solutions by modeling core-specific timing behavior in a pipeline shell. However, this comes at the cost of added complexity and a higher probability of faults in the model.
 
-\tmp{TODO: mer konkludering}
 
 \section{Future Work}
-\tmp{TODO}
 
-\subsection{Implement the \texttt{interrupt\_allowed} signal}
+Future work should focus on making the reference model independent of the core by modeling the \sv{interrupt_allowed} signal from the state of the pipeline shell. To achieve this, it should be evaluated if the retirement-dependent approach is sufficient for modeling the \sv{interrupt_allowed} signal and if previous states should not be stored inside the ISS but instead passed through the pipeline.
 
-As the \sv{interrupt_allowed} signal is a vital part of the proposed design, it is important to further evaluate if it is possible to model the signal based on the information in the pipeline shell.
+The ISS should also be replaced with a synthesizable ISS like sail-riscv compiled to SystemVerilog when this is fully supported. Formal verification support should then be evaluated with this solution.
+
+Additionally, the partitioning of the handling of asynchronous events between the pipeline shell and ISS should be reevaluated to avoid unnecessary complexity. This could be done by fully deciding the operation of asynchronous events in the pipeline shell instead of in the ISS.
+
+Another interesting avenue to explore could be to use the implemented state reversion functionality from  \Cref{sec:ps_revertion} and \Cref{sec:iss_revert} to implement a state exploration approach similar to ImperasDV(\Cref{sec:imperasdv}).
+Given a "fork" of different operations, it could attempt one possible state, compare with the core, and revert the state if there is a mismatch. It can then attempt the next possible state change and revert if this also has a mismatch. If all state changes cause a mismatch, this can be flagged as an error.
+
+Additional work should also be done to model the rest of the asynchronous events in the CV32E40S core, like \acrshort{clic} interrupts and \acrlong{nmi}.
 
 
-\subsection{Using state revertion to implement a state exploration approach}
 
-The state revertion implementatio explained in \Cref{sec:ps_revertion} and \Cref{sec:iss_revert} has the potential to be used to implement state exploration approach similar to ImperasDV. Given a "fork" of different operations, it could attempt one possible state, compare with the core, and revert the state if there is a mismatch. It can then attempt the next possible state change, and revert if this also has a mismatch. If all state changes cause a mismatch, this can be flagged as an error.
-
-
-\subsection{Replace the ISS with sail-riscv}
-
-Work is currently being done to implement SystemVerilog compilation of the sail-riscv model\footnote{https://github.com/riscv/sail-riscv/issues/424}. When this is completed, it would be interesting to replace Spike with sail-riscv, and evaluate wether this approach could work with formal verification. 
-
-\subsection{Improvements based on limitations}
-
-\tmp{Diskuterer litt løsninger i Limitations i diskusjonen. Bør jeg flytte de hit, eller bare nevne at de er i diskusjonen?}
-
-\subsection{CLIC}
-
-\tmp{TODO}
+%
+%\subsection{Implement the \texttt{interrupt\_allowed} signal}
+%
+%As the \sv{interrupt_allowed} signal is a vital part of the proposed design, it is important to further evaluate if it is possible to model the signal based on the information in the pipeline shell.
+%
+%
+%\subsection{Using state revertion to implement a state exploration approach}
+%
+%The state revertion implementatio explained in \Cref{sec:ps_revertion} and \Cref{sec:iss_revert} has the potential to be used to implement state exploration approach similar to ImperasDV. Given a "fork" of different operations, it could attempt one possible state, compare with the core, and revert the state if there is a mismatch. It can then attempt the next possible state change, and revert if this also has a mismatch. If all state changes cause a mismatch, this can be flagged as an error.
+%
+%
+%\subsection{Replace the ISS with sail-riscv}
+%
+%Work is currently being done to implement SystemVerilog compilation of the sail-riscv model\footnote{https://github.com/riscv/sail-riscv/issues/424}. When this is completed, it would be interesting to replace Spike with sail-riscv, and evaluate wether this approach could work with formal verification. 
+%
+%\subsection{Improvements based on limitations}
+%
+%\tmp{Diskuterer litt løsninger i Limitations i diskusjonen. Bør jeg flytte de hit, eller bare nevne at de er i diskusjonen?}
+%
+%\subsection{CLIC}
+%
+%\tmp{TODO}

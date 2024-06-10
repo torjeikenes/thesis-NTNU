@@ -19,7 +19,7 @@ After setting the interrupt to be triggered in 10 cycles, we do some add instruc
 
 
 
-\subsection{Implementation without pipeline shell}
+\subsection{Implementation Without Pipeline Shell}
 
 In the first implementation, the pipeline shell is not implemented and just calls the \lstinline{step()} dpi function when the core retires an instruction. This functions correctly with synchronous execution, but not when interrupts are introduced. 
 

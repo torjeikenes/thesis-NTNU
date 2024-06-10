@@ -10,25 +10,25 @@ A specialization Project was done before this thesis called "Designing a RISC-V 
 \section{Reference Model Architecture}
 \label{sec:pw_architecture}
 
-The report proposed a reference model architecture based on the two-layered modeling technique proposed by \textcite{chiangEfficientTwolayeredCycleaccurate2009} and \textcite{leeFaCSimFastCycleAccurate2008}, which both use a core-independent untimed functional kernel and a core-dependent timing shell that we will call \gls{ps}.
+The report proposed a reference model architecture based on the two-layered modeling technique proposed by \textcite{chiangEfficientTwolayeredCycleaccurate2009} and \textcite{leeFaCSimFastCycleAccurate2008}, which both use a core-independent untimed functional kernel and a core-dependent timing shell that we will call the \textit{pipeline shell}.
 
-This architecture containing a custom \gls{ps} customized to the specific core, built on top of an existing \acrshort{iss}, was chosen instead of creating the entire reference model from scratch or modifying an existing microarchitectural simulator. 
+This architecture containing a custom pipeline shell customized to the specific core, built on top of an existing \acrshort{iss}, was chosen instead of creating the entire reference model from scratch or modifying an existing microarchitectural simulator. 
 
 This two-layered partitioning allows the \acrshort{iss} to be a functional kernel that is core-independent and is responsible for correct instruction-level functionality described in the \acrshort{isa} specification. 
 
-The \gls{ps} built on top should only be responsible for correctly timing the core-specific timing of the user-visible values and side effects generated from the \acrshort{iss}. 
+The pipeline shell built on top should only be responsible for correctly timing the core-specific timing of the user-visible values and side effects generated from the \acrshort{iss}. 
 
-This partitioning enhances the modularity of the system since only the \gls{ps} needs to be modified for a new core, and the \acrshort{iss} can be easily replaced and updated without modifying the \gls{ps}. 
+This partitioning enhances the modularity of the system since only the pipeline shell needs to be modified for a new core, and the \acrshort{iss} can be easily replaced and updated without modifying the pipeline shell. 
 
 
 \section{Pipeline Shell Design}
 \label{sec:pw_pipelineShellDesign}
 
-The report proposed two different \gls{ps} designs: a \Gls{stagebased} and a \Gls{timewheel}. 
+The report proposed two different pipeline shell designs: a \textit{stage-based pipeline simulation}and a \textit{Cycle-based time wheel simulation}. 
 
 In the stage-based design, the pipeline is modeled like the actual pipeline, where each stage can hold one instruction and is moved through the pipeline.
 
-The \Gls{timewheel} proposed in \cite{chiangEfficientTwolayeredCycleaccurate2009} has a \textit{time wheel} with slots for each cycle instead of slots for each pipeline stage and is shown in \cref{fig:time wheel block}. This requires a \textit{commander} that decides when ISS should step through a new instruction, depending on the inputs and time wheel. The results from the \acrshort{iss} are passed into the \textit{scheduler}, which uses the core-specific timing details to populate the cycle slots in the \textit{time wheel} with the state changes generated in the ISS. The time wheel advances every cycle and outputs the last correct cycle to the outputs.
+The \textit{Cycle-based approach} proposed in \cite{chiangEfficientTwolayeredCycleaccurate2009} has a \textit{time wheel} with slots for each cycle instead of slots for each pipeline stage and is shown in \cref{fig:time wheel block}. This requires a \textit{commander} that decides when ISS should step through a new instruction, depending on the inputs and time wheel. The results from the \acrshort{iss} are passed into the \textit{scheduler}, which uses the core-specific timing details to populate the cycle slots in the \textit{time wheel} with the state changes generated in the ISS. The time wheel advances every cycle and outputs the last correct cycle to the outputs.
 
 \begin{figure}[htb]
     \centering
@@ -48,19 +48,19 @@ One disadvantage of the stage-based design is that it closely relates to how the
 
 \subsection{Abstraction level}
 
-Work was also done to determine the appropriate abstraction level to properly time interrupts. By analyzing the \acrshort{rtl} code of the \gls{cv32x} core, the dependency tree in \cref{fig:dependency-tree-cv32x} was built. This gives a visual understanding of all the components that affect the timing of an interrupt and can be used when creating the reference model.
+Work was also done to determine the appropriate abstraction level to properly time interrupts. By analyzing the \acrshort{rtl} code of the CV32E40X core, the dependency tree in \cref{fig:dependency-tree-cv32x} was built. This gives a visual understanding of all the components that affect the timing of an interrupt and can be used when creating the reference model.
 
-\begin{figure}[htb]
+\begin{figure}
     \centering
     \includegraphics[width=1.0\linewidth]{figures/dependency_tree_full.pdf}
-    \caption{Simulation dependency tree for interrupt timing in the \gls{cv32x} core.}
+    \caption{Simulation dependency tree for interrupt timing in the CV32E40X core, as reported in \cite{torjenygaardeikenesDesigningRISCVReference2023}.}
     \label{fig:dependency-tree-cv32x}
 \end{figure}
 
 \subsection{Pipeline shell and ISS partitioning and interaction}
 \label{sec:pw_partition}
 
-The specialization project evaluated different partitions between the \gls{ps} and \acrshort{iss}. Tree approaches were compared with varying amounts of necessary modifications to the \acrshort{iss}. For side effects to be timed appropriately, two methods were discussed that split up the \acrshort{iss} into different stages triggered at different points in the pipeline shell. These modifications to the ISS would be invasive, hard to implement, and hard to maintain, so a third approach was proposed that would keep the ISS as intact as possible. In this approach, the ISS would step through a whole instruction and return the state changes to the \acrshort{if} stage in the pipeline shell. Keeping the ISS intact has multiple advantages. Since it executes a full instruction at a time, we do not need to simulate forwarding to keep the data used in instructions correct, but the pipeline shell should instead simulate halts and hazards. Keeping the ISS intact also makes it easier to replace it in the future and keep it updated. With this approach, all side effects and registers are essentially updated in the \acrshort{if} stage, so the pipeline shell is responsible for timing these changes externally.
+The specialization project evaluated different partitions between the pipeline shell and \acrshort{iss}. Three approaches were compared with varying amounts of necessary modifications to the \acrshort{iss}. For side effects to be timed appropriately, two methods were discussed that split up the \acrshort{iss} into different stages triggered at different points in the pipeline shell. These modifications to the ISS would be invasive, hard to implement, and hard to maintain, so a third approach was proposed that would keep the ISS as intact as possible. In this approach, the ISS would step through a whole instruction and return the state changes to the \acrshort{if} stage in the pipeline shell. Keeping the ISS intact has multiple advantages. Since it executes a full instruction at a time, we do not need to simulate forwarding to keep the data used in instructions correct, but the pipeline shell should instead simulate halts and hazards. Keeping the ISS intact also makes it easier to replace it in the future and keep it updated. With this approach, all side effects and registers are essentially updated in the \acrshort{if} stage, so the pipeline shell is responsible for timing these changes externally.
 
 Additionally, the state of the ISS might have to be reverted to a previous state to handle pipeline flushes caused by interrupts or debug requests. One proposed solution is to keep a copy of the register file and \acrshort{csr}s written to by the pipeline shell at the correct cycles. During a pipeline flush, the internal register files of the ISS can be reverted to the state of the external register files.
 
@@ -75,7 +75,7 @@ Additionally, the state of the ISS might have to be reverted to a previous state
 \section{ISS}
 \label{sec:pw_iss}
 
-The report compared many different \acrshort{iss}s considering a set of requirements necessary to be used in the reference model, where Spike \cite{SpikeRISCVISA2023} and sail-riscv \cite{RISCVSailModel2023} passed all requirements. They were further compared against each other and found that both are viable options, but Spike is likely easier to get started with and modify. At the same time, sail-riscv can be more future-proof as the sail model has been adopted as the golden formal model for \acrshort{riscv}. These will be compared further in this thesis, and formal verification will also be considered.
+The report compared many different \acrshort{iss}s considering a set of requirements necessary to be used in the reference model, where Spike \cite{SpikeRISCVISA2023} and sail-riscv \cite{RISCVSailModel2023} passed all requirements. They were further compared against each other and found that both are viable options, but Spike is likely easier to get started with and modify. At the same time, sail-riscv can be more future-proof as the sail model has been adopted as the golden formal model for \acrshort{riscv}. These two ISSs will be compared further in this thesis, and formal verification will also be considered.
 
 
 

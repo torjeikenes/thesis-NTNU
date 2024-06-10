@@ -5,19 +5,18 @@
 
 The \acrfull{iss} is a critical component in our reference model, responsible for the functional execution of each instruction While the pipeline shell handles the timing and core-specific pipeline behaviour, the ISS ensures the correct interpretation and execution of the instructions according to the RISC-V ISA specification \cite{watermanRISCVInstructionSet2019, watermanRISCVInstructionSet2021}.
 
-This chapter will discuss the selection and modification of the iSS to meet the requirements of our reference model. cover the necessary modifications to the ISS to integrate it with the rest of the design. The key contributions in this chapter can be categorized into two main areas:
+This chapter will first discuss the requirements of the ISS, and then discuss the selection and modification of the ISS to meet the requirements. 
+We will cover the following aspects:
 
-\begin{enumerate}
-    \item Modifying the ISS to support the CV32E40S processor core.
-    \item Modifying the ISS to ensure proper interaction with pipeline shell.
-\end{enumerate}
+\begin{itemize}
+    \item Choosing the ISS.
+    \item Adapting the ISS to the CV32E40S processor core.
+    \item Modifying the ISS to properly interact with the pipeline shell.
+\end{itemize}
 
 \section{ISS Requirements}
 
-To achieve these goals, we define the following requirements for the ISS. These requirements are collected from the previous chapters and referred to as \textbf{ISS Requirement X}.
-
-
-and are required for the ISS to be used as a part of the reference model. This chapter will use these requirements to discuss the choice of ISS and its necessary modifications. 
+To achieve these goals, we define the following requirements for the ISS. These requirements are collected from the previous chapters and referred to as \textbf{ISS Requirement X}, and are required for the ISS to be used as a part of the reference model. This chapter will use these requirements to discuss the choice of ISS and its necessary modifications. 
 
 \begin{enumerate}
 
@@ -29,9 +28,9 @@ and are required for the ISS to be used as a part of the reference model. This c
 
 \par The ISS should be mature and thoroughly tested. It should be actively maintained and likely to be updated in the future.
 
-\item \textbf{The ISS should be core-independent} \label[issReq]{issReq:coreIndependent}
-
-\item[] The ISS should contain as little core-dependent functionality as possible to make the reference model easily modifiable to different cores.
+%\item \textbf{The ISS should be core-independent} \label[issReq]{issReq:coreIndependent}
+%
+%\item[] The ISS should contain as little core-dependent functionality as possible to make the reference model easily modifiable to different cores.
 
 \item \textbf{Modify ISS to match the core.} \label[issReq]{issReq:csr}
 
@@ -50,10 +49,6 @@ and are required for the ISS to be used as a part of the reference model. This c
 \par The ISS needs to output the state changes executed after each instruction so that the pipeline shell can apply these changes in a cycle-accurate manner. 
 %To be able to use the ISS in verification, we need to access the processor state changes after each instruction to compare with the DUT. This should preferably be in the RVFI format or enough information should be available to convert into an RVFI item.
 
-\item \textbf{Revert the state of the ISS a variable number of instructions} \label[issReq]{issReq:revertState}
-
-\par To discard instructions flushed in the pipeline, we must be able to revert the ISS to a previous state, as discussed in \Cref{sec:ps_revertion}. We must be able to revert the \acrshort{pc}, \acrshort{gpr}, \acrshort{csr}, and memory operations a set number of steps.
-
 
 %\item \textbf{Support modification of instructions} \label[issReq]{issReq:modification}
 %
@@ -65,15 +60,15 @@ and are required for the ISS to be used as a part of the reference model. This c
 
 \item \textbf{The ISS should decide which interrupt to take, when multiple interrupts are enabled} \label[issReq]{issReq:interruptOrdering} 
 
-\par As discussed in \Cref{sec:ps_interrupt}, which interrupt to take should be decided in the ISS instead of the pipeline shell. This means that the ISS must also know the interrupt ordering of the custom interrupts in bit 16 and above, in addition to the ordering of bit 15:0 specified in the RISC-V specification.
+\par As discussed in \Cref{sec:ps_interrupt}, which interrupt to take should be decided in the ISS instead of the pipeline shell. This means that the ISS must also know the interrupt priorities of the custom interrupts in bit 16 and above, in addition to the priorities of bit 15:0, specified in the RISC-V specification.
 
 \item \textbf{Enable and disable interrupt independently of the \rv{mip} bits} \label[issReq]{issReq:interruptEnabled} 
 
 \par The \rv{mip} bits should be able to be set without necessarily triggering an interrupt.
 
-\item \textbf{Configurable with different extextions} \label[issReq]{issReq:custom}
-
-\par A large driving force for using RISC-V is the ability to add custom extensions. Therefore, custom instructions and extensions must be easily created and added to the ISS without modifying large parts of the model.
+%\item \textbf{Configurable with different extextions} \label[issReq]{issReq:custom}
+%
+%\par A large driving force for using RISC-V is the ability to add custom extensions. Therefore, custom instructions and extensions must be easily created and added to the ISS without modifying large parts of the model.
 
 %\item \textbf{Ensure maintainability while meeting requirements} \label[issReq]{issReq:update}
 %
@@ -84,13 +79,19 @@ and are required for the ISS to be used as a part of the reference model. This c
 %\par The ISS should be mature and thoroughly tested. It should be actively maintained and likely to be updated in the future.
 
 
+\item \textbf{Set interrupt dependent CSRs from outside of the ISS.} \label[issReq]{issReq:set_CSR}
+
+\par We should be able to apply the effects of the \rv{mie} and \rv{mstatus} CSRs from outside of the ISS, to ensure interrupts are timed correctly.
+
+
 \item \textbf{Output CSRs relevant for interrupt timing.} \label[issReq]{issReq:CSR_out}
 
 \par The ISS should output the CSRs that have an influence on interrupt timing, so that these can be applied at the correct time. This includes the \rv{mstatus.mie} and \rv{mie} CSRs.
 
-\item \textbf{Set interrupt dependent CSRs from outside of the ISS.} \label[issReq]{issReq:set_CSR}
+\item \textbf{Revert the state of the ISS a variable number of instructions} \label[issReq]{issReq:revertState}
 
-\par We should be able to apply the effects of the \rv{mie} and \rv{mstatus} CSRs from outside of the ISS, to ensure interrupts are timed correctly.
+\par To discard instructions flushed in the pipeline, we must be able to revert the ISS to a previous state, as discussed in \Cref{sec:ps_revertion}. We must be able to revert the \acrshort{pc}, \acrshort{gpr}, \acrshort{csr}, and memory operations a set number of steps.
+
 
 \item \textbf{[optional] The ISS should compatible with formal verification} \label[issReq]{issReq:formal}
 
@@ -105,151 +106,59 @@ and are required for the ISS to be used as a part of the reference model. This c
 
 \section{Choosing ISS}
 
-The specialization project discussed multiple potential \acrshort{iss}s in \Cref{sec:pw_iss} and found that Spike \cite{SpikeRISCVISA2023} and sail-riscv \cite{RISCVSailModel2023} were the most viable choices. Both of these pass many of the requirements above, but Spike was thought to be the easiest to get started with and integrate with the rest of the pipeline shell. 
+The specialization project discussed multiple potential \acrshort{iss}s (\Cref{sec:pw_iss}) and found that Spike \cite{SpikeRISCVISA2023} and sail-riscv \cite{RISCVSailModel2023} were the most viable choices. Both of these meet many of the same requirements, but Spike was thought to be the easiest to integrate due to its maturity and existing use in the core-v-verif environment. 
 
-The deciding factor for us is whether any of the ISSs can meet \Cref{issReq:formal} and be synthesizable. Spike is written in \cpp and is not synthesizable. 
+The specialization project did not consider formal verification, so we will re-evaluate the choice of ISS below. In order to meet \Cref{issReq:formal} and support formal verification, the ISS should be synthesizable. Spike is written in \cpp and is not synthesizable. 
+Sail-riscv, written in the Sail language, has experimental support for compilation to SystemVerilog \cite{Release17Remsproject2023}. However, this feature is still under development and not yet implemented into the sail-riscv model \cite{SupportSystemVerilogCompilation2024}.
 
-Sail-riscv is written in the Sail language. Sail recently added support for compiling the model to SystemVerilog code\footnote{\url{https://github.com/rems-project/sail/releases/tag/0.17}}. If the model could generate synthesizable SystemVerilog code, this would meet \Cref{issReq:formal}. This feature is however still very experimental, and at the time of writing not yet implemented into the sail-riscv model\footnote{\url{https://github.com/rems-project/sail/issues/420}}.
-When this feature is implemented in the future, this would be very interesting future work to implement, but for now, we choose to go with Spike.
-We will adhere to \Cref{issReq:replacable} and make the ISS replaceable, in order to make this potential switch easy in the future
-
-
-There are multiple Spike forks that we can choose to use. One potential version of Spike to use is a version that is already part of core-v-verif and is used to verify the CVA6 core from the OpenHW group. This Spike implementation is still in active development but adds some advantageous features for integrating it into the reference model.
-
-To meet \Cref{issReq:step}, the ISS has to be able to step through the instructions, one instruction at a time. It must also output the processor state as RVFI to comply with \Cref{issReq:state}. The normal version of Spike runs sequentially, so some requirements are necessary to do this. These are the most important modifications done to the Spike version for CVA6. It implements a set of DPI function calls that are used to step through instructions in Spike and returns a simplified RVFI output \cite{openhwgroupOpenhwgroupCorevverif2023}.
-
-These are implemented in the \file{riscv_dpi.cc} file that has DPI functions for setting parameters, initializing Spike, and stepping through the model. To maintain the state, this file has several classes instantiated as global variables, the most important being \ccode{Simulation* sim}, which is an addition made with the CVA6 Spike implementation. The \ccode{Simulation} class inherits from the spike \ccode{sim_t} class and adds a lot of the functionality implemented in the main function in pure Spike.  
+Future work should evaluate sail-riscv for formal verification when this feature is supported, but we choose to use Spike for this thesis because of its current advantages. This highlights the importance of \Cref{issReq:replacable} to make the ISS replaceable in the future.  
 
 
+%If the model could generate synthesizable SystemVerilog code, this would meet \Cref{issReq:formal}. This feature is however still very experimental, and at the time of writing not yet implemented into the sail-riscv model\footnote{\url{https://github.com/rems-project/sail/issues/420}}.
+%When this feature is implemented in the future, this would be very interesting future work to implement, but for now, we choose to go with Spike.
+%We will adhere to \Cref{issReq:replacable} and make the ISS replaceable, in order to make this potential switch easy in the future
 
-\begin{table}[!htb]
-\centering
-%\setlist[itemize]{font= \color{DeepSkyBlue}, wide, leftmargin=*, noitemsep, after=\vspace*{-\topsep}}
-%\setlength{\extrarowheight}{3pt}
-%\setlength{\tabcolsep}{3pt}
-\caption{Summary of advantages and disadvantages of Plain Spike and CVA6 Spike}
-\label{tab:spikevsail}
-%\begin{tabularx}{\textwidth}{|p{15mm}|*{2}{>{\compress\RaggedRight\arraybackslash} X |}}
-\begin{tabularx}{\textwidth}{|p{15mm}|*{2}{>{\arraybackslash} X |}}
-\hline
-ISS & Advantages & Disadvantages \\
-\hline
-Plain Spike
-& \begin{itemize}
-\item Widely used and tested 
-\item Stable 
-\item Easier to keep up to date with changes to Spike
-\end{itemize}
-& \begin{itemize}
-\item No support for RVFI outputs
-\item Interrupt and debug injection must be added
-\item DPI support must be added
-\end{itemize} \\
-\hline
-CVA6 Spike
-& \begin{itemize}
-\item Supports a minimala version of RVFI 
-\item Built into the core-v-verif
-\item Already modified to work with DPI functions from systemverilog
-\end{itemize}
-& \begin{itemize}
-\item Modified for the CVA6 Core
-\item Currently in active development, so interfaces and functionality can change in the future
-\item Not available in the same core-v-verif branch used by the CV32E40S/X cores which can get ugly.
-\end{itemize} \\
-\hline
-\end{tabularx}
-\end{table}
+\subsection{Spike in core-v-verif}
 
+There are multiple different versions of Spike available. We have chosen the version of Spike that already exists in the core-v-verif repository \cite{openhwgroupOpenhwgroupCorevverif2023}. We name this Spike implementation \textit{CVV Spike}. This verifies the CVA6 core, which also shares the core-v-verif verification environment. This implementation offers several advantages for integration into our reference model, meeting several of the requirements for the ISS:
 
+To meet \Cref{issReq:step}, the ISS has to be able to step through the instructions, one instruction at a time. It must also output the processor state as RVFI to comply with \Cref{issReq:state}. The normal version of Spike runs sequentially, so some requirements are necessary to do this. These are the most important modifications done to the Spike version for core-v-verif. It implements a set of DPI function calls used to step through instructions in Spike and return a simplified RVFI output \cite{openhwgroupOpenhwgroupCorevverif2023}.
 
+This Spike implementation is still in active development. This can be disadvantageous since we can end up relying on features that may change in the future. It can however also be an advantage, since we can influence the development.
 
+While the CVV Spike implementation offers many benefits, it still requires modifications to be compatible with the CV32E40S core, and to fit into the rest of the pipeline shell. These modifications will be discussed in the following sections.
 
+\section{Adapting the ISS to the CV32E40S Core}
+%\ref{issReq:csr} \& \ref{issReq:binaries}}
 
-
-%\section{Memory regions}
-%
-%Spike needs to be configured to use the same memory regions as the test binaries.
-%
-%The binaries are generated using \lstinline{link.ld}
-%
-%This linkscript sets ram from \lstinline{0x00000000}
-%
-%by changing this to something else spike no longer complains, but the configuration of the processor changes.
-%
-%
-%Spike configures a debug module from 0x0 to 0x1000 and a reset vector from 0x1000 to 0x2000 (REF mail. Sjekk opp). This overlaps with the memory description from link.ld and needs to be removed.
-%
-%
-%One fix in link.ld:
-%move ram to 0x80000000 and \lstinline{boot_address = 0x80000080}.
-%set \lstinline{boot_addr_i = 0x80000080}.
-%This kind of works, but we should modify spike instead of link.ld.
-
-
-
-
-%\section{Experiment}
-%
-%\subsection{pure spike with cv32e40s test}
-%memory 0x0 invalid
-%
-%\subsection{CVA6 test elf on pure spike}
-%works
-%
-%\subsection{cva6 spike with cv32e40s test}
-%memory 0x0 invalid
-%
-%
-%\subsection{Move ram in link.ld to another location}
-%Spike runs but core testbench fails
-
-
-
-
-\subsection{Using CVA6 spike}
-
-We choose to go with CVA6 spike implementation, but this also requires some modifications to be compatible with CV32E40S, and is one of the contributions of this thesis.
-
-%Some modifications to CVA6 spike are necessary
-%\begin{itemize}
-%    \item Change memory mapping to handle cv32e40s binaries 
-%    \item \lstinline{CV_VP_REGISTERs} are from \lstinline{0x00800000} and contain registers like virtual printer used by stdout and other thing.
-%    \item  disable dtb to disable the spike bootloader that overlaps with core-v memory regions
-%    \item Modify CSR registers
-%\end{itemize}
-
-
-
-\section{Making the ISS replaceable : ISS Requirement \ref{issReq:replacable} }
-
-\subsubsection{ISS interface}
-
-To easily interface with the ISS the communication is done in \file{iss_wrap_pkg.sv}. This exports the generic functions \lstinline{iss_init(...)} and \lstinline{iss_step(...)}) that "easily" allows the ISS the be replaced in the future by only modifying \lstinline{iss_wrap_pkg.sv}. The \lstinline{iss_init(...)} configures Spike with the correct ISA string, sets the boot address, sets the correct parameters and loads the ELF binary. 
-
-\lstinline{iss_step(...}) steps spike one instruction and returns an \lstinline{st_rvfi} rvfi struct.
-
-\tmp{More on the interface}
-
-\section{Matching the ISS to the core: ISS Requirement \ref{issReq:csr} \& \ref{issReq:binaries}}
+To ensure the ISS accurately models the CV32E40S core, we need to adapt it to match some core-specific features. Although the pipeline shell should contain most of the core-specific functionality, some modifications to the ISS are also necessary (\Cref{issReq:csr}). This involves core-specific CSR implementations and configuring the memory regions of the ISS to fit the core.
 
 \subsection{Parameters}
 
-The core-v-verif Spike version has implemented passing of parameters to Spike, and exports functions like \ccode{spike_set_param_str(base,string,value)}, and \ccode{spike_set_param_uint64_t(base,string,value)}\cite{openhwgroupOpenhwgroupCorevverif2023}. It also exports \ccode{spike_set_default_params(profile)}, that allows spike to be configured to different processors. 
+The CVV Spike version allows passing parameters to Spike as key-value pairs using functions like \ccode{spike_set_param_str(base,string,value)}, and \ccode{spike_set_param_uint64_t(base,string,value)}\cite{openhwgroupOpenhwgroupCorevverif2023}. It also exports \ccode{spike_set_default_params(profile)}, that allows Spike to be configured to different processors. 
 
-We can call these function from \ccode{iss_init(...)} to configure the necessary modifications required to match the core. The necessary modifications will be discussed below. 
+We can call these functions during the ISS initialization in \ccode{iss_init(...)}  to configure the necessary modifications. 
 
-\subsection{Mismatched CSRs}
+\subsection{Mismatched CSRs}%: ISS Requirement \ref{issReq:csr}}
 
-There are some differences in the implementation of the CSRs from the core and Spike. This happens because the RISC-V specification is not always fully accurate, and provides some optional implementations of some CSRs \cite{watermanRISCVInstructionSet2021} and some CSRs are specific to a core. Some necessary modifications are described below.
+There are discrepancies between the CSR implementations in the core and Spike, due to ambiguities in the RISC-V specification \cite{watermanRISCVInstructionSet2021}, as well as core-specific CSRs. Some modifications to CSRs are listed below:
 
 \begin{itemize}
-    \item \rv{mvendorid}  - This is specific to the vendor and should be reset to the OpenHW vendor ID (\lstinline{0x602}) 
-    \item \rv{marchid} - This is unique to each microarchitecture from a vendor. It should be reset to CV32E40S marchid (\lstinline{0x15})
-    \item \rv{misa} - Spike does not have bit 23 set, which should be set if non-standard extensions are present\cite{watermanRISCVInstructionSet2021}. The CV32E40S hard-wires this to 1. We can add the "xdummy" to the ISA string passes to spike, so spike sets bit 23 high.
-    \item \rv{mcountinhibit} - This should be reset to 5 instead of 0
-    \item \rv{mcycle, mcycleh} - Disabeling of mcycle was not implemented in Spike. This required a modification to Spikes functionality to take mcountinhibit into account and only increase \rv{mcycle} if it is enabled.
+    \item \rv{mvendorid}: This CSR is specific to the vendor and should be reset to the OpenHW vendor ID (\lstinline{0x602}) 
+    \item \rv{marchid}: This is unique to each microarchitecture from a vendor. It should be reset to CV32E40S \rv{marchid} (\lstinline{0x15})
+    \item \rv{misa}: Spike does not have bit 23 set, which should be set if non-standard extensions are present\cite{watermanRISCVInstructionSet2021}. The CV32E40S hard-wires this to 1, so we add the xdummy" string to the ISA string passed to Spike. This sets bit 23 high in Spike.
+    \item \rv{mcountinhibit}: CV32E40S resets this to 5 instead of 0, requiring the same modification in Spike.
+    \item \rv{mcycle}: Disabling mcycle based on the value of \rv{mcountinhibit} is not implemented in Spike. To implement this, we add a check if \rv{mcountinhibit} is set before increasing the clock count.
 \end{itemize}
+
+%\subsection{\rv{dcsr}}
+%\tmp{Unødvendig?}
+%
+%The \rv{dcsr} debug control and status CSR differs between the core and spike. The core has the \rv{MPRVEN} and \rv{STOPCYCLE} fields hardwired to 1, while these are hardwired to 0 in Spike. Both these fields are specified as optional in the RISC-V Debug Specification \cite{pauldonahueRISCVDebugSupport2023}, so these field should be configurable in spike to match different cores.
+%
+
+
+
 
 %Mstatus differs this is from \cite{watermanRISCVInstructionSet2021}:
 %M-mode software can determine whether a privilege mode is implemented by writing that mode
@@ -258,239 +167,290 @@ There are some differences in the implementation of the CSRs from the core and S
 %required to represent either 00 or 11 in MPP.
 
 
-\subsection{Memory Mapping}
+\subsection{Memory Layout}%: ISS Requirement \ref{issReq:binaries}}
 
-In order to run the same binaries as the core and fulfill \Cref{issReq:binaries}, Spike must be modified with the same memory mapping as the core.
+To run the same binaries as the core (\Cref{issReq:binaries}), Spike must be modified with the same memory layout as the memory layout from the core.
+The binaries used in core-v-verif are built using a linker script from the \acrfull{bsp} provided with core-v-verif. This linker script defines the memory layout of the program.
 
 
-%\url{https://github.com/openhwgroup/core-v-verif/tree/master/cv32e40s/bsp}
-The binaries used in core-v-verif is built using the \acrfull{bsp} provided with core-v-verif in \dir{cv32e40s/bsp}. Among other things, this contains a linker script (\file{link.ld}) that defines the memory layout of the program, specifying the placement of code and data in memory \cite{openhwgroupCorevverifCv32e40sBsp}. 
+The core-v-verif linker script \cite{openhwgroupCorevverifCv32e40sBsp} has two sections, \lstinline{ram} and \lstinline{dbg}. The ram starts at address \lstinline{0x0} and has a size of \lstinline{0x400000}. The debug section starts at \lstinline{0x1A110800} and has a size of \lstinline{0x1000}. Additionally, the core has memory regions for virtual periphery registers  \lstinline{0x00800000}.
 
-The core-v-verif linker script has two sections, \lstinline{ram} and \lstinline{dbg}. The ram starts at address \lstinline{0x0} and has a size of \lstinline{0x400000} (4MB). The debug section starts at \lstinline{0x1A110800} and has a size of \lstinline{0x1000}. Additionally, the core has memory regions for virtual periphery registers and \lstinline{0x00800000}.
 
-%To make Spike work with this new memory mapping we have to do the following:
+Spike's default configuration includes a boot ROM and a debug module that conflicts with the memory regions of the core \cite{evancoxAddDocumentationLowlevel2017}. To resolve this, we disable this boot loader and debug module and add support for configuring this with parameters. We also add parameters to enable and configure the location and size of the memory regions above.
+
+These modifications allow an ELF binary file generated with core-v-verif to be run successfully in Spike. 
+\Cref{lst:config} shows how all the modifications described in this section can easily be configured in \ccode{spike_set_default_params()} using parameters.
+
+\begin{clisting}[caption=Code in \ccode{spike_set_default_params(profile)} configuring Spike for the CV32E40S core.,label=lst:config]
+else if (strcmp(profile, "cv32e40s") == 0)
+  {
+    ...
+
+    //Disable the debug module and boot ROM
+    params.set_bool("/top/", "dtb_enabled", false);
+    params.set_bool("/top/", "bootrom", false);
+
+    //Configure ram memory region
+    params.set_uint64_t("/top/", "dram_base", 0x00000000UL);
+    params.set_uint64_t("/top/", "dram_size", 0x400000UL);
+
+    //Configure the debug memory region
+    params.set_bool("/top/", "dbg", true);
+    params.set_uint64_t("/top/", "dbg_base", 0x1a110800UL);
+    params.set_uint64_t("/top/", "dbg_size", 0x1000UL);
+
+    //Configure the memory region for virtual peripherals
+    params.set_bool("/top/", "vp", true);
+    params.set_uint64_t("/top/", "vp_base", 0x00800000UL);
+    params.set_uint64_t("/top/", "vp_size", 0x1000UL);
+
+    //Configure core-specific CSRs
+    params.set_uint64_t("/top/core/0/", "marchid", 0x15UL);
+    params.set_uint64_t("/top/core/0/", "mvendorid", 0x602UL);
+    params.set_uint64_t("/top/core/0/", "mcountinhibit", 0x5UL);
+
+    params.set_uint64_t("/top/core/0/", "num_prev_states_stored", 4UL);
+  } 
+\end{clisting}
+
+%\section{Modifications to interrupt taking: ISS Requirement \ref{issReq:interruptEnabled} \& }
+
+
+%\label{sec:iss_interruptModifications}
 %
-%\begin{enumerate}
-%    \item Remove spikes default memory mapping which overlaps with our new memory mapping.
-%    \item Configure spike with the new memory mapping
-%    \item Make spike start execution at the start address of \file{link.ld}.
-%\end{enumerate}
-
-
-Spike always starts running at the \lstinline{DEFAULT_RSTVEC = 0x1000}. Spike places a custom boot rom at this reset location \cite{evancoxAddDocumentationLowlevel2017}.
-After this is run, spike will jump to the provided program counter or to the \lstinline{_start} symbol from the ELF file. Aditionally, spike has a debug module in memory.
-
-These memory regions overlap with the \lstinline{ram} region from \file{link.ld}.
-To avoid conflicts, the reset vector and debug module from Spike must be disabled. Spike's default boot loader can be disabled by setting \lstinline{dtb_enabled = false}, and the debug module can be removed from the \ccode{sim_t} class.
-
-
-To run the core-v-verif binaries, spike must be configured with 3 memory regions discussed earlier. Ram from \lstinline{0x00000000} with size \lstinline{0x400000}, Debug from \lstinline{0x1a110800} with size \lstinline{0x1000}, and corev virtual registers from \lstinline{0x00800000} with size \lstinline{0x1000}. The corev virtual registers contain registers used for example to write to stdout, and to inject interrupt etc.
-
-These modifications allow an elf file generated with core-v-verif to run successfully in spike.
-
-
-%\subsection{Volatile CSRs}
+%\subsection{Interrupt allowed}
 %
-%\tmp{ImperasDV and RVVI supports volatile CSRs and memory regions. This could avoid fine tuning all CSRs to fit the core, but increases reliance on the core and gives verification gaps.}
-
-\section{Step through individual instructions: ISS Requirement \ref{issReq:step} \& \ref{issReq:state}}
-
-
-Normally, Spike runs from the main function in \file{spike.cc}, and runs sequentially from start to finish using the \ccode{sim_t::run()} function.
-
-To use Spike in the reference model, we need a way to interface with it that runs only one instruction and returns the state changes from this instruction. This requires some modification. 
-
-We want to use DPI functions to interface with Spike from the reference model. To do this, we need to instantiate Spike in a DPI wrapper instead of running it from the main function. We want an initialization function that instantiates and configures Spike, a step function to step through one instruction and return the state changes as an RVFI output, and functions to inject asynchronous events into Spike.
-
-The Spike implementation in core-v-verif has been modified to support single-stepping instructions by exporting a set of DPI functions in \file{riscv_dpi.cc}. Spike is expanded with two new classes \ccode{Processor}, and \ccode{Simulation}, that inherit from \ccode{processor_t} and \ccode{sim_t} to get access to and build upon the processor state and simulation details.
-
-The most important addition is the \ccode{Processor::step()} method. This steps Spike one instruction and fills the \ccode{st_rvfi} RVFI struct that is sent out of spike over DPI to the reference model. The RVFI struct is filled using the values from the \ccode{state_t} state struct and the \ccode{Processor} class.
+%To support \Cref{issReq:interruptEnabled}, we add a separate \ccode{interrupt_allowed} variable to the \ccode{processor_t} class that is checked before taking an interrupt. 
+%
+%\subsubsection{External interrupts}
+%
+%The CV32E40S core only has some of the interrupt pins enabled, and some pulled to 0\cite{openhwgroupExceptionsInterruptsCOREV2023}. For the standard interrupts in bit \texttt{15-0} in \rv{mip}, these are specified in the RISC-V specification \cite{watermanRISCVInstructionSet2021} and will be set correctly in Spike if it is configured with the correct privilege levels.
+%The problem is with the external interrupts in bit \texttt{31-16} of \rv{mip}, which are not enabled in Spike. We must modify the write mask used when Spike writes to \rv{mie} to enable the custom interrupts by setting bit \texttt{31-16} high.
+%
+%\subsection{Interrupt Ordering}
+%
 
 
+\section{ISS Modifications for Interaction With the Pipeline Shell}
 
-\subsection{Return RVFI after instruction}
+To integrate the ISS into the reference model, we need to modify Spike to support the interface introduced in \Cref{sec:des_iss_interface}. We must be able to step through individual instructions and return RVFI data with the \sv{iss_step()} function. Interrupts and debug requests must be passed with \sv{iss_intr()} and \sv{iss_set_debug()}, and we must be able to revert the state of the ISS to a previous state. Adhering to this interface also makes the ISS easy to replace, fulfilling \Cref{issReq:replacable}.
+This will be covered in this section.
 
-To properly support \Cref{issReq:state} and output RVFI after each instruction, some modifications must be made. The currently supported RVFI output added to Spike in core-v-verif is minimal and does not always match the RVFI output from the core.
+\subsection{Step Through Individual Instructions}%: ISS Requirement \ref{issReq:step} }
 
+The CVV Spike implementation already supports single-stepping through instructions using DPI functions defined in \ccode{riscv_dpi.cc} \cite{CorevverifVendorRiscv}.
 
+The \ccode{Processor::step()} is the key method that fulfills both \Cref{issReq:step} and \ref{issReq:state}, stepping an instruction, populating the \ccode{st_rvfi} struct, and returning this to the pipeline shell over \acrshort{dpi}. 
 
-\subsection{RVFI problems}
-RVFI from CVA6 is sometimes off. RVFI signals are generated by calling \lstinline{insn.rs1()} which selects the correct number of bits from the insn. This is a problem when the RISC-V format does not include this field. For example the insn \lstinline{addi x3, x3, 1224} is an I-type instruction, with only rs1 and rd registers, and not rs2. When RVFI items are generated and \lstinline{insn. rs2()} is called, it does not consider the instruction type and incorrectly stores the rs2 bits that in the case of an I-type overlap with the Imm bits, leading to an incorrect rs2 rvfi item.
-
-
-\subsection{Adding the memory section to rvfi}
-
-Core-v-verif Spike does not support memory output over RVFI, so we will add this support. 
-CV32E40S has expanded RVFI to support multiple memory operations per instruction \cite{openhwgroupRISCVFormalInterface2023}. Since all RV32I instructions support single-memory operations, we will implement this first.
-
-For logging, spike stores all register and memory commits during an instruction. This can be used to generate the \rv{rd} and memory RVFI signals. Register commits are stored in the unordered map \ccode{log_reg_write} with register number and data, while memory read and write commits are stored in the vectors \ccode{log_mem_read} and \ccode{log_mem_write} containing tuples address, value, and size.
-
-We use the values stored in these \textit{commit logs} to generate the RVFI outputs. The details can be found in \ref{}
-
-\subsection{RVFI interrupts and traps}
-
-Some modifications are also required for the interrupt signals in RVFI.
-
-In Spike, interrupts and synchronous traps are both reported using the \ccode{which_trap} variable, but interrupts are marked with the MSB high.
-
-For exceptions (traps), the \lstinline{rvfi_trap} signal is asserted the instruction the trap occurs, while \lstinline{rvfi_intr} is asserted on the next instruction, which is the first instruction of the trap handler. To delay the interrupt RVFI output one step, we store the interrupt output into \ccode{next_rvfi_intr}, which is output to \ccode{rvfi_intr} at the next instruction.
+\subsection{Return RVFI After Instruction}%: ISS Requirement \ref{issReq:state}}
 
 
-%For interrupts, we should only output \lstinline{rvfi_intr} and not \lstinline{rvfi_trap}. When taking an interrupt, Spike must call the step function two times, one time to take the interrupt, and the second to actually execute the first instruction of the interrupt handler. In spike, the information about the interrupt is generated during the first step and \lstinline{taken_trap} stores if an interrupt or trap happens, and \lstinline{which_trap} holds the cause of the trap/interrupt. Aditionally the MSB of signals wether the trap is for an exception or interrupt. Since we only collect the rvfi data from the second step when taking interrupts, we generate the \lstinline{rvfi_intr} signals in the first step when the trap data is available, and store this to \lstinline{next_rvfi_intr}, which is output to \lstinline{rvfi_intr} at the next step, along with the interrupt handler.
+To meet \Cref{issReq:state}, we must return RVFI after each instruction. The previously implemented RVFI output in CVV Spike is too primitive for our needs and does not match the RVFI output from the CV32E40S core. This requires modifications to the \ccode{Processor::step()} method. Some of these problems and modifications will be briefly explained below, but the exact modifications can be found in \Cref{app:spike_step}.
 
-\subsection{Debug}
 
-Similarly to interrupts, a delay must also be added to debug mode caused by \rv{ebreak}. This should report a trap on the instruction \rv{ebreak} is executed and output to \sv{rvfi_dbg} when at the next instruction when debug mode is active.
+\begin{itemize}
+    \item \textbf{Incorrect \rv{rs2} reporting}
+    \par CVV Spike reports the wrong \rv{rs2} values for instructions that do not have an \rv{rs2} field since it reads the \rv{rs2} value directly from the instruction bits without checking the instruction type. The instruction type should be checked before reading these bits to output these values properly.
+    
+    \item \textbf{Missing Memory Output}
+    \par CVV Spike does not implement the RVFI memory outputs in the \mbox{\rv{rvfi_mem_...}} RVFI signals. We support this by utilizing Spikes commit logs, which store register and memory writes, to generate the \rv{rd} and memory RVFI signals.
 
-\rv{rvfi_dbg_mode} should be high for all instructions run in debug mode. We can use the \ccode{debug_mode} stored in the \ccode{state_t} to generate this but also delay this one instruction by reading from the previous state to only output it when the whole instruction ran in debug mode, and not when an instruction enabled debug mode.
 
-\subsection{CSR}
+      %\rv{rvfi_mem_addr}
+      %\rv{rvfi_mem_rdata}
+      %\rv{rvfi_mem_rmask}
+      %\rv{rvfi_mem_wdata}
+      %\rv{rvfi_mem_wmask}
 
-To support \Cref{issReq:CSR_out}, we also want to output CSR changes over RVFI. This is currently also implemented in the core-v-verif Spike version.
+    
+    \item \textbf{Interrupt and Trap Output}
+    \par The \rv{rvfi_intr} signal must be implemented, and the \rv{rvfi_trap} signals must be modified to report interrupts and exceptions out from the core correctly. Since the \rv{rvfi_intr} signal must be reported on the first instruction of the interrupt handler \cite{openhwgroupRISCVFormalInterface2023}, we delay the \rv{rvfi_intr} signal one step to time it correctly.
+    
+    \item \textbf{Debug mode Output}
+    \par CVV Spike does not implement the RVFI debug signals, which we must also implement. \rv{rvfi_dbg_mode} must be high for all instructions run in debug mode\cite{openhwgroupRISCVFormalInterface2023}, so we use the internal \ccode{debug_mode} state variable. 
 
-\section{Interrupt injection: ISS Requirement \ref{issReq:interrupt}, \ref{issReq:set_CSR}, and \ref{issReq:interruptEnabled}}
+    \item \textbf{CSR Output}
+    \par To meet \Cref{issReq:CSR_out}, we must output CSR changes over RVFI. This also requires some modifications to the step function. In Spike CSR writes are also stored in a commit log, and can be used to output the modified CSR values.
+    
+\end{itemize}
+
+
+
+%\subsection{RVFI problems}
+%RVFI from CVA6 is sometimes off. RVFI signals are generated by calling \lstinline{insn.rs1()} which selects the correct number of bits from the insn. This is a problem when the RISC-V format does not include this field. For example the insn \lstinline{addi x3, x3, 1224} is an I-type instruction, with only rs1 and rd registers, and not rs2. When RVFI items are generated and \lstinline{insn. rs2()} is called, it does not consider the instruction type and incorrectly stores the rs2 bits that in the case of an I-type overlap with the Imm bits, leading to an incorrect rs2 rvfi item.
+%
+%
+%\subsection{Adding the memory section to rvfi}
+%
+%Another modification involves adding support 
+%
+%CVV Spike does not support memory output over RVFI, so we will add this support. 
+%CV32E40S has expanded RVFI to support multiple memory operations per instruction \cite{openhwgroupRISCVFormalInterface2023}. Since all RV32I instructions support single-memory operations, we will implement this first.
+%
+%For logging, spike stores all register and memory commits during an instruction. This can be used to generate the \rv{rd} and memory RVFI signals. Register commits are stored in the unordered map \ccode{log_reg_write} with register number and data, while memory read and write commits are stored in the vectors \ccode{log_mem_read} and \ccode{log_mem_write} containing tuples address, value, and size.
+%
+%We use the values stored in these \textit{commit logs} to generate the RVFI outputs. The details can be found in \ref{}
+%
+%\subsection{RVFI interrupts and traps}
+%
+%Some modifications are also required for the interrupt signals in RVFI.
+%
+%In Spike, interrupts and synchronous traps are both reported using the \ccode{which_trap} variable, but interrupts are marked with the MSB high.
+%
+%For exceptions (traps), the \lstinline{rvfi_trap} signal is asserted the instruction the trap occurs, while \lstinline{rvfi_intr} is asserted on the next instruction, which is the first instruction of the trap handler. To delay the interrupt RVFI output one step, we store the interrupt output into \ccode{next_rvfi_intr}, which is output to \ccode{rvfi_intr} at the next instruction.
+%
+%
+%%For interrupts, we should only output \lstinline{rvfi_intr} and not \lstinline{rvfi_trap}. When taking an interrupt, Spike must call the step function two times, one time to take the interrupt, and the second to actually execute the first instruction of the interrupt handler. In spike, the information about the interrupt is generated during the first step and \lstinline{taken_trap} stores if an interrupt or trap happens, and \lstinline{which_trap} holds the cause of the trap/interrupt. Aditionally the MSB of signals wether the trap is for an exception or interrupt. Since we only collect the rvfi data from the second step when taking interrupts, we generate the \lstinline{rvfi_intr} signals in the first step when the trap data is available, and store this to \lstinline{next_rvfi_intr}, which is output to \lstinline{rvfi_intr} at the next step, along with the interrupt handler.
+%
+%\subsection{Debug}
+%
+%Similarly to interrupts, a delay must also be added to debug mode caused by \rv{ebreak}. This should report a trap on the instruction \rv{ebreak} is executed and output to \sv{rvfi_dbg} when at the next instruction when debug mode is active.
+%
+%\rv{rvfi_dbg_mode} should be high for all instructions run in debug mode. We can use the \ccode{debug_mode} stored in the \ccode{state_t} to generate this but also delay this one instruction by reading from the previous state to only output it when the whole instruction ran in debug mode, and not when an instruction enabled debug mode.
+%
+%\subsection{CSR}
+%
+%To support \Cref{issReq:CSR_out}, we also want to output CSR changes over RVFI. This is currently also implemented in the CVV Spike version.
+
+\subsection{Interrupt Injection}%: ISS Requirement \ref{issReq:interrupt}, \ref{issReq:interruptOrdering}, \ref{issReq:set_CSR}, and \ref{issReq:interruptEnabled}}
 \label{sec:iss_interruptInjection}
 
-We add a new DPI function called \ccode{iss_intr()} to inject interrupts. This calls the \ccode{Processor:interrupt(...)} method via \ccode{Simulator::interrupt(...)}, and is shown in \Cref{lst:interrupt}. This function is called every clock cycle to determine if something has changed, and an interrupt can be taken. We set the \rv{mip} CSR even though the interrupt is not enabled to avoid a mismatch with the core if the \rv{mip} CSR is read.
+%This function is called every clock cycle to determine if an interrupt can be taken. 
+To inject interrupts into Spike, we introduce a new \acrshort{dpi} function called \sv{iss_intr()}, which calls the \ccode{Processor:interrupt(...)} method in Spike shown in \Cref{lst:interrupt}. This is an important method for this design and will be covered in detail here.
+%This is an essential method in the design and fulfills ISS Requirement \Cref{issReq:interrupt}, \ref{issReq:set_CSR}, and \ref{issReq:interruptEnabled}.
+The main responsibility of the method is to set the \rv{mip} bits to reflect the incoming interrupt, informing Spike of the interrupt, and fulfilling \Cref{issReq:interrupt}. However, the previous chapter discusses multiple challenges when injecting interrupts into the ISS, which the method must also consider.
 
-To support \Cref{issReq:set_CSR}, we also want to consider the values of the external CSR explained in \Cref{sec:ps_side-effects}. To do this, we take \ccode{mie} and \ccode{interrupt_allowed} as inputs to the function. \ccode{mie} is set at line \ref{line:mie}, overwriting the current \rv{mie} when determining if the interrupt can be taken. \ccode{interrupt_allowed} is set at line \ref{line:interrupt_allowed}. This variable in the \ccode{processor_t} class is checked before taking an interrupt when Spike steps and will be discussed later.
+As discussed in \Cref{sec:ps_interrupt}, the ISS should be responsible for determining whether an interrupt is taken. It does, however, need multiple signals from the pipeline shell to correctly make this decision.
 
-To support \Cref{issReq:revertState}, we also take the number of steps to revert during an interrupt as an input. As discussed in \Cref{sec:ps_revertion}, we want to revert the state only if the interrupt will be taken, and before setting the \rv{mip} bits, so we call \ccode{revert_step(revert_steps)} in line \ref{line:revert}.
+\Cref{sec:ps_interrupt_to_iss} determined that we need to inject the \sv{interrupt_allowed} signal into the ISS for it to properly decide if an interrupt should be taken. To fulfill this, the \ccode{interrupt()} method takes in an \ccode{interrupt_allowed} parameter. We introduce a new local state variable to Spike called \ccode{interrupt_allowed} that is checked every time Spike attempts to take a new interrupt. This allows interrupts to be enabled and disabled independently of the \rv{mip} CSRs, fulfilling \Cref{issReq:interruptEnabled}.
 
-When Spike takes an interrupt, the step is used to change the state of the processor, storing the previous PC to \rv{mepc} and changing the PC to the correct interrupt handler, but it does not actually execute the instruction at the new PC. For an interrupt to be taken and the first instruction of the interrupt handler to be run, we must step Spike two times. 
+As discussed in \Cref{sec:ps_side-effects}, some side-effects also affect the timing of interrupts. To fulfill \Cref{issReq:set_CSR}, we must apply these CSRs from the external CSR into Spike to properly time interrupts. We do this by adding \rv{mie} and \rv{interrupt_allowed} as parameters to the interrupt method. We set the internal \rv{mie} value from this parameter and \rv{mstatus.mie} discussed in \Cref{sec:ps_side-effects} is applied to the \sv{interrupt_allowed} signal before being passed to Spike.
 
-Since we export separate interrupt and step functions, we choose to step once in the interrupt function, but only if we know the interrupt will be taken. This ensures that the next time the step function is run, it will actually execute an instruction instead of only taking the interrupt. 
+\Cref{sec:ps_revertion} also discussed how the ISS needs to revert its state before taking an interrupt, but after deciding that it must be taken. Because of this, the interrupt method also takes the number of instructions to revert as a parameter and reverts the state if it decides an interrupt should be taken. State reversion in the ISS is discussed further in \Cref{sec:iss_revert}.
 
-\begin{sloppypar}
-To only step if the interrupt will be taken, we also define a \ccode{will_trigger_interrupt(mip)} method that determines if the interrupt will be taken based on the current debug mode, if the interrupts are enabled in \rv{mstatus}, and if the set \rv{mip} bits are enabled in \rv{mie}. To support \Cref{issReq:set_CSR}, we also consider the \ccode{interrupt_allowed} input in addition to \ccode{will_trigger_interrupt(mip)} .
-\end{sloppypar}
+
+The method is shown in \Cref{lst:interrupt}. This shows that it starts by setting the \sv{interrupt_allowed} and \rv{mie} values in line \ref{line:interrupt_allowed} and line \ref{line:mie}.
+It then decides if the interrupt will be taken in line \ref{line:will_trigger}, using the \sv{interrupt_allowed} signal and the \ccode{will_trigger_interrupt(mip)} method. This checks if the interrupt will be taken, given the internal state and CSRs of Spike.
+
+If the interrupt is taken, we follow the order of events from \Cref{sec:ps_when_revert}, first reverting the state in line \ref{line:revert}, then setting the \rv{mip} bits in line \ref{line:mip}, and stepping the ISS once in line \ref{line:step}.
+
+When Spike takes an interrupt, the step is used to change the state of the processor, storing the previous PC to \rv{mepc} and changing the PC to the correct interrupt handler, but it does not actually execute the instruction at the new PC. For an interrupt to be taken and the first instruction of the interrupt handler to be run, we must step Spike two times. Since we export separate interrupt and step functions, we choose to step once in the interrupt function, but only if we know the interrupt will be taken. This ensures that the next time the \rv{iss_step()} function is run, it will actually execute an instruction instead of only taking the interrupt. 
+
+
+We also set the \rv{mip} bits even if the interrupt is not taken in line \ref{line:mip_not}. This is to avoid a mismatch if the the \rv{mip} CSR is read while interrupts are not enabled or allowed.
+
+
+
 
 \begin{clisting}[label=lst:interrupt, caption=The function used to apply interrupt in spike.,escapechar=|]
 bool Processor::interrupt(reg_t mip, reg_t mie, uint32_t revert_steps, bool interrupt_allowed) {
   this->interrupt_allowed = interrupt_allowed; |\label{line:interrupt_allowed}|
   state->mie->write_with_mask(IRQ_MASK, mie); |\label{line:mie}|
-  if(interrupt_allowed && will_trigger_interrupt(mip)) {
+  if(interrupt_allowed && will_trigger_interrupt(mip)) { |\label{line:will_trigger}|
     this->revert_step(revert_steps); |\label{line:revert}|
-    state->mip->write_with_mask(IRQ_MASK, mip);
+    state->mip->write_with_mask(IRQ_MASK, mip); |\label{line:mip}|
     this->step(1, vref); |\label{line:step}|
     return true;
   } else {
-    state->mip->write_with_mask(mask, mip);
+    state->mip->write_with_mask(mask, mip); |\label{line:mip_not}|
     return false;
   }
 } 
 \end{clisting}
 
-\section{Modifications to interrupt taking: ISS Requirement \ref{issReq:interruptEnabled} \& \ref{issReq:interruptOrdering}}
-\label{sec:iss_interruptModifications}
-
-\subsection{Interrupt allowed}
-
-To support \Cref{issReq:interruptEnabled}, we add a separate \ccode{interrupt_allowed} variable to the \ccode{processor_t} class that is checked before taking an interrupt. 
-
-\subsubsection{External interrupts}
-
-The CV32E40S core only has some of the interrupt pins enabled, and some pulled to 0\cite{openhwgroupExceptionsInterruptsCOREV2023}. For the standard interrupts in bit \texttt{15-0} in \rv{mip}, these are specified in the RISC-V specification \cite{watermanRISCVInstructionSet2021} and will be set correctly in Spike if it is configured with the correct privilege levels.
-The problem is with the external interrupts in bit \texttt{31-16} of \rv{mip}, which are not enabled in Spike. We must modify the write mask used when Spike writes to \rv{mie} to enable the custom interrupts by setting bit \texttt{31-16} high.
-
-\subsection{Interrupt Ordering}
-
 The RISC-V specification specifies the priority order of the standard interrupt bits (bit \texttt{0-15}) in \rv{mip} but does not specify a priority order for the custom external interrupts in bit \texttt{31-16} \cite{watermanRISCVInstructionSet2021}, as these can be platform specific. In CV32E40S, the external interrupt with the highest ID will get the highest priority \cite{openhwgroupExceptionsInterruptsCOREV2023}.
 
-To make the interrupt priorities the same in the core and Spike can modify the functionality of the \ccode{processor_t::take_interrupt()} method to correctly order the external interrupts. This approach assumes that the interrupt ordering for the external interrupts will be the same for all cores. This might not necessarily be the case since the ordering is not defined in the specification \cite{watermanRISCVInstructionSet2021}. Future work should, therefore, make the ordering of external interrupts configurable or move the interrupt-taking functionality of Spike to a separate, core-specific module.
 
-\section{Revert state: ISS Requirement \ref{issReq:revertState}}
+\Cref{issReq:interruptOrdering} specifies that the ISS must be able to decide which interrupt to take if multiple are enabled. Therefore, we must also modify Spike to add external interrupts and the correct prioritization.
+To make the interrupt priorities the same in the core and Spike, we can modify the functionality of the \ccode{processor_t::take_interrupt()} method to correctly order the external interrupts. 
+This approach assumes that the interrupt ordering for the external interrupts will be the same for all cores. This might not necessarily be the case since the ordering is not defined in the specification \cite{watermanRISCVInstructionSet2021}. Future work should, therefore, make the ordering of external interrupts configurable or move the interrupt-taking functionality of Spike to a separate, core-specific module.
+
+
+
+
+
+
+\subsection{State Reversion}%: ISS Requirement \ref{issReq:revertState}}
 \label{sec:iss_revert}
 
-\Cref{issReq:revertState} specifies that we must be able to revert Spike to a previous state to discard instructions that are flushed from the pipeline shell, as discussed in \Cref{sec:ps_revertion}. THis involves restoring register file values, \acrshort{csr}s, memory contents, \acrshort{pc}, and other relevant state information. 
+\Cref{issReq:revertState} specifies that we must be able to revert Spike to a previous state to discard instructions that are flushed from the pipeline shell, as discussed in \Cref{sec:ps_revertion}. This involves restoring the \acrshort{pc}, register file values, \acrshort{csr}s, memory contents,  and other relevant state information. 
 
-We never have to store more states than the number of stages in the pipeline, because revertion is only done to discard instructions flushed from the pipeline. This allows a fixed-size array to be used with the same size as the number of pipeline stages. If a synthesizable ISS is used in the future, using a fixed-size array would also make these modifications synthesizable, meeting \Cref{issReq:formal}.
+We never have to store more states than the number of stages in the pipeline because revertion is only done to discard instructions flushed from the pipeline. This allows a fixed-size array to be used with the same size as the number of pipeline stages. If a synthesizable ISS is used in the future, using a fixed-size array would also make these modifications synthesizable, meeting \Cref{issReq:formal}.
 
 Most of this state data is encapsulated in Spikes \ccode{state_t} struct. A straightforward approach is to store a snapshot of this struct before executing each instruction. When a flush occurs, we can restore a previous state by replacing the current state with a previous snapshot state. 
 
-Using \ccode{sizeof(state_t)}, we find that the struct size is 3592 bytes. While storage constraints are not a primary concern, future work could be to store only the relevant data to a smaller struct, but we can live with the size of \ccode{state_t} for now. 
+Using \ccode{sizeof(state_t)}, we find that the struct size is 3592 bytes. While storage constraints are not a primary concern, future work could be to store only the relevant data to a smaller struct. For now, we can accept the size of  \ccode{state_t}. 
 
 Memory writes during an instruction gets more complicated, as these are not stored in the \ccode{state_t} struct. There are several possible approaches:
 
 \begin{enumerate}
-    \item \textbf{Full memory snapshots}: We could store a complete memory copy before each instruction. Spike uses a \ccode{sparse_memory_map} to store locations of different memory pages \cite{SpikeRISCVISA2023}. To copy the whole memory we would have to make a copy of each page pointed to by the memory map. Additionally, the cache and TLB also has to be properly updated. This is highly impractical due to the potentially large size of the memory and uneccesary complexity.
-    \item \textbf{Cache snapshots}: An alternative solution is to store a snapshot of the cache. The cache is smaller than the whole memory, but restoring it might not be as straightforward since memory writes can bypass the cache and store it straight to memory \cite{hennessyComputerArchitectureQuantitative2019}.
-    \item \textbf{Storing pre-write values}: One approach is to store the original values at memory locations before these are written to. On reversion, we can store back all of the original values. This approach is drastically smaller than the previous approaches, and we do not have to consider the cache or TLB\tmp{Justify}.
+    \item \textbf{Full memory snapshots}: One solution could be to store a complete memory copy before each instruction. Spike uses a \ccode{sparse_memory_map} to store locations of different memory pages \cite{SpikeRISCVISA2023}. To copy the whole memory we would have to make a copy of each page pointed to by the memory map. Additionally, the cache and TLB also have to be properly updated. This is highly impractical due to the potentially large memory size and unnecessary complexity.
+    \item \textbf{Cache snapshots}: Another solution is to store a snapshot of the cache. The cache is smaller than the whole memory, but restoring it might not be as straightforward since memory writes can bypass the cache and store it straight to memory \cite{hennessyComputerArchitectureQuantitative2019}.
+    \item \textbf{Storing pre-write values}: Another approach is to store the original values at memory locations before these are written to. On state reversion, we can iterate over the stored values and store them back using the normal memory interface, avoiding considering the cache or TLB.
 \end{enumerate}
 
 
-\subsubsection{Storing the changes to memory for every instruction. (or values before memory operation)}
-We choose to store the values before a write is done to the address.
-When the pipeline is flushed, each of these memory operations has to be reverted back to its original state. This allows us to use the top level \ccode{store()} function in Spike to revert each memory operation. This would automatically handle the TLB, caches, and storing to the correct memory address on the correct page.
+%\subsubsection{Storing the changes to memory for every instruction. (or values before memory operation)}
 
-The \ccode{state_t} already contais commit logs holding reads and writes to registers and memory, used to make the execution log from spike. The memory logs hold address, value, and size in a vector of tuples like \ccode{typedef std::vector<std::tuple<reg_t, uint64_t, uint8_t>> commit_log_mem_t;}. The commit log is written to in \ccode{store()} in \file{mmu.h}. We are interested in the value before writing, and not the value stored in the commit log, which is the value after writing. 
+We choose the last option, storing the values before a write is done to the address. This approach is drastically smaller and simpler than the other approaches.
+When the pipeline is flushed, each memory operation must be reverted to its original state. This allows us to use the top-level \ccode{store()} function in Spike to revert each memory operation. This would automatically handle the TLB, caches, and storing to the correct memory address on the correct page.
 
-We can therefore expand the \ccode{state_t} to hold another commit log of values before writing, called \ccode{log_mem_pre_write}. This vector holds the address, value, and size of memory operations. We can expand the \ccode{store()} function in \file{mmu.h} read the value of the given address before writing to it, and storing this value and the address to \ccode{log_mem_pre_write}.
+The \ccode{state_t} already contains commit logs holding reads and writes to registers and memory, used to make the execution log from Spike. The memory logs hold address, value, and size in a vector of tuples like \ccode{typedef std::vector<std::tuple<reg_t, uint64_t, uint8_t>> commit_log_mem_t;}. The commit log is written to in \ccode{store()} in \file{mmu.h}. We are interested in the value before writing, and not the value stored in the commit log, which is the value after writing. 
+
+We can therefore expand the \ccode{state_t} to hold another commit log of values before writing, called \ccode{log_mem_pre_write}. This vector holds the address, value, and size of memory operations. We can expand the \ccode{store()} function in \file{mmu.h} to read the value of the given address before writing to it and storing this value and the address to \ccode{log_mem_pre_write}.
 
 %To load the memory values before writing to them, we can either use the \ccode{load()} function from inside \ccode{store()} or directly use the relevant lines from \ccode{load()} in \ccode{store()}. If we were to call the \ccode{load()} function, this would also store to the \ccode{log_mem_read} commit log, which would affect the generated RVFI output and spike execution log. We would therefore have to clear the \ccode{log_mem_read} after running \ccode{load()} or disable the commit log before running it.
 
-Since the address generation from \ccode{load()} and \ccode{store()} are similar, we can easily add the relevant lines of code from \ccode{load()} to \ccode{store()}. The expanded \ccode{store()} from \file{mmu.h} is shown in \Cref{lst:store} with the added lines marked with \ccode{+}.
+%Since the address generation from \ccode{load()} and \ccode{store()} are similar, we can easily add the relevant lines of code from \ccode{load()} to \ccode{store()}. The expanded \ccode{store()} from \file{mmu.h} is shown in \Cref{lst:store} with the added lines marked with \ccode{+}.
+%
+%
+%\begin{clisting}[caption={Modified \ccode{store()} function from \file{mmu.h} with new lines marked with \ccode{+}.}, label={lst:store}]
+%  template<typename T>
+%  void ALWAYS_INLINE store(reg_t addr, T val, uint32_t xlate_flags = 0) {
+%    reg_t vpn = addr >> PGSHIFT;
+%    bool aligned = (addr & (sizeof(T) - 1)) == 0;
+%    bool tlb_hit = tlb_store_tag[vpn % TLB_ENTRIES] == vpn;
+%    target_endian<T> previous_value;
+%
+%
+%    if (xlate_flags == 0 && likely(aligned && tlb_hit)) {
+%+     //Store previous value before writing
+%+     previous_value = *(target_endian<T>*)(tlb_data[vpn % TLB_ENTRIES].host_offset + addr);
+%
+%      *(target_endian<T>*)(tlb_data[vpn % TLB_ENTRIES].host_offset + addr) = to_target(val);
+%    } else {
+%+     //Store previous value before writing
+%+     load_slow_path(addr, sizeof(T), (uint8_t*)&previous_value, xlate_flags);
+%
+%      target_endian<T> target_val = to_target(val);
+%      store_slow_path(addr, sizeof(T), (const uint8_t*)&target_val, xlate_flags, true, false);
+%    }
+%
+%    if (unlikely(proc && proc->get_log_commits_enabled())) {
+%      proc->state.log_mem_write.push_back(std::make_tuple(addr, val, sizeof(T)));
+%+     proc->state.log_mem_pre_write.push_back(std::make_tuple(addr, from_target(previous_value), sizeof(T)));
+%    }
+%  }
+%\end{clisting}
 
+\subsubsection{Storing States for Instructions}
 
-\begin{clisting}[caption={Modified \ccode{store()} function from \file{mmu.h} with new lines marked with \ccode{+}.}, label={lst:store}]
-  template<typename T>
-  void ALWAYS_INLINE store(reg_t addr, T val, uint32_t xlate_flags = 0) {
-    reg_t vpn = addr >> PGSHIFT;
-    bool aligned = (addr & (sizeof(T) - 1)) == 0;
-    bool tlb_hit = tlb_store_tag[vpn % TLB_ENTRIES] == vpn;
-    target_endian<T> previous_value;
+Since we store the \ccode{log_mem_pre_write} in the \ccode{state_t}, it should be sufficient to only store this state struct for each instruction in the pipeline to store the registers, \acrshort{csr}s, and memory operation for each instruction. 
 
+To avoid converting this struct to SystemVerilog and back to \cpp, it is easier to store this state \textit{snapshot} in Spike and use a DPI function call from the pipeline shell to signal which snapshot to revert back to.
 
-    if (xlate_flags == 0 && likely(aligned && tlb_hit)) {
-+     //Store previous value before writing
-+     previous_value = *(target_endian<T>*)(tlb_data[vpn % TLB_ENTRIES].host_offset + addr);
-
-      *(target_endian<T>*)(tlb_data[vpn % TLB_ENTRIES].host_offset + addr) = to_target(val);
-    } else {
-+     //Store previous value before writing
-+     load_slow_path(addr, sizeof(T), (uint8_t*)&previous_value, xlate_flags);
-
-      target_endian<T> target_val = to_target(val);
-      store_slow_path(addr, sizeof(T), (const uint8_t*)&target_val, xlate_flags, true, false);
-    }
-
-    if (unlikely(proc && proc->get_log_commits_enabled())) {
-      proc->state.log_mem_write.push_back(std::make_tuple(addr, val, sizeof(T)));
-+     proc->state.log_mem_pre_write.push_back(std::make_tuple(addr, from_target(previous_value), sizeof(T)));
-    }
-  }
-\end{clisting}
-
-\subsubsection{Storing states for instructions}
-
-Since we store the \ccode{log_mem_pre_write} in the \ccode{state_t} it should be sufficient to only store this state struct for each instruction in the pipeline to store the registers, \acrshort{csr}s, and memory operation for each instruction. 
-
-To avoid converting this struct to SystemVerilog and back to \cpp, it is easier to store this state \textit{snapsh} in Spike and use a DPI function call from the pipeline shell to signal which snapshot to revert back to.
-
-Because we only need the states for the instructions that are currently in the pipeline, we only need to store a set number of previous states. If we in the future want to use a synthesizable ISS, this method can be advantageous as fixed size array is easier to synthesize than a dynamic array.
-
-In Spike, we can store the previous states in a \ccode{deque} double-ended queue. This makes it easy to insert the most recent state at the beginning of the queue and remove the oldest state from the end of the queue when the instruction leaves the pipeline. 
+In Spike, we can store the previous states in a \ccode{deque} double-ended queue. This makes it easy to insert the most recent state at the beginning of the queue, and remove the oldest state from the end of the queue when the instruction leaves the pipeline. 
 We can also easily access items at a specific index to revert the state to a given previous state.
 
 We store the previous states in the \ccode{Processor} class. We store the previous state at the beginning of the \ccode{step()} function. After executing the instruction, we store the \ccode{llog_mem_pre_write} vector into a \ccode{prev_changes_t} struct along with the previous state. This is stored in the \ccode{previous_states} \ccode{deque}.
 
+\subsubsection{Reverting the State}
 
-
-\subsection{Reverting state}
-
-We add the \ccode{Processor::revert_step(int num_steps)} method to revert the state.
-To revert the state, we override the current state with the state stored at the index of \ccode{num_steps} in \ccode{prev_changes}. To revert the memory operations, we then iterate over all the previous states and the content of \ccode{log_mem_pre_write}. For all the stored memory writes, we call the \ccode{store()} method with the stored address, value, and size of each memory write.
+We introduce the \ccode{Processor::revert_step(int num_steps)} method to revert the state.
+To revert the state, we override the current state with the state stored at the index of \ccode{num_steps} in \ccode{prev_changes}. To revert the memory operations, we iterate over all the previous states and the content of \ccode{log_mem_pre_write}. For all the stored memory writes, we call the \ccode{store()} method with the stored address, value, and size of each memory write.
 
 To get the order of operations right, the \ccode{revert_step()} method is called inside the \ccode{interrupt()} and \ccode{debug()} methods, as explained in \Cref{sec:ps_revertion} and \Cref{sec:iss_interruptInjection}.
 
-\subsection{The problem with revertions}
-\tmp{PGK: Bør dette diskuteres her eller i discussion?}
-
-This solution, storing the states inside Spike, has some problems and disadvantages.
-
-CSRs are written with \ccode{processor_t::put_csr(int which, reg_t val)}. This writes to the CSR stored in \ccode{state.csrmap} as a \ccode{shared_ptr}. This means that when we copy the state struct into the deque, we only copy the pointer, not the actual CSR value. We must either deep copy all the CSR values in \ccode{csrmap}, storing new values for the pointers. We can also implement a solution similar to memory writes, where we iterate over previous CSR writes and revert them. One last solution is to use the external CSR in the pipeline shell. Since we already export CSR writes over RVFI (\Cref{issReq:CSR_out}) and update the external CSR (\Cref{sec:ps_side-effects}), it is possible to update the internal Spike CSR to match the external CSR when reverting the state. When these CSRs are updated in the external CSR, they would no longer have to be flushed since it mimics the actual CSR in the core.
-
-\tmp{This could maybe be done for the state aswell}
 
 %\section{Custom instructions:\Cref{issReq:custom}}
 %
@@ -501,48 +461,20 @@ CSRs are written with \ccode{processor_t::put_csr(int which, reg_t val)}. This w
 %\section{Update: \Cref{issReq:update}}
 
 
-\section{WFI}
-\label{sec:wfi}
-
-\tmp{Flytt til ch 5?}
-
-A \rv{wfi} instruction should halt execution until an interrupt occurs. This requires some modifications to the design to function correctly.
-
-
-One problem with \rv{wfi} instructions and the pipeline shell is that the next steps in Spike will not be executed when a \rv{wfi} is set. This prohibits the pipeline from filling up with the upcoming instructions. When an interrupt is taken, and \rv{wfi} is awakened, the next instructions are not loaded into the pipeline, causing a mismatch. To avoid this, we fully disable \rv{wfi} in Spike and let the pipeline shell handle the waiting caused by a \rv{wfi}. This is legal since the RISC-V specification also specifies that implementing \rv{wfi} as a \rv{nop} is a legal implementation \cite{watermanRISCVInstructionSet2021}. As will be discussed in \Cref{sec:res_tests}, this causes some problems when a \rv{wfi} is the last instruction of a program.
-
 %%A \rv{wfi} should as wake up to an interrupt even though \rv{mstatus.mie} is disabled \cite{watermanRISCVInstructionSet2021}. 
 %%The added \ccode{interrupt_allowed} bool added to Spike should not stop a \rv{wfi}we added should not block \ccode{take_interrupt(pending_interrupt)} from running even if interrupts are not allowed, since this could lead to a \rv{wfi} not waking up when an interrupt is passed to spike.
 
 
 %To allow the pipeline to fill up with the upcoming instructions after the \rv{wfi}, we can disable wfi in Spike by setting \ccode{in_wfi = false} in the step function in \file{Proc.cc}. This way, the next instruction will run on the next step, and we will have to make sure \rv{wfi} waits operate as intended outside of Spike in the reference model. When using the retirement dependent approach, the \rv{wfi} instruction will automatically wait to be run until the core runs, but we need some way to determine that an interrupt actually occurred, causing the execution to continue after the \rv{wfi}. \tmp{TODO: this}
 
-\section{Debug requests}
+\section{Debug Requests}
 
 
 To insert asynchronous interrupts into Spike, we define a new DPI function \ccode{iss_set_debug(...)} that calls the method \ccode{Processor::set_debug(bool debug_req, uint32_t revert_steps, bool debug_allowed}. It takes in the debug request, the number of revert steps, and the \ccode{debug_allowed} as parameters, similarly to \ccode{iss_intr(...)}. 
 
-If Spike is not in debug mode, a new debug request is made, and debug is allowed, we set the \ccode{processor_t::halt_request} variable to \ccode{HR_REGULAR}. At the next step, Spike will enter debug mode, store the cause and privilege to \rv{dcsr}, store the PC to \rv{dpc}, and change the PC to the address specified in \tmp{TODO}. 
+If Spike is not in debug mode, a new debug request is made, and if debug is allowed, we set the \ccode{processor_t::halt_request} variable to \ccode{HR_REGULAR}. At the next step, Spike will enter debug mode, store the cause and privilege to \rv{dcsr}, store the PC to \rv{dpc}, and change the PC to the debug handler.
 
+One timing difference between interrupts and debug requests in the CV32E40S core is that when an interrupt is taken, the pipeline is immediately flushed, and the PC changed to the interrupt handler, while when an async debug is taken, the pipeline is first halted one cycle, before flushing all or parts of the pipeline the next cycle. The WB stage is also not flushed if the interrupt is caused by \rv{EBREAK} or \rv{TRIGGER}.
 
-One timing difference between interrupts and debug requests in the CV32E40S core is that when an interrupt is taken, the pipeline is immediately flushed, and the PC changed to the interrupt handler, while when an async debug is taken, the pipeline is first halted one cycle, before flushing all or parts of the pipeline the next cycle. The WB stage is not flushed if the interrupt is caused by \rv{EBREAK} or \rv{TRIGGER}
-
-
-\subsection{RVFI}
-\tmp{i rvfi?}
-
-RVFI support also has to be added for debug. All instruction run in debug mode should output \ccode{rvfi_dbg_mode = 1}, and the first debug instruction should output the debug cause in \ccode{rvfi_dbg} \cite{openhwgroupRISCVFormalInterface2023}.
-
-
-\subsection{\rv{dcsr}}
-\tmp{Unødvendig?}
-
-The \rv{dcsr} debug control and status CSR differs between the core and spike. The core has the \rv{MPRVEN} and \rv{STOPCYCLE} fields hardwired to 1, while these are hardwired to 0 in Spike. Both these fields are specified as optional in the RISC-V Debug Specification \cite{pauldonahueRISCVDebugSupport2023}, so these field should be configurable in spike to match different cores.
-
-
-\subsection{EBREAK in pipeline when external debug request is enabled}
-\tmp{I PS?}
-
-Since the ISS is run in IF, when an \rv{ebreak} instructions runs in IF, the ISS sets debug mode to 1. This causes problems for a debug request asserted while the \rv{ebreak} is in the pipeline, but not yet executed in WB. Since the ISS already is in debug mode caused by the \rv{ebreak}, the debug request would not be taken, and the cause of the debug mode would be the \rv{ebreak} instead of the external debug request, which has a higher priority. To fix this, we can modify \ccode{set_debug()} to check if a new debug request is made while the debug mode is not set in the pipelines shell but is set in the ISS, and the current debug cause is by an \rv{ebreak}. This only occurs if the \rv{ebreak} is still in the pipeline. If this is the case, we can disable debug mode, so that the external debug request can trigger debug mode again with the correct cause.
 
 

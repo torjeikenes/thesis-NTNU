@@ -1,0 +1,26 @@
+
+These are implemented in the \file{riscv_dpi.cc} file that has DPI functions for setting parameters, initializing Spike, and stepping through the model. To maintain the state, this file has several classes instantiated as global variables, the most important being \ccode{Simulation* sim}, which is an addition made with the CVA6 Spike implementation. The \ccode{Simulation} class inherits from the spike \ccode{sim_t} class and adds a lot of the functionality implemented in the main function in pure Spike.  
+
+
+
+Spike always starts running at the \lstinline{DEFAULT_RSTVEC = 0x1000}. Spike places a custom boot rom at this reset location \cite{evancoxAddDocumentationLowlevel2017}.
+After this is run, spike will jump to the provided program counter or to the \lstinline{_start} symbol from the ELF file. Aditionally, spike has a debug module in memory.
+
+
+These memory regions overlap with the \lstinline{ram} region from \file{link.ld}.
+To avoid conflicts, the reset vector and debug module from Spike must be disabled. Spike's default boot loader can be disabled by setting \lstinline{dtb_enabled = false}, and the debug module can be removed from the \ccode{sim_t} class.
+
+
+
+
+
+Normally, Spike runs from the main function in \file{spike.cc}, and runs sequentially from start to finish using the \ccode{sim_t::run()} function.
+
+To use Spike in the reference model, we need a way to interface with it that runs only one instruction and returns the state changes from this instruction. This requires some modification. 
+
+We want to use DPI functions to interface with Spike from the reference model. To do this, we need to instantiate Spike in a DPI wrapper instead of running it from the main function. We want an initialization function that instantiates and configures Spike, a step function to step through one instruction and return the state changes as an RVFI output, and functions to inject asynchronous events into Spike.
+
+The Spike implementation in core-v-verif has been modified to support single-stepping instructions by exporting a set of DPI functions in \file{riscv_dpi.cc}. Spike is expanded with two new classes \ccode{Processor}, and \ccode{Simulation}, that inherit from \ccode{processor_t} and \ccode{sim_t} to get access to and build upon the processor state and simulation details.
+
+The most important addition is the \ccode{Processor::step()} method. This steps Spike one instruction and fills the \ccode{st_rvfi} RVFI struct that is sent out of spike over DPI to the reference model. The RVFI struct is filled using the values from the \ccode{state_t} state struct and the \ccode{Processor} class.
+

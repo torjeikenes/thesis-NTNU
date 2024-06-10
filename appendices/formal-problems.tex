@@ -11,8 +11,8 @@
 
 \item \textbf{Issue:} \lstinline{vlog -sv -f fv.flist} has no way (known by author) of specifying the sv2012 version, leading to errors from sv2012 specific functionality.
   \begin{description}
-    \item[Cause:] 
-    \item[Resolution:] Manually add all files and includes from fv.flist with \lstinline{add_read_hdl_option -verilog_include_path <path>} and \lstinline{read_verilog -version sv2012 <file.sv>}:
+    \item[Cause:] Limitation in Onespin. 
+    \item[Resolution:] Manually add all files and includes from fv.flist with \lstinline{add_read_hdl_option -verilog_include_path <path>} and \lstinline{read_verilog -version sv2012 <file.sv>} instead of using a \sv{.flist} file to load these files.
   \end{description}
 
 \item \textbf{Issue:}  \lstinline{uvm_error} not defined although it is defined in \file{uvm_pgk.sv}
@@ -23,8 +23,8 @@
   
  \item \textbf{Issue:} Error: \lstinline{-E- UnsuppVerilog - /home/torjene/core-v-verif/core-v-cores/cv32e40s/bhv/cv32e40s_wrapper.sv:218: bind construct with instances are not supported.}
   \begin{description}
-    \item[Cause:] from onespin reference manual: Binding to individual instances (\lstinline{bind_target_instance} and hierarchical instance names) is supported only when used with the \lstinline{read_sva} command, i.e. not in \lstinline{read_verilog}.
-    \item[Resolution:] remove individual instances or find a way to add the assertions with \lstinline{read_sva}
+    \item[Cause:] The onespin reference manual specifies that: "Binding to individual instances (\lstinline{bind_target_instance} and hierarchical instance names) is supported only when used with the \lstinline{read_sva} command, i.e. not in \lstinline{read_verilog}".
+    \item[Resolution:] We remove individual instances or find a way to add the assertions with \lstinline{read_sva}
   \end{description}
   
 \item \textbf{Issue:} 

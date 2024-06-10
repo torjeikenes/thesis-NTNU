@@ -9,38 +9,42 @@ This chapter will explore the pipeline shell's design and implementation details
 
 \section{Pipeline Shell Requirements}
 
-The following list contains the requirements for the pipeline shell to correctly fit into the reference model design proposed in \Cref{ch:design}. The requirements are referred to as \textbf{PS requirement X} in the previous chapters.
+The following list contains the requirements for the pipeline shell to correctly fit into the reference model design proposed in \Cref{ch:design}. The requirements are referred to as PS requirement X in the previous chapters.
 In this chapter, the requirements will guide the design choices of the pipeline shell.
-
 The pipeline shell should:
 \begin{enumerate}
 
-\item \textbf{Take RVFI data from the ISS as input.} \label[psReq]{psReq:rvfiIn}
+\item \textbf{Take RVFI data from the ISS as input} \label[psReq]{psReq:rvfiIn}
 \par The pipeline shell must receive \acrshort{rvfi} data from the ISS after it has executed an instruction.
 
+\item \textbf{Output state information through RVFI at instruction retirements} \label[psReq]{psReq:rvfiOut}
+\par For the testbench to compare the reference model with the DUT core, it must output the state changes as RVFI when instructions are retired.
 
-\item \textbf{Take in asynchronous events as inputs, independently of the core.} \label[psReq]{psReq:async_input}
+\item \textbf{Take in asynchronous events as inputs, independently of the core} \label[psReq]{psReq:async_input}
 \par We need the pipeline shell to avoid asynchronous events depending on the core. The pipeline shell must take asynchronous events like interrupts and debug requests as inputs, independently of the core, to avoid the verification gap from \Cref{sec:back_issProblem}.
 
-\item \textbf{Determine when to take asynchronous events.} \label[psReq]{psReq:async_control}
-\par The pipeline shell should internally decide when to take asynchronous events using the pipeline state. This timing should exactly match the timing in the core.
 
-\item \textbf{Control the ISS, including when it should execute instructions and take asynchronous events.} \label[psReq]{psReq:ISS-control}
+
+\item \textbf{Control the ISS, including when it should execute instructions and take asynchronous events} \label[psReq]{psReq:ISS-control}
 \par Since the ISS should be purely functional and not responsible for the timing, the pipeline shell must control when the ISS should execute instructions and take asynchronous events.
 
 
-\item \textbf{Accurately simulate pipeline details necessary to time asynchronous events.} \label[psReq]{psReq:pipeline}
+
+\item \textbf{Determine when to take asynchronous events} \label[psReq]{psReq:async_control}
+\par The pipeline shell should internally decide when to take asynchronous events using the pipeline state. This timing should exactly match the timing in the core.
+
+\item \label[psReq]{psReq:side-effects} \textbf{Accurately time side effects affecting the timing of asynchronous events} 
+
+\par Some instructions have side effects that can influence the timing of asynchronous events. The pipeline shell must accurately model the timing of these side effects to ensure the correct timing of asynchronous events.
+
+
+
+\item \textbf{Accurately simulate pipeline details necessary to time asynchronous events} \label[psReq]{psReq:pipeline}
 \par The timing of asynchronous events is influenced by various pipeline details. The pipeline shell must accurately model details like flushing and pipeline movement to ensure that the timing of asynchronous events matches the core.
 
 
-\item \textbf{Accurately time side effects affecting the timing of asynchronous events.} \label[psReq]{psReq:side-effects}
-\par Some instructions have side effects that can influence the timing of asynchronous events. The pipeline shell must accurately model the timing of these side effects to ensure the correct timing of asynchronous events.
-
 %\item \textbf{The pipeline shell should be the only core-dependent component} \label[psReq]{psReq:core-dependent}
 %\par 
-
-\item \textbf{Output state information through RVFI at instruction retirements.} \label[psReq]{psReq:rvfiOut}
-\par For the testbench to compare the reference model with the DUT core, it must output the state changes as RVFI when instructions are retired.
 
 
 \item \textbf{Be synthesizable and compatible with formal verification} \label[psReq]{psReq:formal}
@@ -70,7 +74,7 @@ The specialization project compared two pipeline shell designs in \Cref{sec:pw_p
 It concluded that a stage-based design could be easier to implement since the cycle-based approach would be complicated with pipeline flushing. However, the stage-based design could increase the probability of implementing the same bugs in the pipeline shell as in the core.
 
 
-When considering a pipeline shell compatible with formal verification(\Cref{psReq:formal}), even more disadvantages with a cycle-based approach are uncovered. 
+When considering a pipeline shell compatible with formal verification (\Cref{psReq:formal}), even more disadvantages with a cycle-based approach are uncovered. 
 Since the \textit{time wheel} must have one stage for every cycle that an instruction is in the pipeline, the time wheel must have a dynamic size. This is problematic because dynamic arrays in SystemVerilog are not synthesizable~\cite{mehtaIntroductionSystemVerilog2021}, and therefore not compatible with formal verification~\cite{seligmanFormalVerificationEssential2015}.
 
 %The cycle-based approach proposed by \textcite{chiangEfficientTwolayeredCycleaccurate2009} is written in SystemC. 
@@ -92,7 +96,7 @@ The figure also shows that we interact with the ISS from the IF stage, where we 
 
 Calling the ISS from the IF stage offers a key advantage: all information about an instruction's execution is available as it progresses through the pipeline, simplifying the design compared to calling the ISS from the WB stage. If the ISS is called from the WB stage, we do not have any information about the instructions before the WB stage. Since the controller depends on the information in the pipeline stages, decoding must happen separately from the main call to the ISS in WB. This requires splitting up the ISS call to separate fetching and decoding from the execution and writeback part. Additionally, branches and jumps need to be handled outside the ISS to keep the contents of the pipeline stages accurate. This would be complicated as a branch might depend on a register value, which again might require forwarding and execution to be implemented.
 
-To avoid the added complexity of calling the ISS from the WB stage, we decide to interact with the ISS from the IF stage. However, this has multiple downsides that will be discussed later, requiring reversion of the ISS state on pipeline flushes (\Cref{sec:ps_revertion}) and timing of side effects in (\Cref{sec:ps_side-effects}).
+To avoid the added complexity of calling the ISS from the WB stage, we decide to interact with the ISS from the IF stage. However, this has multiple downsides that will be discussed later, requiring reversion of the ISS state on pipeline flushes (\Cref{sec:ps_revertion}) and timing of side effects (\Cref{sec:ps_side-effects}).
 %
 %\subsection{Compartementalizing core-specific functionality}
 %
@@ -206,7 +210,7 @@ When this struct reaches the \acrshort{wb} stage and has been retired, we must o
 
 
 
-\subsection{Pipeline stages}
+\subsection{Pipeline Stages}
 Since different processor cores can have varying numbers of pipeline stages, the pipeline shell should be easily adaptable to different pipeline architectures. One option is to make a generic pipeline module with a parameterized number of equal pipeline stages. 
 
 However, while the different pipeline stages can be fairly similar, there are some differences. Looking at \Cref{fig:pipeline_shell}, the IF stage must communicate with the pipeline, and the WB stage must correctly output RVFI from the pipeline shell. Using such a generalized design might also make implementing non-standard pipelines and out-of-order designs difficult.
@@ -215,9 +219,9 @@ Instead, we choose to create separate pipeline stage modules for each stage. Thi
 
 
 
-\section{Controller module design}
+\section{Controller Module Design}
 
-The controller is the heart of the pipeline shell and is responsible for controlling the movement of instructions and the timing of asynchronous events. From \Cref{fig:pipeline_shell}, we see that it takes in the \sv{clk}, \sv{rvfi_valid} signal from the core, and asynchronous events like \sv{irq}, and \sv{debug_req}. It also takes in the \sv{RVFI} signals from each pipeline stage. It controls each pipeline stage with \sv{step} and \sv{flush} signals and injects asynchronous events into the ISS.
+The controller is the heart of the pipeline shell and is responsible for controlling the movement of instructions and the timing of asynchronous events. From \Cref{fig:pipeline_shell}, we see that it takes in the \sv{clk}, \sv{rvfi_valid} signal from the core, and asynchronous events like \sv{irq}, and \sv{debug_req} (\Cref{psReq:async_input}). It also takes in the \sv{RVFI} signals from each pipeline stage. It controls each pipeline stage with \sv{step} and \sv{flush} signals and injects asynchronous events into the ISS.
 
 The primary functionality of the controller module includes:
 \begin{enumerate}
@@ -228,10 +232,10 @@ The primary functionality of the controller module includes:
     \par The controller should decide when to take asynchronous events, considering the pipeline state (\Cref{psReq:async_control}).
 
     \item \textbf{Timing of Side Effects} 
-    \par The controller should accurately model time side effects that affect the timing of asynchronous events(\Cref{psReq:side-effects}).
+    \par The controller should accurately model time side effects that affect the timing of asynchronous events (\Cref{psReq:side-effects}).
     
     \item \textbf{Pipeline Flushing and State Revertion}
-    \par The controller should manage the flushing of the pipeline stages caused by interrupts and branching. As will be discussed in \Cref{sec:iss_revert}, this also requires reversion of the ISS state(\Cref{psReq:pipeline}).
+    \par The controller should manage the flushing of the pipeline stages caused by interrupts and branching. As will be discussed in \Cref{sec:iss_revert}, this also requires reversion of the ISS state (\Cref{psReq:pipeline}).
 \end{enumerate}
 
 The following sections will cover the design and implementation of each of these functionalities. 
@@ -257,7 +261,7 @@ The following sections will cover the design and implementation of each of these
 %    \item \sv{interrupt_allowed_o}
 %\end{itemize}
 
-\section{Instruction stepping}% : \Cref{psReq:ISS-control}}
+\section{Instruction Stepping}% : \Cref{psReq:ISS-control}}
 
 In the context of our reference model, the term \textit{step} can be used for the following actions: 
 \begin{itemize}
@@ -276,7 +280,7 @@ Since we use a retirement-dependent approach, the \sv{step} depends on the \sv{r
 
 In a standard pipeline, each stage can be halted, preventing instructions from moving to the next stage \cite{pattersonComputerOrganizationDesign2021}. This typically depends on the \sv{ready} and \sv{valid} signals. In our design, halting is implicitly supported since instructions will not progress in the pipeline when \sv{step} is low.
 
-\subsection{Filling the pipeline}
+\subsection{Filling the Pipeline}
 
 The pipeline stages are empty at the start of a simulation or after the pipeline is flushed. If we wait for the first retirement from the core before executing any instructions in the reference model, the retired instruction would only be in the IF stage of the reference model, and the execution would lag behind the core. To prevent this, the pipeline shell should proactively fill up the pipeline until all the pipeline stages contain valid instructions, and a retirement from the core would also lead to a retirement from the pipeline shell.
 
@@ -308,12 +312,13 @@ However, when considering the timing of side effects in \Cref{sec:ps_side-effect
 
 When multiple interrupts are enabled, the ISS must also determine which interrupt to take. The RISC-V specification \cite{watermanRISCVInstructionSet2021} only specifies the priority of the standard interrupts (bit \rv{15:0} in \rv{mip}), while the priority of custom interrupts (\rv{31:16}) is implementation specific.
 
-We let the ISS choose which interrupt to take, although this requires some core-specific modifications to the ISS, giving us \textbf{\Cref{issReq:interruptOrdering}}. We choose this approach since determining interrupt taking in the pipeline shell would require larger modifications to how interrupts are handled inside the ISS and the communication between the pipeline shell and the ISS.
+We let the ISS choose which interrupt to take, although this requires some core-specific modifications to the ISS, giving us \Cref{issReq:interruptOrdering}. We choose this approach since determining interrupt taking in the pipeline shell would require larger modifications to how interrupts are handled inside the ISS and the communication between the pipeline shell and the ISS.
 
 %On the other hand, determining the interrupt ordering in the pipeline shell causes some problems with the communication with the ISS. Instead of injecting the bits to be set in \rv{mip} and letting the ISS operate close to its original implementation, larger modifications to interrupt handling are required. If we want to tell the ISS which interrupt to take, the ISS must be modified to take the input interrupt instead of analyzing \rv{mip} and deciding the interrupt. One approach to informing the ISS of the interrupt is to only set one \rv{mip} bit at a time, so the ISS has no choice. This can work, but causes a mismatch between the \rv{mip} register of the core and the reference model if this is read. Another way would be to override the ISS interrupt-taking functionality so that it takes a given input interrupt instead of relying on \rv{mip}.
 
 
-\subsection{Interrupt notification to the ISS}
+\subsection{Interrupt Notification to the ISS}
+\label{sec:ps_interrupt_to_iss}
 
 To inform the ISS of potential interrupts, we use a dedicated function called \sv{iss_intr(...)}. This is called every clock cycle and takes \sv{irq} and \sv{interrupt_allowed} as inputs to let the ISS decide whether the interrupt should be taken. As will be discussed in \Cref{sec:ps_side-effects}, \sv{iss_intr(...)} must also consider the values from an external CSR.
 
@@ -324,7 +329,7 @@ The partitioning and timing of the interrupt handling is shown in \Cref{fig:ps_i
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{figures/PS_interrupt_timing.pdf}
-    \caption{Diagram showing the partition and timing of interrupt handing between the pipeline shell and ISS.}
+    \caption{Diagram showing the partition and timing of interrupt handling between the pipeline shell and ISS.}
     \label{fig:ps_interrupt_timing}
 \end{figure}
 
@@ -335,7 +340,7 @@ The partitioning and timing of the interrupt handling is shown in \Cref{fig:ps_i
 
 The \sv{interrupt_allowed} signal is a critical factor in determining the timing of interrupts, indicating whether the pipeline is in a state where an interrupt can safely be taken. In the CV32E40S, the signal is influenced by various factors, including in-flight memory operations, the debug mode, multi-cycle instructions, and other pipeline-related conditions. \Cref{fig:dependency-tree-cv32x} shows the complexity of this signal and how it depends on the different pipeline stages.
 
-Ideally, all components contributing to the \sv{interrupt_allowed} signal would be accurately modeled from the state of the pipeline shell, independently of the core. However, due to the scope of this thesis, the \sv{interrupt_allowed} signal is not modeled based on the pipeline shell but Instead directly injected from the DUT core. This is done to facilitate the implementation of the other reference model components, where we can now assume that the \sv{interrupt_allowed} signal functions correctly.
+Ideally, all components contributing to the \sv{interrupt_allowed} signal would be accurately modeled from the state of the pipeline shell, independently of the core. However, due to the scope of this thesis, the \sv{interrupt_allowed} signal is not modeled based on the pipeline shell but instead directly injected from the DUT core. This is done to facilitate the implementation of the other reference model components, where we can now assume that the \sv{interrupt_allowed} signal functions correctly.
 
 Injecting the \sv{interrupt_allowed} from the core introduces a verification gap. If there is a bug in the core's implementation of this signal, the reference model will contain the same bug, leading to the bug not being detected. Therefore, future work should focus on independently modeling the \sv{interrupt_allowed} signal within the pipeline shell.
 
@@ -352,7 +357,7 @@ Injecting the \sv{interrupt_allowed} from the core introduces a verification gap
 \section{Timing Side effects}% : \Cref{psReq:side-effects}}
 \label{sec:ps_side-effects}
 
-\subsection{Side effects influencing interrupt timing}
+\subsection{Side Effects Influencing Interrupt Timing}
 
 Some side effects affect the timing of interrupts, like changes to the \rv{mie} and \rv{mstatus} CSRs. The chosen pipeline shell architecture leads to a problem with side effects, which will be explained in an example.
 
@@ -376,7 +381,7 @@ In our design, the ISS executes the instructions in the IF stage. The figure sho
 
 To address this timing discrepancy, we introduce an \textit{External CSR} within the pipeline shell. It should store the CSR values that affect the interrupt timing, and should be updated as instructions progress through the pipeline. By using the values in the external CSR when evaluating interrupts, we ensure that the reference model accurately reflects the state of the CSRs at the time the interrupt is considered.
 
-Since the ISS decides when interrupts are allowed, we must pass the relevant values from the external CSR to the ISS by adding these values to the \sv{iss_intr()} function. This requires the ISS to take external CSR values as inputs and consider these when taking an interrupt. This gives us \textbf{\Cref{issReq:set_CSR}}. Additionally, the ISS must be able to output the modified CSR values through RVFI, giving us \textbf{\Cref{issReq:CSR_out}}.
+Since the ISS decides when interrupts are allowed, we must pass the relevant values from the external CSR to the ISS by adding these values to the \sv{iss_intr()} function. This requires the ISS to take external CSR values as inputs and consider these when taking an interrupt. This gives us \Cref{issReq:set_CSR}. Additionally, the ISS must be able to output the modified CSR values through RVFI, giving us \Cref{issReq:CSR_out}.
 These CSR changes can then travel through the pipeline and update the external CSR when they reach the WB stage.
 
 
@@ -418,14 +423,14 @@ The previous example focuses on \rv{mstatus}, but the same problem can, for exam
 As described in \Cref{sec:bg_flushing}, we must discard instructions already in the pipeline when the PC is changed by a jump, branch, or interrupt.
 To model our pipeline shell, we will also need to implement pipeline flushing.
 
-\subsubsection{Flush after jump/branch}
+\subsubsection{Flush After Jump/Branch}
 
 A typical pipeline flushes when the core jumps or branches to a new PC \cite{pattersonComputerOrganizationDesign2021}. Since we call the ISS in the IF stage, and the ISS fully executes one instruction before the next, the ISS always executes the correct instruction after a branch or jump, and we do not get the same incorrect instructions as the core in the pipeline that need to be flushed.
 
 The CV32E40S core executes jumps in the ID stage and branches in the EX stage \cite{openhwgroupPipelineDetailsCOREV2023}. This means the core and reference model can mismatch the IF and ID stages before a jump or branch is correctly taken in the core. However, looking at \Cref{fig:dependency-tree-cv32x}, we see that the state of the IF is not required for interrupt timing and that the ID stage is only relevant for \acrshort{clic} interrupts. Since we, for the time being, only support \acrshort{clint} interrupts, we choose to ignore flushing the pipeline because of jumps and branches, but this assumption should be re-evaluated when implementing \acrshort{clic} interrupts in future work.
 
 
-\subsubsection{Flushing after an interrupt}
+\subsubsection{Flushing After an Interrupt}
 
 Since interrupts are asynchronous to the processor execution, we can not ignore the flushing caused by interrupts. When the interrupt is taken, the remaining instructions in the pipeline must be flushed. In our implementation, we clear the \sv{rvfi} data in each pipeline stage and set the \sv{valid} signal to 0. We use the \sv{if_flush, id_flush, ex_flush}, and \sv{wb_flush} from the controller to the pipeline stages to control flushing in each stage. When the ISS decides to take an interrupt, the \sv{iss_intr()} function returns true, and the \sv{interrupt_taken} signal is set. This signal can be output to the pipeline stages with the \sv{flush} signals.
 
@@ -464,26 +469,27 @@ Some \acrfull{csr} are also changed because of instructions and must be stored. 
 Additionally, since we use the ISS's internal memory simulation, we need to revert potential memory writes that occurred for instructions that must be discarded.
 
 
-\subsection{Store states in Pipeline Shell or ISS}
+\subsection{Store States in Pipeline Shell or ISS}
 
 We can either store these states inside the ISS or in the Pipeline shell. By outputting the snapshot and moving it through the pipeline, it would theoretically be simple to input the state of the oldest instruction in the pipeline into the ISS and revert back to it. This could be more practical if a core-independent pipeline shell is chosen in \Cref{sec:ps_dependency}. In practice, converting the snapshot into SystemVerilog may be difficult, and it must be contained enough to be sent through the pipeline easily. %Another solution could be not to store the entire state as a snapshot but only store the state changes. This would require iterating through the pipeline stages in reverse and reversing all the stored state changes.
 
 Instead, we choose to store the snapshot inside the ISS. This keeps the state contained and allows the snapshot to be stored in a logical format to the ISS without converting it to and from SystemVerilog to be sent through the pipeline. 
 To revert the state from outside the ISS, we introduce a \sv{revert_steps} parameter to the \sv{iss_intr()} function. This parameter indicates the number of states to revert, allowing the ISS to revert the instructions flushed in a typical pipeline.
-This gives us \textbf{\Cref{issReq:revertState}}, specifying that the ISS must be able to revert to a previous state, reverting registers, CSRs, and memory operations.
+This gives us \Cref{issReq:revertState}, specifying that the ISS must be able to revert to a previous state, reverting registers, CSRs, and memory operations.
 
-\subsection{When to revert}
+\subsection{When To Revert}
+\label{sec:ps_when_revert}
 
 The order of events when reverting the state is essential to get right.
 The naive order could look something like this:
 
 \begin{enumerate}
-    \item An interrupt is input into the reference model.
-    \item The reference model decides if the interrupt is allowed and inputs the \rv{irq} bits into the ISS with \sv{iss_intr()}.
-    \item The ISS reports that the interrupt is taken.
-    \item The pipeline shell is flushed.
-    \item We revert the ISS to a previous state.
-    \item The ISS starts running the interrupt handler.
+    \item An interrupt is input into the reference model
+    \item The reference model decides if the interrupt is allowed and inputs the \rv{irq} bits into the ISS with \sv{iss_intr()}
+    \item The ISS reports that the interrupt is taken
+    \item The pipeline shell is flushed
+    \item We revert the ISS to a previous state
+    \item The ISS starts running the interrupt handler
 \end{enumerate}
 
 This order is problematic. When we run the \sv{iss_intr()} function and the interrupt is taken in the ISS, this sets the \rv{mepc} and \rv{mstatus} CSRs as explained in \Cref{sec:bg_interrupts}. Reverting the state after the interrupt is taken in the ISS, like above, discards these CSR writes since the CSRs are reverted to a previous state. Since interrupt taking is decided inside the ISS, we can also not revert the state before running the \sv{iss_intr()} function.
@@ -502,7 +508,7 @@ This gives us the following order:
     \item The ISS starts running the interrupt handler
 \end{enumerate}
 
-\subsection{How many states to revert}
+\subsection{How Many States To Revert}
 
 \begin{figure}
     \centering
@@ -537,13 +543,13 @@ With our current retirement-dependent implementation, we must always revert the 
 
 
 
-\section{Other asynchronous events}% : \Cref{psReq:async_control}}
+\section{Other Asynchronous Events}% : \Cref{psReq:async_control}}
 \label{sec:other_async}
 
 Since the previous sections used interrupts as an example of how asynchronous events can be handled in the pipeline shell, this section will cover how the techniques and design choices discussed for interrupts can also be applied to other asynchronous events.
 
 
-\subsection{Applying Interrupt Handling Techniques to Debug Requests}
+\subsection{Applying Interrupt Handling Techniques To Debug Requests}
 
 %We will use debug requests as an example of how other asynchronous events can utilize the techniques discovered for interrupts.
 %
@@ -553,20 +559,20 @@ The CV32E40S core \cite{openhwgroupDebugTriggerCOREV2023} supports the RISC-V De
 
 Debug requests share many similarities with interrupt handling. Both are asynchronous events interrupting the processor's operation, and both require the pipeline to be flushed and the processor's state to be saved before the event can be handled. The following sections will cover how the techniques for interrupts apply to debug requests.  
 
-\subsubsection{Informing the ISS of debug requests}
+\subsubsection{Informing the ISS of Debug Requests}
 
 We can inform the ISS of debug requests the same way as interrupts in \Cref{sec:ps_interrupt} by using a \sv{iss_set_debug(...)} function called every cycle. This can work similarly to \sv{iss_intr(...)}, taking \sv{debug_req_i} and \sv{debug_allowed} as inputs.
 
 The \sv{debug_allowed} signal is used like the \sv{interrupt_allowed} signal and is determined by the pipeline shell based on the current processor state. If debug is allowed, the ISS decides whether to take it, storing the necessary state information and entering debug mode.
 
 
-\subsubsection{State Reversion after debug}
+\subsubsection{State Reversion After Debug}
 
 Similar to interrupts, when an external debug request is taken, the pipeline must be flushed, and the PC needs to be changed to the debug handler. 
 
 This gives the same problem as interrupts in \Cref{sec:ps_revertion}, where the ISS needs to be reverted to a previous state. This can be implemented the same way as for interrupts, where the \sv{iss_set_debug()} function takes in the number of states to revert and reverts the state if the debug request is taken. 
 
-\subsubsection{Delay debug mode with pipeline}
+\subsubsection{Delay Debug Mode With Pipeline}
 
 The debug mode of the processor causes a similar problem to the timing of \rv{mstatus.mie} explained in \Cref{sec:ps_side-effects}, where the value changes too early in the ISS and needs to be delayed with an external CSR. Similar to the \rv{mret} example in \Cref{fig:mret_example_fail}, the same problem can occur when a debug handler returns with the \rv{dret} instruction and immediately goes straight into another debug request. 
 This can be solved the same way as for interrupts by outputting the \rv{debug_mode} from the ISS over RVFI, propagating it through the pipeline, and storing it similarly to the external CSR. 
@@ -592,7 +598,7 @@ This value is passed to the ISS with the \sv{iss_set_debug()} function and consi
 \subsection{Interrupts and Debug Requests Simultaneously }
 
 When interrupts and debug requests occur simultaneously, this can also lead to more problems. One example is when we return from debug mode and immediately take an interrupt.
-The same way the changes from \rv{mret} must be delayed in an external CSR in\Cref{fig:mret_example}, the state changes from \rv{dret} must also be considered before taking an interrupt. This requires that the current debug mode is also considered before taking an interrupt.
+The same way the changes from \rv{mret} must be delayed in an external CSR in \Cref{fig:mret_example}, the state changes from \rv{dret} must also be considered before taking an interrupt. This requires that the current debug mode is also considered before taking an interrupt.
 When considering multiple asynchronous events, we can not separate the handling of interrupts and debug requests since these affect each other.
 
 \subsection{Non Maskable Interrupts (NMIs)}
@@ -611,7 +617,7 @@ We imagine that the following techniques can be transferrable to NMIs:
 \end{itemize}
 
 
-\subsection{Priorotizing Events}
+\subsection{Prioritizing Events}
 
 We also have to prioritize the different asynchronous events in relation to each other. Since we currently use the ISS to determine which asynchronous event to take, it must also consider the prioritization between the different events. The prioritized list of the CV32E40S \cite{openhwgroupCv32e40s2024} is shown below and may need to be configured in the ISS to choose the correct asynchronous event.
 
@@ -653,4 +659,19 @@ We also have to prioritize the different asynchronous events in relation to each
 %\tmp{TODO}
 %
 %\tmp{We disable wifi in the ISS so that the timing is done in the pipeline shell}
+
+
+\subsection{WFI}
+\label{sec:wfi}
+
+A \rv{wfi} instruction should halt execution until an interrupt occurs \cite{watermanRISCVInstructionSet2021}. This requires some modifications to the design to function correctly.
+
+One problem with \rv{wfi} instructions and the pipeline shell is that the next steps in Spike will not be executed when a \rv{wfi} is set. This prohibits the pipeline from filling up with the upcoming instructions. When an interrupt is taken, and \rv{wfi} is awakened, the next instructions are not loaded into the pipeline, causing a mismatch. To avoid this, we fully disable \rv{wfi} in the ISS and let the pipeline shell handle the waiting caused by a \rv{wfi}. This is legal since the RISC-V specification also specifies that implementing \rv{wfi} as a \rv{nop} is a legal implementation \cite{watermanRISCVInstructionSet2021}. As will be discussed in \Cref{sec:res_tests}, this causes some problems when a \rv{wfi} is the last instruction of a program.
+
+
+%\subsection{EBREAK in pipeline when external debug request is enabled}
+%\tmp{I PS?}
+%
+%Since the ISS is run in IF, when an \rv{ebreak} instructions runs in IF, the ISS sets debug mode to 1. This causes problems for a debug request asserted while the \rv{ebreak} is in the pipeline, but not yet executed in WB. Since the ISS already is in debug mode caused by the \rv{ebreak}, the debug request would not be taken, and the cause of the debug mode would be the \rv{ebreak} instead of the external debug request, which has a higher priority. To fix this, we can modify \ccode{set_debug()} to check if a new debug request is made while the debug mode is not set in the pipelines shell but is set in the ISS, and the current debug cause is by an \rv{ebreak}. This only occurs if the \rv{ebreak} is still in the pipeline. If this is the case, we can disable debug mode, so that the external debug request can trigger debug mode again with the correct cause.
+
 

@@ -3,21 +3,23 @@
 
 \section{core-v-verif Onespin integration}
 
-In order to support formal verification, one contribution of this thesis is a script that configures Onespin \cite{onespinsolutionsgmbhUserManualOneSpin} to support the CV32E40S core. This contribution is the addition of the file \file{onespin.tcl} found in \Cref{app:onespin.tcl}. This loads the correct files and configures the core for formal verification in Onespin. 
+In order to support formal verification, one contribution of this thesis is a script that configures Onespin \cite{onespinsolutionsgmbhUserManualOneSpin} to support the CV32E40S core, as well as makefile modifications to properly run the testbench. This contribution is the addition of the file \file{onespin.tcl} found in \Cref{app:onespin.tcl}. This loads the correct files and configures the core for formal verification in Onespin. 
 
-Onespin needs signals to drive in order to test different inputs. By default, these signals are already driven in the testbench, so these need to be disconnected or \textit{cut} for the signals to show up as inputs and be drivable by onespin. This can be done with the \lstinline{add_compile_option -cut_signal clknrst_if/clk}.
+Onespin needs signals to drive in order to test different inputs. By default, these signals are already driven in the testbench, so these need to be disconnected or \textit{cut} for the signals to show up as inputs and be drivable by onespin\cite{ReferenceManualOneSpin}. This can be done with the \lstinline{add_compile_option -cut_signal clknrst_if/clk}.
 
-To get Onespin setup, Onespin needs a clock and reset signal to drive. We therefore cut \sv{clk} and \sv{reset}.
-
-
-To test different instructions, we can inject values into the obi interface by cutting the signals in \lstinline{obi_instr_if} and \lstinline{obi_data_if}.
+To get Onespin set up, we cut the clock (\sv{clk}) and reset (\sv{reset}) signals so Onespin can drive them. Additionally, to test different instructions, values can be injected into the \acrfull{obi} \cite{siliconlabsincOBI} used to read instructions from memory by cutting the signals in \lstinline{obi_instr_if} and \lstinline{obi_data_if}.
 
 
-\section{Formal verification testbench}
+\section{Formal Verification of the Reference Model}
 \label{sec:formal_testbench}
 \label{sec:formal_dummy}
 
+The previous section covered how the standard core-v-verif environment can be configured to work with Onespin. This focuses on using Onespin to verify the reference model itself. 
+
+When running the makefile controlling core-v-verif, the reference model can also be enabled and disabled with a set of defines. We need to support these defines in our solution to support the reference model in onespin.
+
 Since Spike is written in \cpp, it is incompatible with formal verification. To support formal verification in the future by switching to a formal-friendly ISS, we want the rest of the reference model to be compatible with formal verification. In addition to the simulation-based testbench, we want to verify the design using formal methods. To do this, we replace \lstinline{iss_wrap_pkg.sv} that communicates with Spike, with a "dummy ISS " in \lstinline{iss_wrap_formal_pkg.sv} that is mostly empty but can be used to verify that the rest of the reference model works with formal methods.
+
 
 For the dummy ISS interface to be used by the rest of the reference model, it should have the same interface and return \acrshort{rvfi} signals. Since we do not have a working formal ISS, we can either output a static \acrshort{rvfi} item or return the same \acrshort{rvfi} signals as the core. We can also verify that the comparison functionality works by returning the same RVFI signals as the core.
 
@@ -27,3 +29,10 @@ We would then have two environments: a UVM simulation environment that verifies 
 If both these tests pass, future work should be to replace the dummy ISS in the formal environment with sail-riscv when the SystemVerilog generator is fully supported and verify that this works. 
 
 
+\section{Benefits of Onespin Support}
+
+The \file{onespin.tcl} script enables the use of Onespin for formal verification of the CV32E40S core, even without the reference model. The CV32E40S core contains many \acrfull{sva} for verifying properties within the core \cite{openhwgroupCv32e40s2024}. This contribution also allows these assertions to be verified using formal verification with Onespin.
+
+Although core-v-verif already supports other formal verification tools like Jasper Formal \cite{JasperFormalVerification} and Questa Formal \cite{QuestaFormalVerification}, adding Onespin support can still be valuable. Core-v-verif is used by multiple cores and various teams with access to different tools. Supporting a wider range of tools enhances the accessibility and usability of the verification environment, enabling more users to verify RISC-V processors formally.
+
+Adding support for a reference model with formal verification can also be very valuable. If a formal-friendly ISS can be used in the future, making the proposed reference model compatible with formal verification, this has many benefits explained in \Cref{sec:bg_formal}. By doing this, we can mathematically prove that the core and reference model will operate the same way, instead of simulation-based testing used today, where many tests are run hoping that they cover every scenario and corner case.
